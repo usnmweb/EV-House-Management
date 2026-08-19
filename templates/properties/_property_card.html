@@ -1,0 +1,27 @@
+{% load static %}
+<article class="property-card">
+  <div class="property-card-media">
+    {% with cover=property.cover_image %}
+      {% if cover %}
+        <a href="{{ property.get_absolute_url }}">
+          <img src="{{ cover.image.url }}" alt="{{ cover.display_alt }}" loading="lazy" width="800" height="600">
+        </a>
+      {% else %}
+        <div class="media-placeholder" aria-hidden="true">EV</div>
+      {% endif %}
+    {% endwith %}
+    {% if property.featured %}<span class="badge-featured">In evidenza</span>{% endif %}
+  </div>
+
+  <div class="property-card-body">
+    <h3><a href="{{ property.get_absolute_url }}">{{ property.title }}</a></h3>
+    <p class="property-location">{{ property.location }}</p>
+    <p class="property-excerpt">{{ property.short_description|truncatewords:22 }}</p>
+
+    <div class="property-specs">
+      <span><strong>{{ property.guests }}</strong> ospiti</span>
+      <span><strong>{{ property.bedrooms }}</strong> camere</span>
+      <span><strong>{{ property.bathrooms }}</strong> bagni</span>
+    </div>
+  </div>
+</article>

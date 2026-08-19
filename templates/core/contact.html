@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Contatti</span>
+      <h2>Scrivici</h2>
+      <hr class="gold-rule">
+    </div>
+
+    <div class="contact-layout">
+      <div>
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-error">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          {% for field in form.visible_fields %}
+            {% if field.name == "privacy" %}
+              <div class="form-check">
+                {{ field }}
+                <label for="{{ field.id_for_label }}">
+                  {{ field.label }} &mdash;
+                  <a href="{% url 'core:privacy' %}" target="_blank" rel="noopener">leggi l'informativa</a>
+                </label>
+              </div>
+              {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            {% else %}
+              <div class="form-field{% if field.field.required %} required{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+
+          {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+
+          <button class="btn btn-primary" type="submit">Invia messaggio</button>
+        </form>
+      </div>
+
+      <aside>
+        <div class="booking-box">
+          <h3>{{ COMPANY_LEGAL_NAME }}</h3>
+          <hr class="gold-rule">
+          <ul class="footer-contacts">
+            <li style="margin-bottom:1rem;">{{ COMPANY_ADDRESS }}</li>
+            <li style="margin-bottom:1rem;"><a href="mailto:{{ COMPANY_EMAIL }}">{{ COMPANY_EMAIL }}</a></li>
+            {% if COMPANY_PHONE %}<li style="margin-bottom:1rem;"><a href="tel:{{ COMPANY_PHONE|cut:" " }}">{{ COMPANY_PHONE }}</a></li>{% endif %}
+            <li>P.IVA / IVA: {{ COMPANY_VAT }}</li>
+          </ul>
+          <p class="price-note" style="margin-top:1.5rem;">
+            Rispondiamo di norma entro un giorno lavorativo.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Galleria</span>
+      <h2>Gli spazi che gestiamo</h2>
+      <hr class="gold-rule">
+      <p class="lead">
+        Una selezione di immagini dagli immobili in gestione: interni, dettagli e viste.
+      </p>
+    </div>
+
+    {% if images %}
+      <div class="masonry">
+        {% for img in images %}
+        <figure>
+          <a href="{{ img.property.get_absolute_url }}">
+            <img src="{{ img.image.url }}" alt="{{ img.display_alt }}" loading="lazy" width="800" height="600">
+          </a>
+          <figcaption>{{ img.property.title }} &middot; {{ img.property.location }}</figcaption>
+        </figure>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="lead">
+        La galleria sarà presto disponibile.
+        <a href="{% url 'properties:list' %}">Intanto scopri gli immobili</a>.
+      </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

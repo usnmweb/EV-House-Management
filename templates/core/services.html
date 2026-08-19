@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Servizi</span>
+      <h2>Gestione completa, dalla A alla Z</h2>
+      <hr class="gold-rule">
+      <p class="lead">
+        Un unico interlocutore per tutto il ciclo di vita del tuo immobile in affitto breve:
+        operativita quotidiana, ottimizzazione dei ricavi e adempimenti amministrativi.
+      </p>
+    </div>
+
+    <div class="service-grid">
+      {% for service in services %}
+      <article class="service-card">
+        <span class="idx">{{ forloop.counter|stringformat:"02d" }}</span>
+        <h3>{{ service.title }}</h3>
+        <p>{{ service.text }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-dark">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Come lavoriamo</span>
+      <h2>Quattro passi</h2>
+      <hr class="gold-rule">
+    </div>
+    <div class="service-grid">
+      <article class="service-card">
+        <span class="idx">01</span>
+        <h3>Sopralluogo</h3>
+        <p>Visitiamo l'immobile, valutiamo posizione, stato e potenziale di rendita.</p>
+      </article>
+      <article class="service-card">
+        <span class="idx">02</span>
+        <h3>Proposta</h3>
+        <p>Ti presentiamo un piano di gestione con stime di occupazione e ricavo.</p>
+      </article>
+      <article class="service-card">
+        <span class="idx">03</span>
+        <h3>Attivazione</h3>
+        <p>Styling, servizio fotografico, pubblicazione degli annunci e avvio operativo.</p>
+      </article>
+      <article class="service-card">
+        <span class="idx">04</span>
+        <h3>Gestione</h3>
+        <p>Operativita continua e rendiconti mensili trasparenti, senza pensieri per te.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <span class="eyebrow">Primo passo</span>
+    <h2>Parliamo del tuo immobile</h2>
+    <p class="lead">Valutazione gratuita e senza impegno del potenziale della tua proprietà.</p>
+    <div class="btn-group">
+      <a class="btn btn-primary" href="{% url 'core:contact' %}">Richiedi una valutazione</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block body_class %}has-hero{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-media">
+    <img src="{% static 'img/hero-1600.jpg' %}"
+         srcset="{% static 'img/hero-1000.jpg' %} 1000w,
+                 {% static 'img/hero-1600.jpg' %} 1600w,
+                 {% static 'img/hero-2400.jpg' %} 2400w"
+         sizes="100vw" width="2400" height="1350"
+         alt="" fetchpriority="high" decoding="async">
+  </div>
+  <div class="hero-scrim" aria-hidden="true"></div>
+
+  <div class="container">
+    <div class="hero-inner">
+      <span class="hero-eyebrow">Property management &middot; Sardegna</span>
+
+      <h1>La tua proprietà,<br><em>gestita nel dettaglio</em></h1>
+
+      <p class="hero-lead">
+        Ci occupiamo di ogni aspetto del tuo immobile: accoglienza degli ospiti,
+        pulizie, manutenzione e burocrazia. Tu ricevi i risultati, noi gestiamo
+        tutto il resto.
+      </p>
+
+      <div class="btn-group">
+        <a class="btn btn-primary" href="{% url 'properties:list' %}">Scopri gli immobili</a>
+        <a class="btn btn-ghost" href="{% url 'core:contact' %}">Parla con noi</a>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<section class="stats-band">
+  <div class="container">
+    <ul class="stats-grid">
+      <li>
+        <span class="num">100%</span>
+        <span class="label">Gestione chiavi in mano</span>
+      </li>
+      <li>
+        <span class="num">24/7</span>
+        <span class="label">Assistenza ospiti</span>
+      </li>
+      <li>
+        <span class="num">4.9</span>
+        <span class="label">Valutazione media</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+{% if featured_properties %}
+<section class="section" id="immobili-evidenza">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Selezione</span>
+      <h2>Immobili in evidenza</h2>
+      <hr class="gold-rule">
+      <p class="lead">
+        Una selezione di proprietà in gestione, scelte per posizione, qualità degli
+        spazi e cura dei dettagli.
+      </p>
+    </div>
+
+    <div class="property-grid">
+      {% for property in featured_properties %}
+        {% include "properties/_property_card.html" with property=property %}
+      {% endfor %}
+    </div>
+
+    <div class="btn-group" style="margin-top:3rem;">
+      <a class="btn btn-outline" href="{% url 'properties:list' %}">Vedi tutti gli immobili</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section section-dark">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Cosa facciamo</span>
+      <h2>Un servizio completo</h2>
+      <hr class="gold-rule">
+    </div>
+
+    <div class="service-grid">
+      <article class="service-card">
+        <span class="idx">01</span>
+        <h3>Gestione operativa</h3>
+        <p>Check-in, pulizie, biancheria, manutenzione ordinaria e straordinaria. Coordiniamo
+           tutti i fornitori e garantiamo standard costanti a ogni soggiorno.</p>
+      </article>
+      <article class="service-card">
+        <span class="idx">02</span>
+        <h3>Revenue management</h3>
+        <p>Analisi di mercato e prezzi dinamici per ottimizzare occupazione e ricavi,
+           adattandosi a stagionalita ed eventi locali.</p>
+      </article>
+      <article class="service-card">
+        <span class="idx">03</span>
+        <h3>Presenza online</h3>
+        <p>Fotografia professionale, annunci curati e distribuzione sui principali portali,
+           con calendario sincronizzato e nessun rischio di overbooking.</p>
+      </article>
+    </div>
+
+    <div class="btn-group" style="margin-top:3rem;">
+      <a class="btn btn-outline" href="{% url 'core:services' %}">Tutti i servizi</a>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <span class="eyebrow">Iniziamo</span>
+    <h2>Affida il tuo immobile a chi lo cura davvero</h2>
+    <p class="lead">
+      Raccontaci la tua proprietà: ti prepariamo una valutazione gratuita del potenziale
+      di rendita e un piano di gestione su misura.
+    </p>
+    <div class="btn-group">
+      <a class="btn btn-primary" href="{% url 'core:contact' %}">Richiedi una valutazione</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

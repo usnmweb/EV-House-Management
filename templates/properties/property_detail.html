@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block og_type %}place{% endblock %}
+
+{% block og_image %}
+  {% with cover=property.cover_image %}
+    {% if cover %}
+      <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ cover.image.url }}">
+      <meta property="og:image:alt" content="{{ cover.display_alt }}">
+    {% else %}
+      <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-default.jpg' %}">
+    {% endif %}
+  {% endwith %}
+{% endblock %}
+
+{% block extra_head %}
+{# ---- JSON-LD: VacationRental ---- #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VacationRental",
+  "name": "{{ property.title|escapejs }}",
+  "description": "{{ property.short_description|escapejs }}",
+  "url": "{{ request.scheme }}://{{ request.get_host }}{{ property.get_absolute_url }}",
+  {% if gallery %}"image": [{% for img in gallery %}"{{ request.scheme }}://{{ request.get_host }}{{ img.image.url }}"{% if not forloop.last %}, {% endif %}{% endfor %}],{% endif %}
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "{{ property.location|escapejs }}",
+    "addressCountry": "IT"
+  },
+  "containsPlace": {
+    "@type": "Accommodation",
+    "occupancy": {
+      "@type": "QuantitativeValue",
+      "value": {{ property.guests }}
+    },
+    "numberOfBedrooms": {{ property.bedrooms }},
+    "numberOfBathroomsTotal": {{ property.bathrooms }}
+  },
+  "provider": {
+    "@type": "LodgingBusiness",
+    "name": "{{ COMPANY_LEGAL_NAME|escapejs }}",
+    "email": "{{ COMPANY_EMAIL }}",
+    "telephone": "{{ COMPANY_PHONE }}",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "{{ COMPANY_ADDRESS|escapejs }}",
+      "addressCountry": "IT"
+    }
+  }{% if property.booking_url %},
+  "potentialAction": {
+    "@type": "ReserveAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "{{ property.booking_url }}"
+    }
+  }{% endif %}
+}
+</script>
+
+{# ---- JSON-LD: Breadcrumb ---- #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Immobili",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'properties:list' %}"},
+    {"@type": "ListItem", "position": 3, "name": "{{ property.title|escapejs }}"}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="detail-hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Percorso">
+      <a href="{% url 'core:home' %}">Home</a> &nbsp;/&nbsp;
+      <a href="{% url 'properties:list' %}">Immobili</a> &nbsp;/&nbsp;
+      <span>{{ property.title }}</span>
+    </nav>
+
+    {% if gallery %}
+      <div class="gallery-main">
+        <img id="gallery-main-img" src="{{ gallery.0.image.url }}"
+             alt="{{ gallery.0.display_alt }}" width="1600" height="1000">
+      </div>
+      {% if gallery|length > 1 %}
+      <div class="gallery-thumbs">
+        {% for img in gallery %}
+          <button type="button"
+                  class="gallery-thumb{% if forloop.first %} is-active{% endif %}"
+                  data-full="{{ img.image.url }}"
+                  data-alt="{{ img.display_alt }}"
+                  aria-label="Mostra immagine {{ forloop.counter }}">
+            <img src="{{ img.image.url }}" alt="{{ img.display_alt }}" loading="lazy" width="400" height="400">
+          </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="gallery-main">
+        <div class="media-placeholder" aria-hidden="true">EV</div>
+      </div>
+    {% endif %}
+
+    <div class="detail-layout">
+      <div>
+        <span class="eyebrow">{{ property.location }}</span>
+        <h1>{{ property.title }}</h1>
+        <hr class="gold-rule">
+
+        <div class="spec-grid">
+          <div class="spec-item">
+            <span class="num">{{ property.guests }}</span>
+            <span class="label">Ospiti</span>
+          </div>
+          <div class="spec-item">
+            <span class="num">{{ property.bedrooms }}</span>
+            <span class="label">Camere</span>
+          </div>
+          <div class="spec-item">
+            <span class="num">{{ property.bathrooms }}</span>
+            <span class="label">Bagni</span>
+          </div>
+        </div>
+
+        <div class="prose">
+          {{ property.description|linebreaks }}
+        </div>
+      </div>
+
+      <aside>
+        <div class="booking-box">
+          <h3>Prenota il soggiorno</h3>
+          <p class="price-note">
+            Verifica disponibilità e tariffe aggiornate, oppure scrivici per una
+            richiesta personalizzata.
+          </p>
+          {% if property.booking_url %}
+            <a class="btn btn-primary btn-block" href="{{ property.booking_url }}"
+               target="_blank" rel="noopener noreferrer">Verifica disponibilità</a>
+            <p class="price-note" style="margin:1rem 0 0;text-align:center;">
+              Si apre sul portale di prenotazione
+            </p>
+          {% else %}
+            <a class="btn btn-primary btn-block" href="{% url 'core:contact' %}">Richiedi disponibilità</a>
+          {% endif %}
+          <a class="btn btn-outline btn-block" style="margin-top:0.75rem;"
+             href="{% url 'core:contact' %}">Contatta il gestore</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+{% if related %}
+<section class="section section-dark" style="margin-top:5rem;">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Potrebbero interessarti</span>
+      <h2>Altri immobili</h2>
+      <hr class="gold-rule">
+    </div>
+    <div class="property-grid">
+      {% for property in related %}
+        {% include "properties/_property_card.html" with property=property %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

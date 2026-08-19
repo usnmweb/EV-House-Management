@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+  <div class="container prose">
+    <span class="eyebrow">Informativa</span>
+    <h1>Cookie Policy</h1>
+    <hr class="gold-rule">
+    <p><strong>Ultimo aggiornamento:</strong> <span class="placeholder">[data da inserire]</span></p>
+
+    <p>
+      Questo documento e un modello di base e va adattato ai cookie effettivamente
+      utilizzati dal sito prima della pubblicazione.
+    </p>
+
+    <h2>1. Cosa sono i cookie</h2>
+    <p>
+      I cookie sono piccoli file di testo che i siti inviano al browser dell'utente,
+      dove vengono memorizzati e ritrasmessi alle visite successive.
+    </p>
+
+    <h2>2. Cookie tecnici (necessari)</h2>
+    <ul>
+      <li><code>csrftoken</code> &mdash; protezione contro attacchi CSRF nei moduli. Durata: 1 anno.</li>
+      <li><code>sessionid</code> &mdash; gestione della sessione utente. Durata: sessione.</li>
+    </ul>
+    <p>Questi cookie sono indispensabili al funzionamento del sito e non richiedono consenso.</p>
+
+    <h2>3. Cookie analitici e di terze parti</h2>
+    <p>
+      Attualmente il sito <strong>non utilizza</strong> cookie analitici o di profilazione.
+      In caso di attivazione futura (es. Google Analytics, pixel di terze parti) verranno
+      elencati qui e sarà implementato un banner di raccolta del consenso.
+      Elenco servizi: <span class="placeholder">[da inserire]</span>.
+    </p>
+
+    <h2>4. Gestione dei cookie</h2>
+    <p>
+      Puoi gestire o eliminare i cookie dalle impostazioni del tuo browser. La
+      disattivazione dei cookie tecnici può compromettere il funzionamento del sito.
+    </p>
+
+    <h2>5. Contatti</h2>
+    <p>
+      Per informazioni scrivi a <a href="mailto:{{ COMPANY_EMAIL }}">{{ COMPANY_EMAIL }}</a>.
+      Vedi anche la <a href="{% url 'core:privacy' %}">Privacy Policy</a>.
+    </p>
+  </div>
+</section>
+{% endblock %}

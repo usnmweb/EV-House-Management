@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Portfolio</span>
+      <h2>Immobili in gestione</h2>
+      <hr class="gold-rule">
+      <p class="lead">
+        Appartamenti e residenze selezionate, pronte per il soggiorno e gestite
+        integralmente da EV House Management.
+      </p>
+    </div>
+
+    <form class="filter-bar" method="get" action="{% url 'properties:list' %}">
+      <div>
+        <label for="f-location">Località</label>
+        <select name="location" id="f-location">
+          <option value="">Tutte</option>
+          {% for loc in locations %}
+            <option value="{{ loc }}" {% if loc == active_location %}selected{% endif %}>{{ loc }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-guests">Ospiti (minimo)</label>
+        <input type="number" name="guests" id="f-guests" min="1" max="20"
+               value="{{ active_guests }}" placeholder="2">
+      </div>
+      <div>
+        <button class="btn btn-primary" type="submit">Filtra</button>
+      </div>
+    </form>
+
+    {% if properties %}
+      <div class="property-grid">
+        {% for property in properties %}
+          {% include "properties/_property_card.html" with property=property %}
+        {% endfor %}
+      </div>
+
+      {% if is_paginated %}
+      <nav class="pagination" aria-label="Paginazione">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}{% if active_location %}&location={{ active_location }}{% endif %}{% if active_guests %}&guests={{ active_guests }}{% endif %}">Precedente</a>
+        {% endif %}
+        <span class="current">Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}{% if active_location %}&location={{ active_location }}{% endif %}{% if active_guests %}&guests={{ active_guests }}{% endif %}">Successiva</a>
+        {% endif %}
+      </nav>
+      {% endif %}
+    {% else %}
+      <p class="lead">Nessun immobile corrisponde ai criteri selezionati.
+        <a href="{% url 'properties:list' %}">Rimuovi i filtri</a>.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <span class="eyebrow">Proprietari</span>
+    <h2>Vuoi vedere il tuo immobile qui?</h2>
+    <p class="lead">Valutiamo gratuitamente il potenziale della tua proprietà.</p>
+    <div class="btn-group">
+      <a class="btn btn-primary" href="{% url 'core:contact' %}">Contattaci</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

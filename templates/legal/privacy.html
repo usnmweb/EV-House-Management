@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+  <div class="container prose">
+    <span class="eyebrow">Informativa</span>
+    <h1>Privacy Policy</h1>
+    <hr class="gold-rule">
+    <p><strong>Ultimo aggiornamento:</strong> <span class="placeholder">[data da inserire]</span></p>
+
+    <p>
+      Questo documento e un modello di base e va rivisto da un consulente legale prima
+      della pubblicazione, in conformita al GDPR (UE 2016/679) e alla LPD svizzera.
+    </p>
+
+    <h2>1. Titolare del trattamento</h2>
+    <ul>
+      <li>{{ COMPANY_LEGAL_NAME }}</li>
+      <li>{{ COMPANY_ADDRESS }}</li>
+      <li>P.IVA / IVA: {{ COMPANY_VAT }}</li>
+      <li>Email: <a href="mailto:{{ COMPANY_EMAIL }}">{{ COMPANY_EMAIL }}</a></li>
+    </ul>
+
+    <h2>2. Dati raccolti</h2>
+    <ul>
+      <li><strong>Dati forniti volontariamente</strong>: nome, email, telefono e contenuto
+        del messaggio inviati tramite il modulo contatti.</li>
+      <li><strong>Dati tecnici</strong>: indirizzo IP, tipo di browser e pagine visitate,
+        raccolti dai log del server per finalita di sicurezza.</li>
+    </ul>
+
+    <h2>3. Finalita e base giuridica</h2>
+    <ul>
+      <li>Rispondere alle richieste di contatto &mdash; base: consenso dell'interessato.</li>
+      <li>Gestione del rapporto contrattuale &mdash; base: esecuzione del contratto.</li>
+      <li>Sicurezza e prevenzione abusi &mdash; base: legittimo interesse.</li>
+    </ul>
+
+    <h2>4. Periodo di conservazione</h2>
+    <p>
+      I dati del modulo contatti sono conservati per
+      <span class="placeholder">[periodo da definire]</span>, salvo obblighi di legge
+      che impongano termini superiori.
+    </p>
+
+    <h2>5. Comunicazione dei dati</h2>
+    <p>
+      I dati possono essere comunicati a fornitori tecnici (hosting, servizi email) che
+      agiscono come responsabili del trattamento. Elenco fornitori:
+      <span class="placeholder">[da inserire]</span>.
+    </p>
+
+    <h2>6. Diritti dell'interessato</h2>
+    <p>
+      Hai diritto di accesso, rettifica, cancellazione, limitazione, portabilita e
+      opposizione. Puoi esercitarli scrivendo a
+      <a href="mailto:{{ COMPANY_EMAIL }}">{{ COMPANY_EMAIL }}</a>.
+      Hai inoltre diritto di reclamo all'autorita di controllo competente.
+    </p>
+
+    <h2>7. Cookie</h2>
+    <p>
+      Per l'uso dei cookie su questo sito consulta la
+      <a href="{% url 'core:cookies' %}">Cookie Policy</a>.
+    </p>
+  </div>
+</section>
+{% endblock %}
