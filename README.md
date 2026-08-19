@@ -297,7 +297,7 @@ Per cambiare i colori basta modificare i token nei tre blocchi in cima al foglio
 ## Modulo contatti
 
 Campi: nome, email, telefono (facoltativo), messaggio, checkbox privacy obbligatoria,
-piu un campo honeypot nascosto anti-spam.
+più un campo honeypot nascosto anti-spam.
 
 In questa fase **non viene inviata nessuna email**: i dati validati vengono stampati
 nella console del server (`core/views.py`). Dopo l'invio l'utente viene reindirizzato
@@ -305,6 +305,34 @@ con un messaggio di conferma (pattern POST/redirect/GET).
 
 Per attivare l'invio reale, imposta le variabili SMTP indicate sotto e sostituisci il
 blocco `print(...)` con `django.core.mail.send_mail`.
+
+### Prima di attivarlo: salvare la prova del consenso
+
+Oggi la spunta privacy viene **validata ma non conservata**, perché nulla lascia il
+server. Finché il modulo si limita a stampare in console il punto è teorico.
+
+**Nel momento in cui il modulo comincia a recapitare o a salvare i messaggi, il
+consenso va registrato.** Il GDPR non chiede solo di raccoglierlo: all'articolo 7
+comma 1 chiede di essere in grado di *dimostrare* di averlo raccolto. Una spunta che
+non lascia traccia non dimostra nulla, e in caso di contestazione l'onere della prova
+è del titolare del trattamento.
+
+Cosa conservare, per ogni invio:
+
+- **data e ora** della spunta;
+- **il testo esatto** dell'informativa accettata, o una sua versione identificabile
+  (es. `privacy-v2-2026-03`): l'informativa cambia nel tempo, e serve sapere a quale
+  versione l'utente ha aderito;
+- i **dati inviati** a cui il consenso si riferisce;
+- facoltativo ma utile: indirizzo IP e user agent della richiesta.
+
+In pratica significa introdurre un modello — per esempio `core.MessaggioContatto` —
+che salvi il messaggio insieme a questi campi, e scrivere il record **prima**
+dell'invio della email: se l'SMTP fallisce, il messaggio non deve andare perso.
+
+Il rovescio della medaglia: da quel momento si conservano dati personali, quindi
+vanno definiti un **periodo di conservazione** e una procedura di cancellazione, e la
+Privacy Policy va aggiornata di conseguenza (oggi il periodo è un segnaposto).
 
 ---
 
@@ -353,9 +381,12 @@ export DJANGO_ALLOWED_HOSTS="www.evhousemanagement.ch,evhousemanagement.ch"
 - [ ] Completare i dati societari: ragione sociale completa, indirizzo, telefono,
       e i campi `[da inserire]` nel footer e nelle pagine legali.
 - [ ] Far revisionare Privacy e Cookie Policy da un consulente legale (GDPR / LPD).
-- [ ] Sostituire titoli, localita e descrizioni demo degli immobili con i dati reali
-      (le fotografie sono gia' quelle vere).
+- [ ] Completare i 21 immobili in bozza (descrizione, dotazioni, fotografie)
+      e pubblicarli dall'amministrazione.
 - [ ] Impostare `DJANGO_SECRET_KEY` e `DJANGO_DEBUG=False`.
 - [ ] Restringere `DJANGO_ALLOWED_HOSTS` al dominio reale.
 - [ ] Configurare l'invio email SMTP e attivare `send_mail` nel modulo contatti.
+- [ ] **Insieme all'attivazione del modulo**: salvare la prova del consenso privacy
+      (data e ora, versione dell'informativa, dati inviati) e definire il periodo
+      di conservazione. Vedi "Modulo contatti".
 - [ ] Servire `static/` e `media/` tramite web server (in produzione Django non li serve).
