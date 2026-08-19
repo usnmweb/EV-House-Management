@@ -1,0 +1,37 @@
+# Blueprint Render. Da "New +" scegliere "Blueprint" e puntare a questo repository:
+# Render legge questo file e crea il servizio già configurato.
+#
+# ATTENZIONE: deve essere un Web Service (Python), NON uno Static Site.
+# Uno Static Site chiede una "publish directory" e Django non ne ha una.
+services:
+  - type: web
+    name: ev-house-management
+    runtime: python
+    plan: starter          # il disco persistente richiede un piano a pagamento
+    region: frankfurt
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --workers 2 --timeout 120"
+    healthCheckPath: /robots.txt
+
+    # Database SQLite e fotografie su disco persistente: senza, a ogni rilascio
+    # si perderebbero sia i dati sia le 533 immagini.
+    disk:
+      name: dati
+      mountPath: /var/data
+      sizeGB: 2
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.14"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true          # Render genera una chiave sicura
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false                  # da compilare col dominio assegnato
+      - key: DJANGO_DB_PATH
+        value: /var/data/db.sqlite3
+      - key: DJANGO_MEDIA_ROOT
+        value: /var/data/media
+      - key: CONTACT_RECIPIENT_EMAIL
+        value: evhouse92@gmail.com

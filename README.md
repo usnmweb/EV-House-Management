@@ -71,6 +71,55 @@ immagini demo con `python manage.py load_demo_data`.
 
 ---
 
+## Messa online (Render)
+
+> **Il servizio deve essere un Web Service, non uno Static Site.** Uno Static Site
+> chiede una *publish directory* — una cartella di file già costruiti — e Django non
+> ne ha una: da lì l'errore `Publish directory ... does not exist`. Se hai già creato
+> un Static Site, eliminalo e ricomincia da qui.
+
+Il repository contiene `render.yaml`, quindi il modo più rapido è il **Blueprint**:
+
+1. Su Render: **New +** → **Blueprint**.
+2. Collega il repository: Render legge `render.yaml` e propone il servizio già configurato.
+3. Al primo rilascio compila `DJANGO_ALLOWED_HOSTS` con il dominio assegnato
+   (es. `ev-house-management.onrender.com`).
+4. Crea l'utente amministratore dalla Shell del servizio:
+   `python manage.py createsuperuser`.
+
+In alternativa, creando il servizio a mano: **New +** → **Web Service**, runtime
+*Python*, build command `./build.sh`, start command
+`gunicorn config.wsgi:application`.
+
+### Cosa fa il rilascio
+
+`build.sh` installa le dipendenze, esegue `collectstatic` e `migrate`, poi lancia
+`import_properties`, che importa gli 84 immobili dallo snapshot e scarica le
+fotografie. **Il primo rilascio richiede una decina di minuti** per via delle 533
+immagini; dai successivi il comando riconosce le foto già presenti e finisce subito.
+
+### Il disco persistente non è opzionale
+
+`render.yaml` monta un disco su `/var/data` e ci fa puntare database e fotografie
+tramite `DJANGO_DB_PATH` e `DJANGO_MEDIA_ROOT`.
+
+Senza disco persistente il filesystem è effimero: a ogni rilascio o riavvio si
+perdono le immagini e — cosa più seria — **tutto quello che è stato modificato
+dall'amministrazione**. Gli immobili tornerebbero allo stato dello snapshot,
+vanificando il requisito di gestibilità da backoffice.
+
+Il disco richiede un piano a pagamento (nel blueprint è `starter`). Sul piano
+gratuito il sito funziona come vetrina dimostrativa, ma va messo in conto che le
+modifiche fatte dall'amministrazione non sopravvivono al riavvio.
+
+### File statici
+
+Sono serviti da **WhiteNoise** dal processo Django, senza bisogno di un web server
+davanti. In produzione usa lo storage con manifest: i nomi dei file portano un hash,
+quindi si possono mettere in cache a lungo senza rischiare di servire versioni vecchie.
+
+---
+
 ## Struttura
 
 ```
