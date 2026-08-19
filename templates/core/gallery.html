@@ -1,9 +1,23 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Galleria"}
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <section class="section">
   <div class="container">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <span class="eyebrow">Galleria</span>
       <h2>Gli spazi che gestiamo</h2>
       <hr class="gold-rule">
@@ -13,9 +27,9 @@
     </div>
 
     {% if images %}
-      <div class="masonry">
+      <div class="masonry" data-stagger>
         {% for img in images %}
-        <figure>
+        <figure data-reveal>
           <a href="{{ img.property.get_absolute_url }}">
             <img src="{{ img.image.url }}" alt="{{ img.display_alt }}" loading="lazy" width="800" height="600">
           </a>

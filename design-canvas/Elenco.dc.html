@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    .ev {
+      --bg:#0a0a0a; --soft:#121212; --surface:#171717; --border:#2a2a2a;
+      --text:#f2efe9; --muted:#a9a49b; --accent:#c9a227; --accent-hi:#e3c667;
+      --on-accent:#0a0a0a; --dim:rgba(201,162,39,.14); --shadow:none; --field:#121212;
+      --serif:"Cormorant Garamond",Georgia,serif;
+      --sans:"Inter",-apple-system,"Segoe UI",Roboto,sans-serif;
+      background:var(--bg); color:var(--text); font-family:var(--sans);
+      font-weight:300; line-height:1.7;
+    }
+    .ev.chiaro {
+      --bg:#faf8f4; --soft:#f2eee6; --surface:#ffffff; --border:#e0d9cc;
+      --text:#17150f; --muted:#6b6459; --accent:#8a6d10; --accent-hi:#6b530a;
+      --on-accent:#ffffff; --dim:rgba(138,109,16,.10); --shadow:0 1px 3px rgba(23,21,15,.06); --field:#ffffff;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hi); }
+    h1,h2,h3 { font-family:var(--serif); font-weight:400; line-height:1.08; margin:0; }
+  </style>
+</helmet>
+
+<div class="ev {{temaClass}}" style="width:1440px">
+  <div style="height:72px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 120px; box-sizing:border-box">
+    <img src="logo.png" alt="EV House Management" style="height:30px; width:auto; display:block">
+    <div style="display:flex; align-items:center; gap:36px">
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--text)">Immobili</span>
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--text)">Servizi</span>
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--text)">Galleria</span>
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); border:1px solid var(--accent); padding:10px 22px">Contatti</span>
+      <span style="width:36px; height:36px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="color:var(--muted)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <div style="padding:72px 120px 96px">
+    <span style="display:block; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:16px">Portfolio</span>
+    <h1 style="font-size:52px; color:var(--text)">Immobili in gestione</h1>
+    <div style="width:56px; height:1px; background:var(--accent); margin:24px 0 22px"></div>
+    <p style="font-size:16px; color:var(--muted); max-width:600px; margin:0 0 44px">
+      +60 soluzioni in 19 località della Sardegna, dalla costa all'entroterra. Disponibilità e tariffe si verificano sul portale prenotazioni.
+    </p>
+
+    <!-- filtri -->
+    <div style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); padding:26px; display:grid; grid-template-columns:1.4fr 1fr 1fr auto; gap:20px; align-items:end; margin-bottom:40px">
+      <div>
+        <span style="display:block; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:8px">Località</span>
+        <div style="background:var(--field); border:1px solid var(--border); padding:13px 16px; font-size:14px; color:var(--text); display:flex; justify-content:space-between; align-items:center">
+          <span>Tutte le località</span>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+      <div>
+        <span style="display:block; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:8px">Tipologia</span>
+        <div style="background:var(--field); border:1px solid var(--border); padding:13px 16px; font-size:14px; color:var(--text); display:flex; justify-content:space-between; align-items:center">
+          <span>Tutte</span>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+      <div>
+        <span style="display:block; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:8px">Ospiti (minimo)</span>
+        <div style="background:var(--field); border:1px solid var(--border); padding:13px 16px; font-size:14px; color:var(--muted)">2</div>
+      </div>
+      <span style="background:var(--accent); color:var(--on-accent); font-size:11px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; padding:15px 32px">Filtra</span>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:26px">
+      <span style="font-size:13px; color:var(--muted)">+60 immobili</span>
+      <span style="font-size:13px; color:var(--muted)">Pagina 1 di 7</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:32px">
+      <sc-for list="{{schede}}" as="s" hint-placeholder-count="6">
+        <div style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); display:flex; flex-direction:column">
+          <div style="position:relative; height:210px; overflow:hidden">
+            <img src="{{s.foto}}" alt="{{s.titolo}}" style="width:100%; height:100%; object-fit:cover; display:block">
+            <span style="position:absolute; top:16px; left:16px; background:var(--accent); color:var(--on-accent); font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; padding:6px 12px">{{s.categoria}}</span>
+          </div>
+          <div style="padding:24px; display:flex; flex-direction:column; gap:10px; flex-grow:1">
+            <h3 style="font-size:21px; color:var(--text)">{{s.titolo}}</h3>
+            <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)">{{s.localita}}</span>
+            <div style="display:flex; gap:20px; margin-top:auto; padding-top:20px; border-top:1px solid var(--border); font-size:13px; color:var(--muted)">
+              <span><strong style="color:var(--text); font-weight:500">{{s.ospiti}}</strong> ospiti</span>
+              <span><strong style="color:var(--text); font-weight:500">{{s.camere}}</strong> camere</span>
+              <span><strong style="color:var(--text); font-weight:500">{{s.bagni}}</strong> bagni</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:flex; justify-content:center; gap:10px; margin-top:56px">
+      <span style="border:1px solid var(--accent); color:var(--accent); padding:11px 18px; font-size:13px">1</span>
+      <span style="border:1px solid var(--border); color:var(--muted); padding:11px 18px; font-size:13px">2</span>
+      <span style="border:1px solid var(--border); color:var(--muted); padding:11px 18px; font-size:13px">3</span>
+      <span style="border:1px solid var(--border); color:var(--muted); padding:11px 22px; font-size:13px">Successiva</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"tema":{"editor":"enum","options":["scuro","chiaro"],"default":"scuro","section":"Tema"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const foto = ['card1.jpg','card2.jpg','card3.jpg'];
+    const dati = [
+      ['[APT Moderno] In centro e spiaggia a pochi passi','La Caletta','Appartamento','4','2','1'],
+      ['[Veranda e BBQ] 150mt spiaggia di San Giovanni','San Giovanni','Appartamento','4','2','1'],
+      ['[New APT] Comfort e veranda vista mare','La Caletta','Appartamento','6','2','1'],
+      ['[Cala Brandinchi] Blue Design, 4 minuti dal mare','Siniscola','Appartamento','4','1','1'],
+      ['[Cala Muravera] Moderno con ampi spazi','Siniscola','Aparthotel','6','2','1'],
+      ['[Cala Mariolu] Ampio APT con terrazze','Siniscola','Appartamento','6','2','2']
+    ];
+    return {
+      temaClass: (this.props.tema ?? 'scuro') === 'chiaro' ? 'chiaro' : '',
+      schede: dati.map((d, i) => ({
+        titolo: d[0], localita: d[1], categoria: d[2],
+        ospiti: d[3], camere: d[4], bagni: d[5], foto: foto[i % 3]
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

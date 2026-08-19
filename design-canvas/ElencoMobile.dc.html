@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    .ev {
+      --bg:#0a0a0a; --soft:#121212; --surface:#171717; --border:#2a2a2a;
+      --text:#f2efe9; --muted:#a9a49b; --accent:#c9a227; --accent-hi:#e3c667;
+      --on-accent:#0a0a0a; --dim:rgba(201,162,39,.14); --shadow:none; --field:#121212;
+      --serif:"Cormorant Garamond",Georgia,serif;
+      --sans:"Inter",-apple-system,"Segoe UI",Roboto,sans-serif;
+      background:var(--bg); color:var(--text); font-family:var(--sans);
+      font-weight:300; line-height:1.7;
+    }
+    .ev.chiaro {
+      --bg:#faf8f4; --soft:#f2eee6; --surface:#ffffff; --border:#e0d9cc;
+      --text:#17150f; --muted:#6b6459; --accent:#8a6d10; --accent-hi:#6b530a;
+      --on-accent:#ffffff; --dim:rgba(138,109,16,.10); --shadow:0 1px 3px rgba(23,21,15,.06); --field:#ffffff;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hi); }
+    h1,h2,h3 { font-family:var(--serif); font-weight:400; line-height:1.08; margin:0; }
+  </style>
+</helmet>
+
+<div class="ev {{temaClass}}" style="width:390px">
+
+  <div style="height:64px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 20px; box-sizing:border-box">
+    <img src="logo.png" alt="EV House Management" style="height:24px; width:auto; display:block">
+    <div style="display:flex; align-items:center; gap:10px">
+      <span style="width:38px; height:38px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </span>
+      <span style="width:38px; height:38px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px">
+        <span style="width:22px; height:1px; background:var(--text); display:block"></span>
+        <span style="width:22px; height:1px; background:var(--text); display:block"></span>
+        <span style="width:22px; height:1px; background:var(--text); display:block"></span>
+      </span>
+    </div>
+  </div>
+
+  <div style="padding:40px 20px 56px">
+    <span style="display:block; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:12px">Portfolio</span>
+    <h1 style="font-size:36px; color:var(--text)">Immobili in gestione</h1>
+    <div style="width:44px; height:1px; background:var(--accent); margin:18px 0 16px"></div>
+    <p style="font-size:14px; color:var(--muted); margin:0 0 26px; line-height:1.7">+60 soluzioni in 19 località della Sardegna.</p>
+
+    <div style="display:flex; gap:10px; margin-bottom:26px">
+      <span style="flex-grow:1; background:var(--field); border:1px solid var(--border); padding:14px 16px; font-size:13px; color:var(--text); display:flex; justify-content:space-between; align-items:center">
+        <span>Filtra</span>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      </span>
+      <span style="background:var(--accent); color:var(--on-accent); font-size:11px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; padding:14px 22px; display:flex; align-items:center">Cerca</span>
+    </div>
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px">
+      <sc-for list="{{chip}}" as="c" hint-placeholder-count="4">
+        <span style="border:1px solid {{c.bordo}}; color:{{c.testo}}; background:{{c.sfondo}}; font-size:11px; letter-spacing:.08em; padding:8px 15px">{{c.nome}}</span>
+      </sc-for>
+    </div>
+
+    <span style="display:block; font-size:12px; color:var(--muted); margin-bottom:18px">+60 immobili</span>
+
+    <div style="display:flex; flex-direction:column; gap:22px">
+      <sc-for list="{{schede}}" as="s" hint-placeholder-count="3">
+        <div style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow)">
+          <div style="position:relative; height:180px; overflow:hidden">
+            <img src="{{s.foto}}" alt="{{s.titolo}}" style="width:100%; height:100%; object-fit:cover; display:block">
+            <span style="position:absolute; top:13px; left:13px; background:var(--accent); color:var(--on-accent); font-size:8px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; padding:5px 10px">{{s.categoria}}</span>
+          </div>
+          <div style="padding:20px; display:flex; flex-direction:column; gap:8px">
+            <h3 style="font-size:19px; color:var(--text)">{{s.titolo}}</h3>
+            <span style="font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)">{{s.localita}}</span>
+            <div style="display:flex; gap:16px; padding-top:16px; border-top:1px solid var(--border); font-size:12px; color:var(--muted)">
+              <span><strong style="color:var(--text); font-weight:500">{{s.ospiti}}</strong> ospiti</span>
+              <span><strong style="color:var(--text); font-weight:500">{{s.camere}}</strong> camere</span>
+              <span><strong style="color:var(--text); font-weight:500">{{s.bagni}}</strong> bagni</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"tema":{"editor":"enum","options":["scuro","chiaro"],"default":"scuro","section":"Tema"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const scuro = (this.props.tema ?? 'scuro') !== 'chiaro';
+    const acc = scuro ? '#c9a227' : '#8a6d10';
+    const bordo = scuro ? '#2a2a2a' : '#e0d9cc';
+    const muted = scuro ? '#a9a49b' : '#6b6459';
+    return {
+      temaClass: scuro ? '' : 'chiaro',
+      chip: [
+        { nome:'Tutte', bordo:acc, testo: scuro ? '#0a0a0a' : '#ffffff', sfondo:acc },
+        { nome:'La Caletta', bordo:bordo, testo:muted, sfondo:'transparent' },
+        { nome:'Siniscola', bordo:bordo, testo:muted, sfondo:'transparent' },
+        { nome:'Posada', bordo:bordo, testo:muted, sfondo:'transparent' }
+      ],
+      schede: [
+        { titolo:'[APT Moderno] In centro e spiaggia a pochi passi', localita:'La Caletta', categoria:'Appartamento', ospiti:'4', camere:'2', bagni:'1', foto:'card1.jpg' },
+        { titolo:'[Cala Mariolu] Ampio APT con terrazze', localita:'Siniscola', categoria:'Appartamento', ospiti:'6', camere:'2', bagni:'2', foto:'card3.jpg' },
+        { titolo:'[New APT] Comfort e veranda vista mare', localita:'La Caletta', categoria:'Aparthotel', ospiti:'6', camere:'2', bagni:'1', foto:'card2.jpg' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    .ev {
+      --bg:#0a0a0a; --soft:#121212; --surface:#171717; --border:#2a2a2a;
+      --text:#f2efe9; --muted:#a9a49b; --accent:#c9a227; --accent-hi:#e3c667;
+      --on-accent:#0a0a0a; --dim:rgba(201,162,39,.14); --shadow:none;
+      --serif:"Cormorant Garamond",Georgia,serif;
+      --sans:"Inter",-apple-system,"Segoe UI",Roboto,sans-serif;
+      background:var(--bg); color:var(--text); font-family:var(--sans);
+      font-weight:300; line-height:1.7;
+    }
+    .ev.chiaro {
+      --bg:#faf8f4; --soft:#f2eee6; --surface:#ffffff; --border:#e0d9cc;
+      --text:#17150f; --muted:#6b6459; --accent:#8a6d10; --accent-hi:#6b530a;
+      --on-accent:#ffffff; --dim:rgba(138,109,16,.10); --shadow:0 1px 3px rgba(23,21,15,.06);
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hi); }
+    h1,h2,h3 { font-family:var(--serif); font-weight:400; line-height:1.08; margin:0; }
+  </style>
+</helmet>
+
+<div class="ev {{temaClass}}" style="width:1440px">
+
+  <!-- header, trasparente sopra l'hero -->
+  <div style="position:relative; z-index:3; height:72px; display:flex; align-items:center; justify-content:space-between; padding:0 120px; box-sizing:border-box">
+    <div style="display:flex; align-items:center; gap:14px">
+      <img src="logo.png" alt="EV House Management" style="height:30px; width:auto; display:block">
+    </div>
+    <div style="display:flex; align-items:center; gap:36px">
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#f2efe9">Immobili</span>
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#f2efe9">Servizi</span>
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#f2efe9">Galleria</span>
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); border:1px solid var(--accent); padding:10px 22px">Contatti</span>
+      <span style="width:36px; height:36px; border:1px solid rgba(242,239,233,.32); display:flex; align-items:center; justify-content:center">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f2efe9" stroke-width="1.5" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- hero -->
+  <div style="position:relative; height:620px; margin-top:-72px; overflow:hidden">
+    <img src="hero.jpg" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover">
+    <div style="position:absolute; inset:0; background:linear-gradient(100deg, rgba(6,8,10,.90) 0%, rgba(6,8,10,.72) 34%, rgba(6,8,10,.38) 66%, rgba(6,8,10,.24) 100%)"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; height:150px; background:linear-gradient(to bottom, rgba(10,10,10,0), var(--bg))"></div>
+    <div style="position:relative; z-index:2; padding:150px 120px 0; max-width:760px; box-sizing:border-box">
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:26px">
+        <span style="width:40px; height:1px; background:#dcbb4e; display:block"></span>
+        <span style="font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:#dcbb4e">Property management · Sardegna</span>
+      </div>
+      <h1 style="font-size:70px; color:#f7f4ee; margin-bottom:26px">La tua proprietà,<br><em style="color:#dcbb4e">gestita nel dettaglio</em></h1>
+      <p style="font-size:17px; line-height:1.75; color:rgba(247,244,238,.80); max-width:520px; margin:0 0 40px">
+        Gestiamo +60 immobili in Sardegna: accoglienza ospiti, pulizie, manutenzione e adempimenti.
+        Tu ricevi i risultati, noi ci occupiamo di tutto il resto.
+      </p>
+      <div style="display:flex; gap:16px">
+        <span style="background:#dcbb4e; color:#0d0b06; font-size:12px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; padding:17px 34px">Scopri gli immobili</span>
+        <span style="border:1px solid rgba(247,244,238,.42); color:#f7f4ee; font-size:12px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; padding:17px 34px">Parla con noi</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- fascia numeri -->
+  <div style="border-bottom:1px solid var(--border); padding:44px 120px; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:24px">
+    <div><span style="display:block; font-family:var(--serif); font-size:38px; color:var(--accent); line-height:1">+60</span><span style="font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted)">Immobili in gestione</span></div>
+    <div style="border-left:1px solid var(--border); padding-left:24px"><span style="display:block; font-family:var(--serif); font-size:38px; color:var(--accent); line-height:1">19</span><span style="font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted)">Località in Sardegna</span></div>
+    <div style="border-left:1px solid var(--border); padding-left:24px"><span style="display:block; font-family:var(--serif); font-size:38px; color:var(--accent); line-height:1">2–8</span><span style="font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted)">Ospiti per soluzione</span></div>
+    <div style="border-left:1px solid var(--border); padding-left:24px"><span style="display:block; font-family:var(--serif); font-size:38px; color:var(--accent); line-height:1">24/7</span><span style="font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted)">Assistenza ospiti</span></div>
+  </div>
+
+  <!-- immobili in evidenza -->
+  <div style="padding:96px 120px">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:48px">
+      <div>
+        <span style="display:block; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:16px">Selezione</span>
+        <h2 style="font-size:46px; color:var(--text)">Immobili in evidenza</h2>
+        <div style="width:56px; height:1px; background:var(--accent); margin:24px 0 0"></div>
+      </div>
+      <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); border-bottom:1px solid var(--accent); padding-bottom:6px">Vedi tutti gli immobili</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:32px">
+      <sc-for list="{{schede}}" as="s" hint-placeholder-count="3">
+        <div style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); display:flex; flex-direction:column">
+          <div style="position:relative; height:230px; overflow:hidden">
+            <img src="{{s.foto}}" alt="{{s.titolo}}" style="width:100%; height:100%; object-fit:cover; display:block">
+            <span style="position:absolute; top:16px; left:16px; background:var(--accent); color:var(--on-accent); font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; padding:6px 12px">{{s.categoria}}</span>
+          </div>
+          <div style="padding:26px; display:flex; flex-direction:column; gap:10px; flex-grow:1">
+            <h3 style="font-size:23px; color:var(--text)">{{s.titolo}}</h3>
+            <span style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)">{{s.localita}}</span>
+            <div style="display:flex; gap:22px; margin-top:auto; padding-top:22px; border-top:1px solid var(--border); font-size:13px; color:var(--muted)">
+              <span><strong style="color:var(--text); font-weight:500">{{s.ospiti}}</strong> ospiti</span>
+              <span><strong style="color:var(--text); font-weight:500">{{s.camere}}</strong> camere</span>
+              <span><strong style="color:var(--text); font-weight:500">{{s.bagni}}</strong> bagni</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- servizi -->
+  <div style="background:var(--soft); padding:96px 120px">
+    <span style="display:block; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:16px">Cosa facciamo</span>
+    <h2 style="font-size:46px; color:var(--text); margin-bottom:24px">Gestione a 360 gradi</h2>
+    <div style="width:56px; height:1px; background:var(--accent); margin-bottom:56px"></div>
+    <div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:24px">
+      <sc-for list="{{servizi}}" as="v" hint-placeholder-count="4">
+        <div style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); padding:32px; display:flex; flex-direction:column; gap:14px">
+          <span style="color:var(--accent)">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="{{v.icona}}"/></svg>
+          </span>
+          <h3 style="font-size:21px; color:var(--text)">{{v.titolo}}</h3>
+          <p style="margin:0; font-size:14px; color:var(--muted); line-height:1.65">{{v.testo}}</p>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- richiamo finale -->
+  <div style="padding:110px 120px; text-align:center; border-top:1px solid var(--border)">
+    <span style="display:block; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:20px">Iniziamo</span>
+    <h2 style="font-size:50px; color:var(--text); margin-bottom:24px">Affida il tuo immobile a chi lo cura davvero</h2>
+    <p style="font-size:16px; color:var(--muted); max-width:560px; margin:0 auto 40px">
+      Valutazione gratuita del potenziale di rendita, senza impegno.
+    </p>
+    <span style="display:inline-block; background:var(--accent); color:var(--on-accent); font-size:12px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; padding:18px 40px">Richiedi una valutazione</span>
+  </div>
+
+  <!-- footer -->
+  <div style="background:var(--soft); border-top:1px solid var(--border); padding:64px 120px 32px">
+    <div style="display:grid; grid-template-columns:1.6fr 1fr 1fr 1.2fr; gap:48px">
+      <div>
+        <img src="logo.png" alt="EV House Management" style="height:26px; width:auto; display:block; margin-bottom:20px">
+        <p style="margin:0; font-size:14px; color:var(--muted); max-width:280px">Gestione immobiliare e affitti brevi in Sardegna. Cura del dettaglio, risultati misurabili.</p>
+      </div>
+      <div>
+        <h3 style="font-family:var(--sans); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:18px">Navigazione</h3>
+        <div style="display:flex; flex-direction:column; gap:10px; font-size:14px; color:var(--muted)">
+          <span>Immobili</span><span>Servizi</span><span>Galleria</span><span>Contatti</span>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-family:var(--sans); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:18px">Contatti</h3>
+        <div style="display:flex; flex-direction:column; gap:10px; font-size:14px; color:var(--muted)">
+          <span>evhouse92@gmail.com</span><span>+39 327 797 9201</span><span>Sardegna, Italia</span>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-family:var(--sans); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:18px">Dati societari</h3>
+        <div style="display:flex; flex-direction:column; gap:10px; font-size:14px; color:var(--muted)">
+          <span>EV House Management</span>
+          <span>P.IVA 01634110918</span>
+          <span style="color:var(--accent); background:var(--dim); padding:0 6px; align-self:flex-start">[sede legale]</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:48px; padding-top:26px; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:13px; color:var(--muted)">
+      <span>© 2026 EV House Management. Tutti i diritti riservati.</span>
+      <span style="display:flex; gap:26px"><span>Privacy Policy</span><span>Cookie Policy</span></span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"tema":{"editor":"enum","options":["scuro","chiaro"],"default":"scuro","section":"Tema"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'scuro';
+    return {
+      temaClass: tema === 'chiaro' ? 'chiaro' : '',
+      schede: [
+        { titolo: '[APT Moderno] In centro e spiaggia a pochi passi', localita: 'La Caletta',
+          categoria: 'Appartamento', ospiti: '4', camere: '2', bagni: '1', foto: 'card1.jpg' },
+        { titolo: '[New APT] Comfort e veranda vista mare', localita: 'La Caletta',
+          categoria: 'Appartamento', ospiti: '6', camere: '2', bagni: '1', foto: 'card2.jpg' },
+        { titolo: '[Cala Mariolu] Ampio APT con terrazze', localita: 'Siniscola',
+          categoria: 'Appartamento', ospiti: '6', camere: '2', bagni: '2', foto: 'card3.jpg' }
+      ],
+      servizi: [
+        { titolo: 'Check-in e accoglienza', testo: 'Accoglienza di persona o self check-in, con omaggio di benvenuto e tutte le informazioni utili.', icona: 'M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6' },
+        { titolo: 'Pulizie e biancheria', testo: 'Imprese professionali e sopralluoghi costanti per mantenere lo standard a ogni soggiorno.', icona: 'M3 7h18v13H3zM8 7V4h8v3M12 11v5' },
+        { titolo: 'Manutenzione', testo: 'Giardinieri e manutentori a disposizione per ogni intervento sulla proprietà.', icona: 'M14 7l3 3-8 8-3-3zM17 3l4 4-2 2-4-4z' },
+        { titolo: 'Burocrazia e incassi', testo: 'Registrazione ospiti sui portali, adempimenti di legge e pagamenti settimanali puntuali.', icona: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h4' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 {% load static %}
-<article class="property-card">
+<article class="property-card" data-reveal>
   <div class="property-card-media">
     {% with cover=property.cover_image %}
       {% if cover %}
@@ -10,18 +10,18 @@
         <div class="media-placeholder" aria-hidden="true">EV</div>
       {% endif %}
     {% endwith %}
-    {% if property.featured %}<span class="badge-featured">In evidenza</span>{% endif %}
+    {% if property.category %}<span class="badge-cat">{{ property.category }}</span>{% endif %}
   </div>
 
   <div class="property-card-body">
     <h3><a href="{{ property.get_absolute_url }}">{{ property.title }}</a></h3>
     <p class="property-location">{{ property.location }}</p>
-    <p class="property-excerpt">{{ property.short_description|truncatewords:22 }}</p>
+    <p class="property-excerpt">{{ property.short_description|truncatewords:20 }}</p>
 
     <div class="property-specs">
       <span><strong>{{ property.guests }}</strong> ospiti</span>
-      <span><strong>{{ property.bedrooms }}</strong> camere</span>
-      <span><strong>{{ property.bathrooms }}</strong> bagni</span>
+      {% if property.bedrooms %}<span><strong>{{ property.bedrooms }}</strong> camere</span>{% endif %}
+      {% if property.bathrooms %}<span><strong>{{ property.bathrooms }}</strong> bagni</span>{% endif %}
     </div>
   </div>
 </article>

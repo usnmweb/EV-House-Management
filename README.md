@@ -103,18 +103,54 @@ EV-House-Management/
 
 ---
 
-## Fotografie
+## Immobili e fotografie
 
-Le 16 fotografie in `properties/demo_media/` provengono dal sito attuale
-evhousemanagement.com (CDN globaluserfiles.com), ridimensionate a 1600px di
-larghezza e ottimizzate per il web. In `static/img/` ci sono il logo ufficiale
-(`logo-ev.png`, PNG con trasparenza, quindi utilizzabile su fondo chiaro e scuro)
-e l'immagine Open Graph (`og-default.jpg`) generata dal logo.
+Gli immobili provengono dal portale prenotazioni **evhouse.kross.travel**, dove
+sono già in gestione. Lo snapshot dei dati è versionato in
+`properties/data/portale_immobili.json` (84 immobili, 293 KB); le fotografie no,
+perché pesano circa 92 MB.
 
-`python manage.py load_demo_data` copia le foto da `properties/demo_media/` dentro
-`media/`, raggruppate in 4 immobili. A differenza delle foto, **titoli, localita e
-descrizioni degli immobili sono placeholder redazionali**: sono stati scritti per
-corrispondere a cio' che si vede nelle immagini, non ai dati reali degli immobili.
+```bash
+python manage.py import_properties               # dati + fotografie
+python manage.py import_properties --no-images   # solo i dati testuali
+python manage.py import_properties --limit 10    # prova sui primi 10
+python manage.py import_properties --reset       # svuota prima di importare
+```
+
+Il comando è **ripetibile**: le foto già scaricate vengono riconosciute dal campo
+`source_ref` e saltate, quindi una seconda esecuzione non riscarica nulla.
+
+### Pubblicati e bozze
+
+Degli 84 immobili, **63 sono pubblicati** e **21 restano in bozza**: sono quelli a
+cui manca la descrizione, mancano le dotazioni o hanno meno di cinque fotografie.
+Le bozze non compaiono in elenco, non entrano nella sitemap e la loro pagina
+risponde 404. Si pubblicano dall'amministrazione, singolarmente o con l'azione
+massiva, una volta completati i dati.
+
+Ogni immobile porta con sé la propria scheda sul portale: dalla pagina di dettaglio
+il pulsante di prenotazione rimanda lì, perché disponibilità e tariffe restano
+gestite dal portale (fuori perimetro, §7 del capitolato).
+
+Le fotografie sono limitate a **8 per immobile** (533 in tutto), scaricate dal CDN
+del portale alla dimensione da 1310px.
+
+---
+
+## Consenso cookie
+
+Il banner compare al primo accesso e resta finché non si sceglie. **Rifiuta e
+Accetta hanno lo stesso rilievo visivo**: il GDPR non ammette che negare il
+consenso costi più fatica che concederlo. "Personalizza" apre il dettaglio per
+categoria.
+
+La scelta finisce in `localStorage` e in un cookie tecnico `ev_cookie_consent`
+(leggibile anche lato server), e viene esposta a `window.evConsenso`.
+
+Oggi il sito **non usa alcuno strumento di misurazione**: la relativa categoria è
+predisposta ma inattiva, e la Cookie Policy lo dice. Quando se ne aggiungerà uno,
+va agganciato a `window.evConsenso.misurazione` senza rimettere mano al banner.
+Dalla Cookie Policy si riaprono le preferenze per cambiare idea.
 
 ---
 
@@ -138,14 +174,27 @@ corrispondere a cio' che si vede nelle immagini, non ai dati reali degli immobil
 
 ## SEO
 
-- `<title>` e meta description dinamici per ogni pagina; i campi `meta_title` e
-  `meta_description` dell'immobile hanno la precedenza, con fallback automatico su
-  titolo e descrizione breve.
-- Tag `canonical`, Open Graph e Twitter Card in `base.html`.
-- `sitemap.xml` generata da `properties/sitemaps.py` (pagine statiche + dettaglio
-  immobili, con `lastmod`). Usa l'host della richiesta, quindi non richiede
-  configurazione aggiuntiva tra sviluppo e produzione.
-- JSON-LD `VacationRental` + `BreadcrumbList` su ogni pagina di dettaglio.
+- **Title e meta description per pagina**: generati dalla vista, con i campi
+  `meta_title` e `meta_description` dell'immobile a prevalere quando compilati.
+  Sulle 63 schede sono tutti unici e nessuno supera i 160 caratteri.
+- **URL leggibili**: `/properties/<slug>/`, slug derivato dal titolo.
+- **`sitemap.xml`** generata da `properties/sitemaps.py`: pagine statiche più le
+  sole schede pubblicate, con `lastmod`. Usa l'host della richiesta, quindi non
+  va configurata diversamente fra sviluppo e produzione.
+- **`robots.txt`** consente tutto tranne `/admin/` e dichiara la sitemap.
+- **Dati strutturati** su ogni pagina:
+  - `LodgingBusiness` dell'azienda, in `base.html`, con un `@id` a cui le altre
+    entità rimandano invece di ripetere gli stessi dati;
+  - `BreadcrumbList` su tutte le pagine interne;
+  - `ItemList` sull'elenco immobili;
+  - `VacationRental` sulla scheda, con indirizzo, coordinate, dotazioni,
+    capienza e l'azione di prenotazione verso il portale.
+- **Testo alternativo**: composto per singola fotografia da
+  `properties/utils.testo_alternativo()`. Il portale non fornisce didascalie per
+  scatto, quindi l'alt non descrive cosa si vede — inventarlo sarebbe peggio che
+  ometterlo — ma dichiara immobile, tipologia, luogo e posizione in galleria:
+  533 testi distinti su 533 immagini. Le miniature della galleria hanno
+  `alt=""` perché decorative: il pulsante che le contiene ha già `aria-label`.
 - Le pagine legali sono marcate `noindex, follow`.
 
 ---
@@ -177,6 +226,41 @@ Scelte tecniche:
 
 Per cambiare l'immagine basta sostituire i tre file `hero-*.jpg` mantenendo il
 rapporto 16:9.
+
+---
+
+## Animazioni
+
+Due meccanismi distinti.
+
+**All'ingresso** (solo home): la fotografia dell'hero fa un lieve zoom
+all'indietro (`scale(1.07)` → `1`) mentre eyebrow, titolo, testo e bottoni
+compaiono scaglionati. Non dipendono dallo scroll ma dalla classe `is-loaded`,
+aggiunta su `<html>` dopo due `requestAnimationFrame` — serve che lo stato
+iniziale sia stato dipinto almeno una volta, altrimenti il browser salta la
+transizione e gli elementi appaiono di colpo.
+
+**Allo scroll**: gli elementi marcati `data-reveal` salgono di 22px sfumando in
+opacità quando entrano nel viewport, tramite un `IntersectionObserver` che li
+smette di osservare dopo la prima comparsa (si animano una volta sola). Un
+contenitore marcato `data-stagger` assegna ai figli un indice `--i` che ritarda
+ogni elemento di 90ms, per l'effetto a cascata su griglie e gallerie.
+
+Per animare un nuovo elemento basta aggiungere `data-reveal` nel template
+(`data-reveal="fade"` per la sola dissolvenza, senza spostamento) e
+`data-stagger` sul contenitore se si vuole la cascata sui figli.
+
+### Perché non si rompe mai
+
+Le animazioni partono solo se `<html>` porta la classe `js-anim`, aggiunta dallo
+script inline in `<head>` **solo quando** JS è attivo, `IntersectionObserver`
+esiste e l'utente non ha chiesto di ridurre le animazioni. Senza quella classe il
+CSS non nasconde nulla: il sito resta completo e leggibile.
+
+In più, se l'observer viene creato ma non emette mai la prima callback (un
+observer sano la emette sempre, anche per elementi non intersecanti), dopo 2
+secondi un timer mostra tutto. Meglio perdere l'animazione che lasciare la
+pagina vuota.
 
 ---
 

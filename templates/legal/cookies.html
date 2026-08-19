@@ -1,8 +1,22 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Cookie Policy"}
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <section class="section">
-  <div class="container prose">
+  <div class="container prose" data-reveal>
     <span class="eyebrow">Informativa</span>
     <h1>Cookie Policy</h1>
     <hr class="gold-rule">
@@ -34,13 +48,21 @@
       Elenco servizi: <span class="placeholder">[da inserire]</span>.
     </p>
 
-    <h2>4. Gestione dei cookie</h2>
+    <h2>4. Le tue preferenze</h2>
+    <p>
+      Puoi rivedere in qualsiasi momento la scelta fatta sul banner.
+    </p>
+    <p>
+      <a class="btn btn-outline" href="#" data-cookie-riapri>Gestisci le preferenze</a>
+    </p>
+
+    <h2>5. Gestione dal browser</h2>
     <p>
       Puoi gestire o eliminare i cookie dalle impostazioni del tuo browser. La
       disattivazione dei cookie tecnici può compromettere il funzionamento del sito.
     </p>
 
-    <h2>5. Contatti</h2>
+    <h2>6. Contatti</h2>
     <p>
       Per informazioni scrivi a <a href="mailto:{{ COMPANY_EMAIL }}">{{ COMPANY_EMAIL }}</a>.
       Vedi anche la <a href="{% url 'core:privacy' %}">Privacy Policy</a>.

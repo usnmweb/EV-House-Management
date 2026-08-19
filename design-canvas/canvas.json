@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",     "x": 0,    "y": 0,    "w": 1440, "h": 2650, "title": "Home" },
+    { "file": "Elenco.dc.html",   "x": 1560, "y": 0,    "w": 1440, "h": 1650, "title": "Elenco immobili" },
+    { "file": "Scheda.dc.html",   "x": 3120, "y": 0,    "w": 1440, "h": 1700, "title": "Scheda immobile" },
+    { "file": "Servizi.dc.html",  "x": 1560, "y": 1780, "w": 1440, "h": 1700, "title": "Servizi" },
+    { "file": "Contatti.dc.html", "x": 3120, "y": 1830, "w": 1440, "h": 1250, "title": "Contatti" },
+    { "file": "Componenti.dc.html", "x": 4680, "y": 0,  "w": 1180, "h": 1300, "title": "Componenti e banner cookie" },
+    { "file": "HomeMobile.dc.html",   "x": 0, "y": 2780, "w": 390, "h": 1950, "title": "Home · telefono" },
+    { "file": "ElencoMobile.dc.html", "x": 500, "y": 2780, "w": 390, "h": 1600, "title": "Elenco · telefono" }
+  ],
+  "annotations": [
+    { "id": "nota-brand", "x": 0, "y": -190, "w": 460,
+      "text": "Branding vincolato dal capitolato: nero e oro, logo a tetti stilizzati, serif in maiuscoletto spaziato.\nToken ripresi dall'implementazione esistente, non reinventati.\nOgni artboard ha il selettore Tema: scuro / chiaro." },
+    { "id": "nota-portale", "x": 3120, "y": -190, "w": 440,
+      "text": "La prenotazione resta fuori perimetro (§7): il riquadro laterale rimanda a evhouse.kross.travel.\nQui il sito si ferma e passa la mano al portale." },
+    { "id": "nota-cookie", "x": 4680, "y": -190, "w": 440,
+      "text": "Banner cookie richiesto dal §2 e oggi assente dal sito.\nRifiuta e Accetta hanno lo stesso peso visivo; i cookie non tecnici restano bloccati finche' l'utente non sceglie." },
+    { "id": "nota-mobile", "x": 0, "y": 2620, "w": 440,
+      "text": "Il §2 chiede attenzione al telefono: da li' arriva la maggior parte del traffico.\nAree tattili da 44px in su, filtri ridotti a chip scorrevoli." },
+    { "id": "nota-contenuti", "x": 1560, "y": -190, "w": 440,
+      "text": "Contenuti reali estratti dal portale: +60 immobili pubblicabili, in 19 localita'.\nI 21 incompleti restano in bozza." }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -56,6 +56,113 @@
   syncThemeUI();
 
   /* ------------------------------------------------------------------
+     Consenso cookie
+     Nessuno strumento di misurazione e' attivo oggi: la scelta viene
+     registrata e resa disponibile a `window.evConsenso`, cosi' quando se ne
+     aggiungera' uno bastera' agganciarlo qui senza rimettere mano al banner.
+     ------------------------------------------------------------------ */
+  var CHIAVE = "ev-cookie";
+  var banner = document.getElementById("cookie-banner");
+
+  function leggiScelta() {
+    try {
+      var v = localStorage.getItem(CHIAVE);
+      return v ? JSON.parse(v) : null;
+    } catch (e) { return null; }
+  }
+
+  function salvaScelta(misurazione) {
+    var scelta = { misurazione: !!misurazione, versione: 1 };
+    try { localStorage.setItem(CHIAVE, JSON.stringify(scelta)); } catch (e) {}
+    // Cookie tecnico, cosi' la scelta e' leggibile anche lato server.
+    document.cookie = "ev_cookie_consent=" + (misurazione ? "all" : "necessary") +
+                      ";path=/;max-age=15552000;SameSite=Lax";
+    window.evConsenso = scelta;
+    if (banner) banner.hidden = true;
+  }
+
+  if (banner) {
+    var prefs = document.getElementById("cookie-prefs");
+    var check = document.getElementById("cookie-analytics");
+    var scelta = leggiScelta();
+
+    window.evConsenso = scelta || { misurazione: false, versione: 0 };
+    if (!scelta) banner.hidden = false;
+
+    banner.addEventListener("click", function (e) {
+      var azione = e.target.closest("[data-cookie]");
+      if (!azione) return;
+      switch (azione.getAttribute("data-cookie")) {
+        case "accept": salvaScelta(true); break;
+        case "reject": salvaScelta(false); break;
+        case "save":   salvaScelta(check && check.checked); break;
+        case "prefs":
+          if (prefs) {
+            prefs.hidden = !prefs.hidden;
+            if (check) check.checked = !!(leggiScelta() || {}).misurazione;
+          }
+          break;
+      }
+    });
+
+    // La Cookie Policy puo' riaprire il pannello per cambiare idea.
+    document.addEventListener("click", function (e) {
+      var riapri = e.target.closest("[data-cookie-riapri]");
+      if (!riapri) return;
+      e.preventDefault();
+      banner.hidden = false;
+      if (prefs) prefs.hidden = false;
+      if (check) check.checked = !!(leggiScelta() || {}).misurazione;
+      banner.scrollIntoView({ block: "center" });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Animazioni
+     La classe .js-anim e' gia' stata messa (o no) dallo script inline in
+     <head>: qui ci limitiamo a far scattare le sequenze.
+     ------------------------------------------------------------------ */
+  var root = document.documentElement;
+  var animate = root.classList.contains("js-anim");
+
+  if (animate) {
+    // Ingresso: due frame di attesa perche' lo stato iniziale sia stato
+    // dipinto, altrimenti il browser salta la transizione.
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { root.classList.add("is-loaded"); });
+    });
+
+    // Rivelazione allo scroll
+    var targets = document.querySelectorAll("[data-reveal]");
+    if (targets.length) {
+      var observerAlive = false;
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          // Un observer funzionante emette sempre una prima callback per ogni
+          // elemento osservato, anche quando non interseca: ci basta come
+          // prova di funzionamento.
+          observerAlive = true;
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);   // si anima una volta sola
+          });
+        },
+        { rootMargin: "0px 0px -10% 0px", threshold: 0.05 }
+      );
+      targets.forEach(function (el) { observer.observe(el); });
+
+      // Rete di sicurezza: se l'observer non da' segni di vita, mostra tutto.
+      // Meglio perdere l'animazione che lasciare la pagina vuota.
+      setTimeout(function () {
+        if (observerAlive) return;
+        targets.forEach(function (el) { el.classList.add("is-visible"); });
+      }, 2000);
+    }
+  }
+
+  /* ------------------------------------------------------------------
      Menu mobile + header sopra l'hero
      Sulle pagine con hero l'header e' trasparente finche' non si scorre
      (o finche' il menu mobile non viene aperto).

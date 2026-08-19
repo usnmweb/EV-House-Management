@@ -6,20 +6,24 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 from properties.models import Property, PropertyImage
+from properties.utils import conteggio_indicativo
 
 from .forms import ContactForm
 
 
 def home(request):
+    pubblicati = Property.objects.published()
     featured = (
-        Property.objects.featured().prefetch_related("images")[:3]
-        or Property.objects.prefetch_related("images")[:3]
+        pubblicati.filter(featured=True).prefetch_related("images")[:3]
+        or pubblicati.prefetch_related("images")[:3]
     )
     return render(
         request,
         "core/home.html",
         {
             "featured_properties": featured,
+            "totale_immobili": conteggio_indicativo(pubblicati.count()),
+            "totale_localita": pubblicati.values("location").distinct().count(),
             "page_title": "Gestione immobiliare di lusso",
             "meta_description": (
                 "EV House Management: gestione completa di immobili e affitti brevi. "
@@ -79,7 +83,8 @@ def services(request):
 def gallery(request):
     images = (
         PropertyImage.objects.select_related("property")
-        .order_by("property__title", "order")
+        .filter(property__status=Property.Status.PUBLISHED)
+        .order_by("property__title", "order")[:120]
     )
     return render(
         request,

@@ -1,0 +1,52 @@
+{% comment %}
+  Banner consenso cookie. Nascosto finché il JS non verifica se manca una scelta:
+  così chi ha già deciso non lo rivede, e senza JS non compare un banner inerte.
+{% endcomment %}
+<div class="cookie-banner" id="cookie-banner" role="dialog" aria-modal="false"
+     aria-labelledby="cookie-title" aria-describedby="cookie-text" hidden>
+  <div class="cookie-inner">
+    <div class="cookie-copy">
+      <h2 id="cookie-title">Rispettiamo la tua privacy</h2>
+      <p id="cookie-text">
+        Usiamo cookie tecnici necessari al funzionamento del sito. Con il tuo consenso
+        useremo anche cookie di misurazione per capire come viene usato.
+        Puoi cambiare idea quando vuoi dalla <a href="{% url 'core:cookies' %}">Cookie Policy</a>.
+      </p>
+    </div>
+
+    <div class="cookie-actions">
+      <button type="button" class="btn btn-quiet" data-cookie="prefs">Personalizza</button>
+      <button type="button" class="btn btn-outline" data-cookie="reject">Rifiuta</button>
+      <button type="button" class="btn btn-primary" data-cookie="accept">Accetta</button>
+    </div>
+  </div>
+
+  <div class="cookie-prefs" id="cookie-prefs" hidden>
+    <h3>Preferenze cookie</h3>
+
+    <div class="cookie-row">
+      <div>
+        <span class="cookie-row-name">Cookie tecnici</span>
+        <span class="cookie-row-text">
+          Necessari al funzionamento del sito: sessione, protezione dei moduli e tema scelto.
+        </span>
+      </div>
+      <span class="cookie-switch is-locked" aria-hidden="true"><span></span></span>
+    </div>
+
+    <div class="cookie-row">
+      <div>
+        <label class="cookie-row-name" for="cookie-analytics">Cookie di misurazione</label>
+        <span class="cookie-row-text">
+          Statistiche anonime sull'uso del sito. Al momento non è attivo alcuno strumento
+          di misurazione: il consenso verrà usato solo se ne introdurremo uno.
+        </span>
+      </div>
+      <input type="checkbox" id="cookie-analytics" class="cookie-check">
+    </div>
+
+    <div class="cookie-prefs-actions">
+      <button type="button" class="btn btn-primary" data-cookie="save">Salva preferenze</button>
+    </div>
+  </div>
+</div>

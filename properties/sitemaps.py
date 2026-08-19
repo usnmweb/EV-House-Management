@@ -11,7 +11,8 @@ class PropertySitemap(Sitemap):
     priority = 0.8
 
     def items(self):
-        return Property.objects.all()
+        # Le bozze non vanno in sitemap: non sono pagine pubbliche.
+        return Property.objects.published()
 
     def lastmod(self, obj):
         return obj.updated_at

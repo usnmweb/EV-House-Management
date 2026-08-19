@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static l10n %}
 
 {% block og_type %}place{% endblock %}
 
@@ -15,51 +15,40 @@
 {% endblock %}
 
 {% block extra_head %}
-{# ---- JSON-LD: VacationRental ---- #}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "VacationRental",
   "name": "{{ property.title|escapejs }}",
-  "description": "{{ property.short_description|escapejs }}",
+  "description": "{{ property.seo_description|escapejs }}",
   "url": "{{ request.scheme }}://{{ request.get_host }}{{ property.get_absolute_url }}",
   {% if gallery %}"image": [{% for img in gallery %}"{{ request.scheme }}://{{ request.get_host }}{{ img.image.url }}"{% if not forloop.last %}, {% endif %}{% endfor %}],{% endif %}
   "address": {
     "@type": "PostalAddress",
+    {% if property.address %}"streetAddress": "{{ property.address|escapejs }}",{% endif %}
     "addressLocality": "{{ property.location|escapejs }}",
+    "addressRegion": "Sardegna",
     "addressCountry": "IT"
   },
+  {% if property.latitude and property.longitude %}"geo": {
+    "@type": "GeoCoordinates",
+    "latitude": {{ property.latitude|unlocalize }},
+    "longitude": {{ property.longitude|unlocalize }}
+  },{% endif %}
+  {% if amenities %}"amenityFeature": [{% for a in amenities %}{"@type": "LocationFeatureSpecification", "name": "{{ a.name|escapejs }}", "value": true}{% if not forloop.last %}, {% endif %}{% endfor %}],{% endif %}
   "containsPlace": {
     "@type": "Accommodation",
-    "occupancy": {
-      "@type": "QuantitativeValue",
-      "value": {{ property.guests }}
-    },
+    "occupancy": {"@type": "QuantitativeValue", "value": {{ property.guests }}},
     "numberOfBedrooms": {{ property.bedrooms }},
     "numberOfBathroomsTotal": {{ property.bathrooms }}
   },
-  "provider": {
-    "@type": "LodgingBusiness",
-    "name": "{{ COMPANY_LEGAL_NAME|escapejs }}",
-    "email": "{{ COMPANY_EMAIL }}",
-    "telephone": "{{ COMPANY_PHONE }}",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "{{ COMPANY_ADDRESS|escapejs }}",
-      "addressCountry": "IT"
-    }
-  }{% if property.booking_url %},
+  "provider": {"@id": "{{ request.scheme }}://{{ request.get_host }}/#organizzazione"}{% if property.booking_url %},
   "potentialAction": {
     "@type": "ReserveAction",
-    "target": {
-      "@type": "EntryPoint",
-      "urlTemplate": "{{ property.booking_url }}"
-    }
+    "target": {"@type": "EntryPoint", "urlTemplate": "{{ property.booking_url }}"}
   }{% endif %}
 }
 </script>
-
-{# ---- JSON-LD: Breadcrumb ---- #}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -85,36 +74,35 @@
     </nav>
 
     {% if gallery %}
-      <div class="gallery-main">
+      <div class="gallery-main" data-reveal="fade">
         <img id="gallery-main-img" src="{{ gallery.0.image.url }}"
-             alt="{{ gallery.0.display_alt }}" width="1600" height="1000">
+             alt="{{ gallery.0.display_alt }}" width="1310" height="875">
       </div>
       {% if gallery|length > 1 %}
-      <div class="gallery-thumbs">
+      <div class="gallery-thumbs" data-reveal>
         {% for img in gallery %}
           <button type="button"
                   class="gallery-thumb{% if forloop.first %} is-active{% endif %}"
-                  data-full="{{ img.image.url }}"
-                  data-alt="{{ img.display_alt }}"
-                  aria-label="Mostra immagine {{ forloop.counter }}">
-            <img src="{{ img.image.url }}" alt="{{ img.display_alt }}" loading="lazy" width="400" height="400">
+                  data-full="{{ img.image.url }}" data-alt="{{ img.display_alt }}"
+                  aria-label="Mostra foto {{ forloop.counter }} di {{ gallery|length }}">
+            <img src="{{ img.image.url }}" alt="" loading="lazy" width="300" height="300">
           </button>
         {% endfor %}
       </div>
       {% endif %}
     {% else %}
-      <div class="gallery-main">
-        <div class="media-placeholder" aria-hidden="true">EV</div>
-      </div>
+      <div class="gallery-main"><div class="media-placeholder" aria-hidden="true">EV</div></div>
     {% endif %}
 
     <div class="detail-layout">
       <div>
-        <span class="eyebrow">{{ property.location }}</span>
+        <span class="eyebrow">
+          {% if property.category %}{{ property.category }} &middot; {% endif %}{{ property.location }}
+        </span>
         <h1>{{ property.title }}</h1>
         <hr class="gold-rule">
 
-        <div class="spec-grid">
+        <div class="spec-grid" data-reveal>
           <div class="spec-item">
             <span class="num">{{ property.guests }}</span>
             <span class="label">Ospiti</span>
@@ -127,31 +115,64 @@
             <span class="num">{{ property.bathrooms }}</span>
             <span class="label">Bagni</span>
           </div>
+          <div class="spec-item">
+            <span class="num">{{ gallery|length }}</span>
+            <span class="label">Foto</span>
+          </div>
         </div>
 
-        <div class="prose">
+        <div class="prose" data-reveal>
           {{ property.description|linebreaks }}
         </div>
+
+        {% if amenities %}
+        <div data-reveal>
+          <h2 class="amenities-title">Dotazioni</h2>
+          <ul class="amenities-grid">
+            {% for a in amenities %}
+              <li>
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                     stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 12.5l5 5L20 6.5"/>
+                </svg>
+                <span>{{ a.name }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        {% if property.license_code %}
+          <p class="license-note" data-reveal="fade">
+            Codice licenza <strong>{{ property.license_code }}</strong>
+          </p>
+        {% endif %}
       </div>
 
       <aside>
-        <div class="booking-box">
-          <h3>Prenota il soggiorno</h3>
+        <div class="booking-box" data-reveal>
+          <h3>Verifica disponibilità</h3>
+          <hr class="gold-rule">
           <p class="price-note">
-            Verifica disponibilità e tariffe aggiornate, oppure scrivici per una
-            richiesta personalizzata.
+            Calendario e tariffe aggiornate sono gestiti sul portale prenotazioni
+            di EV House Management.
           </p>
           {% if property.booking_url %}
-            <a class="btn btn-primary btn-block" href="{{ property.booking_url }}"
-               target="_blank" rel="noopener noreferrer">Verifica disponibilità</a>
-            <p class="price-note" style="margin:1rem 0 0;text-align:center;">
-              Si apre sul portale di prenotazione
-            </p>
-          {% else %}
-            <a class="btn btn-primary btn-block" href="{% url 'core:contact' %}">Richiedi disponibilità</a>
+            <a class="btn btn-primary btn-block btn-external" href="{{ property.booking_url }}"
+               target="_blank" rel="noopener noreferrer">
+              <span>Prenota sul portale</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M7 17L17 7M9 7h8v8"/>
+              </svg>
+            </a>
+            <p class="price-note booking-host">Si apre su evhouse.kross.travel</p>
           {% endif %}
-          <a class="btn btn-outline btn-block" style="margin-top:0.75rem;"
-             href="{% url 'core:contact' %}">Contatta il gestore</a>
+          <a class="btn btn-outline btn-block" href="{% url 'core:contact' %}">Contatta il gestore</a>
+
+          {% if property.address %}
+            <p class="booking-address">{{ property.address }}, {{ property.location }}</p>
+          {% endif %}
         </div>
       </aside>
     </div>
@@ -159,14 +180,14 @@
 </section>
 
 {% if related %}
-<section class="section section-dark" style="margin-top:5rem;">
+<section class="section section-dark">
   <div class="container">
-    <div class="section-head">
-      <span class="eyebrow">Potrebbero interessarti</span>
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Nei dintorni</span>
       <h2>Altri immobili</h2>
       <hr class="gold-rule">
     </div>
-    <div class="property-grid">
+    <div class="property-grid" data-stagger>
       {% for property in related %}
         {% include "properties/_property_card.html" with property=property %}
       {% endfor %}

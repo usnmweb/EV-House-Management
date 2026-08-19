@@ -44,7 +44,7 @@
   --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --font-sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  --header-h: 72px;
+  --header-h: 78px;
   --container: 1200px;
   --radius: 2px;
   --transition: 260ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -220,6 +220,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .btn-outline:hover { background: var(--accent-dim); color: var(--accent-hover); }
 
 .btn-block { display: block; width: 100%; }
+.btn-external { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
 
 .btn-group { display: flex; flex-wrap: wrap; gap: 1rem; }
 
@@ -235,29 +236,27 @@ ul { margin: 0; padding: 0; list-style: none; }
 .header-inner {
   display: flex; align-items: center; justify-content: space-between;
   gap: 1rem;
-  min-height: 72px;
+  min-height: var(--header-h);
 }
 
 .brand { display: flex; align-items: center; gap: 0.7rem; color: var(--text); }
 .brand:hover { color: var(--text); }
 
-.brand-mark {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  width: 40px; height: 40px;
-  display: flex; align-items: center; justify-content: center;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-}
+/* Il logo esiste in due varianti: la sigla "EV" e' bianca nell'originale,
+   quindi su fondo chiaro sparirebbe. La variante "su-chiaro" la ricolora,
+   lasciando intatto l'oro dei tetti. Lo scambio e' in CSS, cosi' funziona
+   anche quando il tema segue le preferenze di sistema. */
+.brand-logo { display: block; height: 46px; width: auto; }
+.brand-logo-scuro { display: none; }
 
-.brand-text {
-  font-family: var(--font-serif);
-  font-size: 1.05rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand-logo-chiaro { display: none; }
+  :root:not([data-theme="light"]) .brand-logo-scuro  { display: block; }
 }
+:root[data-theme="dark"] .brand-logo-chiaro { display: none; }
+:root[data-theme="dark"] .brand-logo-scuro  { display: block; }
+
+.brand-footer .brand-logo { height: 56px; }
 
 .header-actions { display: flex; align-items: center; gap: 0.5rem; }
 
@@ -464,10 +463,11 @@ body.has-hero .site-header:not(.is-solid) .brand,
 body.has-hero .site-header:not(.is-solid) .primary-nav > ul > li > a {
   color: #f7f4ee;
 }
-body.has-hero .site-header:not(.is-solid) .brand-mark,
 body.has-hero .site-header:not(.is-solid) .primary-nav > ul > li > .nav-cta {
   color: #dcbb4e; border-color: #dcbb4e;
 }
+body.has-hero .site-header:not(.is-solid) .brand-logo-chiaro { display: none; }
+body.has-hero .site-header:not(.is-solid) .brand-logo-scuro  { display: block; }
 body.has-hero .site-header:not(.is-solid) .primary-nav > ul > li > a:hover { color: #dcbb4e; }
 body.has-hero .site-header:not(.is-solid) .theme-toggle {
   color: rgba(247, 244, 238, 0.85); border-color: rgba(247, 244, 238, 0.32);
@@ -756,6 +756,117 @@ textarea { resize: vertical; min-height: 140px; }
 .footer-bottom p { margin: 0; }
 .footer-legal-links { display: flex; gap: 1.5rem; }
 
+
+
+/* ---------- Dotazioni, badge e meta ---------- */
+.amenities-title { font-size: clamp(1.4rem, 3vw, 1.75rem); margin: 3rem 0 1.5rem; color: var(--text); }
+.amenities-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1.5rem;
+}
+.amenities-grid li {
+  display: flex; align-items: center; gap: 0.7rem;
+  font-size: 0.88rem; color: var(--text-muted);
+}
+.amenities-grid svg { color: var(--accent); flex-shrink: 0; }
+
+.license-note {
+  margin-top: 2.5rem; padding: 1rem 1.25rem;
+  border-left: 2px solid var(--accent); background: var(--surface);
+  font-size: 0.82rem; color: var(--text-muted);
+}
+.license-note strong { color: var(--text); font-weight: 500; }
+
+.badge-cat {
+  position: absolute; top: 1rem; left: 1rem;
+  background: var(--accent-solid); color: var(--on-accent);
+  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  padding: 0.35rem 0.75rem;
+}
+
+.list-meta {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 1.5rem; font-size: 0.82rem; color: var(--text-muted);
+}
+
+.booking-host { margin-top: 0.75rem; text-align: center; font-size: 0.75rem; }
+.booking-address {
+  margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
+  font-size: 0.82rem; color: var(--text-muted);
+}
+
+@media (min-width: 900px) {
+  .amenities-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ==========================================================================
+   Banner consenso cookie
+   Rifiuta e Accetta hanno lo stesso rilievo visivo: il GDPR non ammette che
+   negare il consenso costi piu' fatica che concederlo.
+   ========================================================================== */
+.cookie-banner {
+  position: fixed; z-index: 200;
+  left: 1rem; right: 1rem; bottom: 1rem;
+  max-width: 1100px; margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.28);
+  padding: 1.5rem 1.6rem;
+}
+.cookie-banner[hidden] { display: none; }
+
+.cookie-inner { display: flex; flex-direction: column; gap: 1.25rem; }
+.cookie-copy h2 {
+  font-size: 1.25rem; color: var(--text); margin: 0 0 0.5rem;
+}
+.cookie-copy p {
+  margin: 0; font-size: 0.88rem; line-height: 1.65; color: var(--text-muted);
+}
+.cookie-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+.cookie-actions .btn { padding: 0.85rem 1.5rem; font-size: 0.72rem; }
+
+.btn-quiet {
+  background: transparent; border-color: var(--border); color: var(--text);
+}
+.btn-quiet:hover { border-color: var(--accent); color: var(--accent); }
+
+.cookie-prefs {
+  margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
+}
+.cookie-prefs[hidden] { display: none; }
+.cookie-prefs h3 { font-size: 1.15rem; color: var(--text); margin-bottom: 1rem; }
+
+.cookie-row {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem;
+  padding: 1rem 0; border-top: 1px solid var(--border);
+}
+.cookie-row-name {
+  display: block; font-size: 0.9rem; color: var(--text); margin-bottom: 0.25rem;
+}
+.cookie-row-text {
+  display: block; font-size: 0.82rem; line-height: 1.6; color: var(--text-muted);
+}
+.cookie-check {
+  width: 20px; height: 20px; flex-shrink: 0; margin-top: 0.2rem;
+  accent-color: var(--accent-solid);
+}
+/* I cookie tecnici non sono disattivabili: interruttore fisso, non un campo. */
+.cookie-switch {
+  flex-shrink: 0; width: 44px; height: 24px; border-radius: 12px;
+  background: var(--accent-solid); border: 1px solid var(--accent-solid);
+  display: flex; align-items: center; justify-content: flex-end;
+  padding: 2px; box-sizing: border-box; margin-top: 0.15rem;
+}
+.cookie-switch span {
+  width: 18px; height: 18px; border-radius: 9px; background: var(--on-accent); display: block;
+}
+.cookie-prefs-actions { margin-top: 1.25rem; }
+
+@media (min-width: 800px) {
+  .cookie-inner { flex-direction: row; align-items: center; gap: 2.5rem; }
+  .cookie-copy { flex: 1; }
+  .cookie-actions { flex-shrink: 0; }
+}
+
 /* ==========================================================================
    Breakpoints
    ========================================================================== */
@@ -770,7 +881,7 @@ textarea { resize: vertical; min-height: 140px; }
   .property-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .service-grid  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .masonry       { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .filter-bar    { grid-template-columns: 1fr 1fr auto; align-items: end; }
+  .filter-bar    { grid-template-columns: 1fr 1fr; align-items: end; }
   .footer-grid   { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .footer-bottom { flex-direction: row; justify-content: space-between; align-items: center; }
 }
@@ -796,6 +907,14 @@ textarea { resize: vertical; min-height: 140px; }
 
   .header-actions { margin-left: 1.75rem; order: 3; }
 
+  /* Da qui in su c'e' spazio per il logo alla misura piena, e l'header
+     cresce di conseguenza: il token governa anche lo scostamento dell'hero. */
+  :root { --header-h: 104px; }
+  .brand-logo { height: 64px; }
+
+  /* localita, tipologia, ospiti e pulsante su una riga sola */
+  .filter-bar { grid-template-columns: 1.4fr 1.1fr 0.7fr auto; }
+
   .hero { --hero-fade: 190px; }
 
   .property-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -805,6 +924,85 @@ textarea { resize: vertical; min-height: 140px; }
 
   .detail-layout { grid-template-columns: 1.7fr 1fr; align-items: start; }
   .contact-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 4rem; align-items: start; }
+}
+
+
+/* ==========================================================================
+   Animazioni
+   Attive solo se <html> porta la classe .js-anim, aggiunta dallo script inline
+   in <head> quando: JS e' attivo, IntersectionObserver esiste e l'utente non ha
+   chiesto di ridurre le animazioni. Senza quella classe nulla viene nascosto,
+   quindi il sito resta perfettamente leggibile senza JS.
+   ========================================================================== */
+
+/* ---------- Rivelazione allo scroll ---------- */
+.js-anim [data-reveal] {
+  --reveal-delay: calc(var(--i, 0) * 90ms);
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 900ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay),
+    transform 900ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay);
+}
+.js-anim [data-reveal="fade"] { transform: none; }
+.js-anim [data-reveal].is-visible { opacity: 1; transform: none; }
+
+/* Indice progressivo per scaglionare i figli di un contenitore */
+.js-anim [data-stagger] > :nth-child(1) { --i: 0; }
+.js-anim [data-stagger] > :nth-child(2) { --i: 1; }
+.js-anim [data-stagger] > :nth-child(3) { --i: 2; }
+.js-anim [data-stagger] > :nth-child(4) { --i: 3; }
+.js-anim [data-stagger] > :nth-child(5) { --i: 4; }
+.js-anim [data-stagger] > :nth-child(6) { --i: 5; }
+.js-anim [data-stagger] > :nth-child(7) { --i: 6; }
+.js-anim [data-stagger] > :nth-child(8) { --i: 7; }
+.js-anim [data-stagger] > :nth-child(9) { --i: 8; }
+.js-anim [data-stagger] > :nth-child(10) { --i: 9; }
+.js-anim [data-stagger] > :nth-child(11) { --i: 10; }
+.js-anim [data-stagger] > :nth-child(12) { --i: 11; }
+
+/* ---------- Sequenza di ingresso della home ---------- */
+/* Lieve zoom all'indietro sulla fotografia dell'hero */
+.js-anim .hero-media img {
+  transform: scale(1.07);
+  transition: transform 2200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.js-anim.is-loaded .hero-media img { transform: none; }
+
+/* Testo dell'hero: comparsa scaglionata dall'alto verso il basso.
+   Non usa [data-reveal] perche' non dipende dallo scroll ma dal caricamento. */
+.js-anim .hero-inner > * {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 950ms cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms),
+    transform 950ms cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms);
+}
+.js-anim .hero-inner > *:nth-child(1) { --d: 240ms; }
+.js-anim .hero-inner > *:nth-child(2) { --d: 360ms; }
+.js-anim .hero-inner > *:nth-child(3) { --d: 480ms; }
+.js-anim .hero-inner > *:nth-child(4) { --d: 600ms; }
+.js-anim.is-loaded .hero-inner > * { opacity: 1; transform: none; }
+
+/* Header: solo opacita'. Un transform su un elemento sticky e' un rischio
+   inutile, e qui non aggiungerebbe nulla. */
+.js-anim .site-header { opacity: 0; transition: opacity 800ms ease 120ms; }
+.js-anim.is-loaded .site-header { opacity: 1; }
+
+/* ---------- Micro-interazioni ---------- */
+.property-card-body h3 a,
+.masonry figure,
+.service-card { will-change: auto; }
+
+/* Sicurezza: se la preferenza cambia dopo il caricamento, mostra tutto. */
+@media (prefers-reduced-motion: reduce) {
+  .js-anim [data-reveal],
+  .js-anim .hero-inner > *,
+  .js-anim .site-header {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .js-anim .hero-media img { transform: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

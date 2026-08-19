@@ -1,25 +1,63 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Immobili"}
+  ]
+}
+</script>
+{% if properties %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Immobili in gestione EV House Management",
+  "numberOfItems": {{ paginator.count }},
+  "itemListElement": [{% for property in properties %}
+    {"@type": "ListItem", "position": {{ forloop.counter }},
+     "url": "{{ request.scheme }}://{{ request.get_host }}{{ property.get_absolute_url }}",
+     "name": "{{ property.title|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <section class="section">
   <div class="container">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <span class="eyebrow">Portfolio</span>
       <h2>Immobili in gestione</h2>
       <hr class="gold-rule">
       <p class="lead">
-        Appartamenti e residenze selezionate, pronte per il soggiorno e gestite
-        integralmente da EV House Management.
+        {{ total_count }} soluzioni in {{ locations|length }} località della Sardegna.
+        Disponibilità e tariffe si verificano sul portale prenotazioni.
       </p>
     </div>
 
-    <form class="filter-bar" method="get" action="{% url 'properties:list' %}">
+    <form class="filter-bar" method="get" action="{% url 'properties:list' %}" data-reveal="fade">
       <div>
         <label for="f-location">Località</label>
         <select name="location" id="f-location">
-          <option value="">Tutte</option>
+          <option value="">Tutte le località</option>
           {% for loc in locations %}
             <option value="{{ loc }}" {% if loc == active_location %}selected{% endif %}>{{ loc }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-category">Tipologia</label>
+        <select name="category" id="f-category">
+          <option value="">Tutte</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if cat == active_category %}selected{% endif %}>{{ cat }}</option>
           {% endfor %}
         </select>
       </div>
@@ -34,7 +72,12 @@
     </form>
 
     {% if properties %}
-      <div class="property-grid">
+      <div class="list-meta">
+        {% if filtri_attivi %}<span>{{ paginator.count }} immobil{{ paginator.count|pluralize:"e,i" }} trovat{{ paginator.count|pluralize:"o,i" }}</span>{% else %}<span>{{ total_count }} immobili</span>{% endif %}
+        {% if is_paginated %}<span>Pagina {{ page_obj.number }} di {{ paginator.num_pages }}</span>{% endif %}
+      </div>
+
+      <div class="property-grid" data-stagger>
         {% for property in properties %}
           {% include "properties/_property_card.html" with property=property %}
         {% endfor %}
@@ -43,11 +86,11 @@
       {% if is_paginated %}
       <nav class="pagination" aria-label="Paginazione">
         {% if page_obj.has_previous %}
-          <a href="?page={{ page_obj.previous_page_number }}{% if active_location %}&location={{ active_location }}{% endif %}{% if active_guests %}&guests={{ active_guests }}{% endif %}">Precedente</a>
+          <a href="?page={{ page_obj.previous_page_number }}{% if active_location %}&location={{ active_location }}{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_guests %}&guests={{ active_guests }}{% endif %}">Precedente</a>
         {% endif %}
-        <span class="current">Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}</span>
+        <span class="current">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
         {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% if active_location %}&location={{ active_location }}{% endif %}{% if active_guests %}&guests={{ active_guests }}{% endif %}">Successiva</a>
+          <a href="?page={{ page_obj.next_page_number }}{% if active_location %}&location={{ active_location }}{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_guests %}&guests={{ active_guests }}{% endif %}">Successiva</a>
         {% endif %}
       </nav>
       {% endif %}
@@ -59,7 +102,7 @@
 </section>
 
 <section class="cta-band">
-  <div class="container">
+  <div class="container" data-reveal>
     <span class="eyebrow">Proprietari</span>
     <h2>Vuoi vedere il tuo immobile qui?</h2>
     <p class="lead">Valutiamo gratuitamente il potenziale della tua proprietà.</p>

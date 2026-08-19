@@ -13,6 +13,14 @@
           document.documentElement.setAttribute("data-theme", saved);
         }
       } catch (e) { /* localStorage non disponibile: si usa la preferenza di sistema */ }
+
+      // Abilita le animazioni solo se possiamo davvero gestirle. Senza questa
+      // classe il CSS non nasconde nulla: niente JS o niente
+      // IntersectionObserver significa sito statico ma completo.
+      var motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if ("IntersectionObserver" in window && motionOk) {
+        document.documentElement.classList.add("js-anim");
+      }
     })();
   </script>
   <meta name="theme-color" id="meta-theme-color" content="#faf8f4">
@@ -45,6 +53,33 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
+
+  {% comment %}
+    Dati strutturati dell'azienda, presenti su ogni pagina. L'@id permette alle
+    altre entità (es. VacationRental) di rimandare qui invece di ripetersi.
+  {% endcomment %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "@id": "{{ request.scheme }}://{{ request.get_host }}/#organizzazione",
+    "name": "{{ COMPANY_LEGAL_NAME|escapejs }}",
+    "url": "{{ request.scheme }}://{{ request.get_host }}/",
+    "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo-su-scuro.png' %}",
+    "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-default.jpg' %}",
+    "email": "{{ COMPANY_EMAIL }}",{% if COMPANY_PHONE %}
+    "telephone": "{{ COMPANY_PHONE }}",{% endif %}
+    "vatID": "{{ COMPANY_VAT }}",
+    "address": {
+      "@type": "PostalAddress",
+      "addressRegion": "Sardegna",
+      "addressCountry": "IT"
+    },
+    "areaServed": {"@type": "AdministrativeArea", "name": "Sardegna"},
+    "description": "Gestione di immobili e affitti brevi in Sardegna: accoglienza ospiti, pulizie, manutenzione e adempimenti."
+  }
+  </script>
+
   {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -53,8 +88,10 @@
   <header class="site-header" id="site-header">
     <div class="container header-inner">
       <a class="brand" href="{% url 'core:home' %}">
-        <span class="brand-mark">EV</span>
-        <span class="brand-text">House Management</span>
+        <img class="brand-logo brand-logo-scuro" src="{% static 'img/logo-su-scuro.png' %}"
+             alt="EV House Management" width="760" height="198">
+        <img class="brand-logo brand-logo-chiaro" src="{% static 'img/logo-su-chiaro.png' %}"
+             alt="EV House Management" width="760" height="198">
       </a>
 
       <div class="header-actions">
@@ -106,8 +143,10 @@
     <div class="container footer-grid">
       <div class="footer-col">
         <a class="brand brand-footer" href="{% url 'core:home' %}">
-          <span class="brand-mark">EV</span>
-          <span class="brand-text">House Management</span>
+          <img class="brand-logo brand-logo-scuro" src="{% static 'img/logo-su-scuro.png' %}"
+               alt="EV House Management" width="760" height="198">
+          <img class="brand-logo brand-logo-chiaro" src="{% static 'img/logo-su-chiaro.png' %}"
+               alt="EV House Management" width="760" height="198">
         </a>
         <p class="footer-tagline">
           Gestione immobiliare e affitti brevi. Cura del dettaglio, risultati misurabili.
@@ -154,6 +193,8 @@
       </ul>
     </div>
   </footer>
+
+  {% include "_cookie_banner.html" %}
 
   <script src="{% static 'js/main.js' %}" defer></script>
   {% block extra_js %}{% endblock %}

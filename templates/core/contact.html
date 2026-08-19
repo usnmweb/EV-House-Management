@@ -1,16 +1,30 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Contatti"}
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <section class="section">
   <div class="container">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <span class="eyebrow">Contatti</span>
       <h2>Scrivici</h2>
       <hr class="gold-rule">
     </div>
 
-    <div class="contact-layout">
-      <div>
+    <div class="contact-layout" data-stagger>
+      <div data-reveal>
         <form method="post" novalidate>
           {% csrf_token %}
 
@@ -44,7 +58,7 @@
         </form>
       </div>
 
-      <aside>
+      <aside data-reveal>
         <div class="booking-box">
           <h3>{{ COMPANY_LEGAL_NAME }}</h3>
           <hr class="gold-rule">

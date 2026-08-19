@@ -1,9 +1,23 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Servizi"}
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <section class="section">
   <div class="container">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <span class="eyebrow">Servizi</span>
       <h2>Gestione completa, dalla A alla Z</h2>
       <hr class="gold-rule">
@@ -13,9 +27,9 @@
       </p>
     </div>
 
-    <div class="service-grid">
+    <div class="service-grid" data-stagger>
       {% for service in services %}
-      <article class="service-card">
+      <article class="service-card" data-reveal>
         <span class="idx">{{ forloop.counter|stringformat:"02d" }}</span>
         <h3>{{ service.title }}</h3>
         <p>{{ service.text }}</p>
@@ -27,28 +41,28 @@
 
 <section class="section section-dark">
   <div class="container">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <span class="eyebrow">Come lavoriamo</span>
       <h2>Quattro passi</h2>
       <hr class="gold-rule">
     </div>
-    <div class="service-grid">
-      <article class="service-card">
+    <div class="service-grid" data-stagger>
+      <article class="service-card" data-reveal>
         <span class="idx">01</span>
         <h3>Sopralluogo</h3>
         <p>Visitiamo l'immobile, valutiamo posizione, stato e potenziale di rendita.</p>
       </article>
-      <article class="service-card">
+      <article class="service-card" data-reveal>
         <span class="idx">02</span>
         <h3>Proposta</h3>
         <p>Ti presentiamo un piano di gestione con stime di occupazione e ricavo.</p>
       </article>
-      <article class="service-card">
+      <article class="service-card" data-reveal>
         <span class="idx">03</span>
         <h3>Attivazione</h3>
         <p>Styling, servizio fotografico, pubblicazione degli annunci e avvio operativo.</p>
       </article>
-      <article class="service-card">
+      <article class="service-card" data-reveal>
         <span class="idx">04</span>
         <h3>Gestione</h3>
         <p>Operativita continua e rendiconti mensili trasparenti, senza pensieri per te.</p>
@@ -58,7 +72,7 @@
 </section>
 
 <section class="cta-band">
-  <div class="container">
+  <div class="container" data-reveal>
     <span class="eyebrow">Primo passo</span>
     <h2>Parliamo del tuo immobile</h2>
     <p class="lead">Valutazione gratuita e senza impegno del potenziale della tua proprietà.</p>
