@@ -87,9 +87,40 @@ Il repository contiene `render.yaml`, quindi il modo più rapido è il **Bluepri
 4. Crea l'utente amministratore dalla Shell del servizio:
    `python manage.py createsuperuser`.
 
-In alternativa, creando il servizio a mano: **New +** → **Web Service**, runtime
-*Python*, build command `./build.sh`, start command
-`gunicorn config.wsgi:application`.
+### Se crei il servizio a mano
+
+Il blueprint è la strada consigliata proprio perché imposta tutto da solo. Creando
+il servizio a mano (**New +** → **Web Service**, runtime *Python*) **niente di
+`render.yaml` viene letto**: build command, comando di avvio e variabili d'ambiente
+vanno compilati uno per uno.
+
+| Campo | Valore |
+|---|---|
+| Build command | `./build.sh` |
+| Start command | `gunicorn config.wsgi:application` |
+
+Il build command suggerito da Render per Django si ferma a `pip install` e
+`collectstatic`: **non esegue le migrazioni**, e il sito parte con il database vuoto
+(`no such table: properties_property`). `build.sh` fa anche `migrate` e
+`import_properties`.
+
+Variabili d'ambiente da impostare a mano:
+
+| Variabile | Valore |
+|---|---|
+| `DJANGO_SECRET_KEY` | una stringa casuale lunga |
+| `DJANGO_DEBUG` | `False` |
+| `DJANGO_ALLOWED_HOSTS` | il dominio assegnato |
+| `DJANGO_DB_PATH` | `/var/data/db.sqlite3` *(solo con disco persistente)* |
+| `DJANGO_MEDIA_ROOT` | `/var/data/media` *(solo con disco persistente)* |
+
+**`DJANGO_DEBUG=False` non è un dettaglio estetico.** Con `DEBUG=True` una qualsiasi
+eccezione mostra al pubblico la pagina di debug di Django, che elenca l'intera
+configurazione: percorsi, app installate, impostazioni email, host consentiti. Va
+impostata prima di rendere l'indirizzo raggiungibile a chiunque.
+
+La versione di Python è fissata da `.python-version`; senza, Render usa la propria
+predefinita, che può non coincidere con quella di sviluppo.
 
 ### Cosa fa il rilascio
 
