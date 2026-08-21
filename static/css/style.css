@@ -342,10 +342,61 @@ ul { margin: 0; padding: 0; list-style: none; }
 body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
 
 .hero-media { position: absolute; inset: 0; z-index: 0; }
-.hero-media img {
+.hero-media img,
+.hero-media video {
   width: 100%; height: 100%;
   object-fit: cover; object-position: 50% 45%;
 }
+
+/* Il video sta sopra la fotografia e sfuma in campo quando ha davvero
+   qualcosa da mostrare. Finche' non arriva a quel punto — rete lenta, formato
+   rifiutato, autoplay negato — resta invisibile e sotto si vede la fotografia,
+   che e' un fotogramma dello stesso video: non c'e' nessun salto. */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 900ms ease;
+}
+.hero-video.e-pronto { opacity: 1; }
+
+/* Comando di pausa. Nascosto finche' il video non parte: se lo sfondo e' una
+   fotografia ferma non c'e' niente da mettere in pausa. */
+.hero-video-toggle {
+  position: absolute;
+  /* Allineato al bordo del contenitore. In percentuale e non in `vw`:
+     `100vw` include la barra di scorrimento e su Windows finirebbe sotto. */
+  right: max(1.5rem, calc((100% - var(--container)) / 2));
+  bottom: calc(var(--hero-fade) + 0.75rem);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  padding: 0;
+  border: 1px solid rgba(247, 244, 238, 0.34);
+  border-radius: 50%;
+  background: rgba(6, 8, 10, 0.42);
+  backdrop-filter: blur(6px);
+  color: var(--hero-text);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition),
+              opacity var(--transition);
+  opacity: 0.62;
+}
+.hero-video-toggle:hover,
+.hero-video-toggle:focus-visible {
+  opacity: 1;
+  border-color: var(--hero-accent);
+  background: rgba(6, 8, 10, 0.66);
+}
+.hero-video-toggle[hidden] { display: none; }
+.hero-video-toggle svg { width: 15px; height: 15px; }
+
+/* Si mostra l'icona dell'azione, non quella dello stato: mentre il video va,
+   il bottone offre la pausa. */
+.hero-video-toggle .icona-play  { display: none; }
+.hero-video-toggle.in-pausa .icona-pausa { display: none; }
+.hero-video-toggle.in-pausa .icona-play  { display: block; }
 
 /* Doppio gradiente: scurisce il lato del testo e sfuma in basso
    verso lo sfondo della pagina, cosi' l'hero si fonde in entrambi i temi. */
@@ -1067,6 +1118,301 @@ textarea { resize: vertical; min-height: 140px; }
 
 
 /* ==========================================================================
+   Vetrina degli immobili in evidenza
+
+   Due comportamenti sullo stesso markup.
+
+   Base — e quindi anche senza JavaScript, su schermi stretti, con "riduci
+   movimento" o su un browser senza timeline di scorrimento: una fila che si
+   trascina in orizzontale, con aggancio alle schede.
+
+   Avanzato: la sezione si blocca a schermo pieno e lo scorrimento verticale
+   diventa avanzamento orizzontale. Nessun `preventDefault` sulla rotella: la
+   pagina scorre come sempre, e' solo la fila a spostarsi in funzione di quanto
+   si e' scorso. Rotella, trackpad, frecce, barra laterale e ricerca nel testo
+   continuano a funzionare come su qualsiasi altra pagina, e alla fine delle
+   schede la pagina riprende da sola a scorrere in verticale.
+   ========================================================================== */
+
+.showcase {
+  --carta: 300px;
+  --spazio: 1.5rem;
+  --bordo: max(1.5rem, calc((100vw - var(--container)) / 2));
+  --tessere: 10;                 /* 9 immobili + la tessera finale */
+
+  /* Larghezza della fila, calcolata invece che dedotta dal contenuto.
+     `width: max-content` sembrava piu' pulito, ma su un contenitore flex
+     Firefox non lo calcola dalla base flessibile delle tessere: misurava
+     11694px al posto di 3936. Tutto quello che si appoggia a quella
+     larghezza — a partire da `translateX(-100%)` — ne usciva sballato.
+     Le tessere hanno larghezza fissa, quindi la somma qui e' esatta. */
+  --larghezza-fila: calc(
+    var(--tessere) * var(--carta)
+    + (var(--tessere) - 1) * var(--spazio)
+    + 2 * var(--bordo));
+
+  /* Quanti pixel percorre la fila per ogni pixel scorso.
+     A 1 il blocco durerebbe quanto tutta la corsa: corretto, ma da scorrere
+     e' lungo. A 2 la fila va al doppio della rotella e il tratto incollato si
+     dimezza, restando abbastanza lento da leggere le schede mentre passano.
+     E' l'unico numero da toccare per accorciare o allungare la sezione. */
+  --ritmo: 2;
+
+  padding: 4.5rem 0;
+  background: var(--bg);
+}
+
+.showcase-head { margin-bottom: 2.5rem; }
+
+.showcase-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: var(--bordo);
+  overscroll-behavior-x: contain;   /* non trascina indietro la cronologia */
+}
+
+.showcase-track {
+  display: flex;
+  /* Senza una larghezza esplicita la fila e' larga quanto il contenitore e le
+     tessere le escono fuori. La misura comprende i due margini laterali,
+     perche' il progetto usa `border-box`. */
+  width: var(--larghezza-fila);
+  gap: var(--spazio);
+  /* Il fondo lascia respiro al sollevamento della scheda, che altrimenti
+     verrebbe tagliato dal contenitore. */
+  padding: 0.25rem var(--bordo) 1.25rem;
+  margin: 0;
+  list-style: none;
+}
+
+.showcase-item {
+  flex: 0 0 var(--carta);
+  height: clamp(380px, 58vh, 520px);
+  scroll-snap-align: start;
+  display: flex;
+}
+.showcase-item > * { width: 100%; }
+
+/* Altezza fissa per tutte le schede: il testo si taglia a due righe e le
+   fotografie restano allineate invece di ballare di scheda in scheda. */
+.showcase-item .property-card { height: 100%; }
+.showcase-item .property-card-media {
+  aspect-ratio: auto;
+  flex: 1 1 auto;
+  min-height: 120px;
+}
+.showcase-item .property-card-body { flex: 0 0 auto; }
+.showcase-item .property-card-body h3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* Altezza fissa di due righe, non massima: un titolo corto lascerebbe
+     comunque il suo spazio, cosi' le fotografie restano tutte alla stessa
+     altezza lungo la fila. */
+  line-height: 1.2;
+  height: 2.4em;
+}
+.showcase-item .property-excerpt {
+  flex: 0 0 auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Tessera finale: chiude la fila su una destinazione invece che nel vuoto. */
+.showcase-fine {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  height: 100%;
+  padding: 2rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-dim);
+  color: var(--text);
+  transition: background-color var(--transition), translate var(--transition);
+}
+.showcase-fine:hover { background: var(--surface); translate: 0 -4px; }
+.showcase-fine-eyebrow {
+  font-size: 0.7rem; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--accent);
+}
+.showcase-fine-titolo {
+  font-family: var(--font-serif);
+  font-size: 1.6rem; line-height: 1.15;
+}
+.showcase-fine-freccia svg { width: 30px; height: 30px; color: var(--accent); }
+.showcase-fine:hover .showcase-fine-freccia svg { translate: 6px 0; }
+.showcase-fine-freccia svg { transition: translate var(--transition); }
+
+/* Senza blocco non serve: c'e' gia' la barra di scorrimento del contenitore. */
+.showcase-avanzamento { display: none; }
+
+
+/* ---------- Variante bloccata ----------
+   La classe `e-bloccata` la mette main.js quando lo schermo e' largo e
+   l'utente non ha chiesto di ridurre le animazioni. Fuori da quei casi non
+   esiste e resta la fila trascinabile qui sopra.
+
+   L'avanzamento (0 -> 1) arriva da `--avanzamento`. Chi ha le timeline di
+   scorrimento lo ignora: il blocco @supports piu' sotto mette un'animazione
+   sulle stesse proprieta', e un'animazione in corso ha la precedenza sulle
+   dichiarazioni normali. Cosi' i browser capaci lo fanno sul compositor e gli
+   altri con un ascoltatore di scroll, senza duplicare una riga di layout. */
+
+.showcase.e-bloccata {
+  /* Quanto c'e' da percorrere in orizzontale. Sopra i 1200px il margine
+     laterale cresce quanto la finestra, quindi la corsa resta costante. */
+  --corsa: calc(var(--larghezza-fila) - 100vw);
+
+  /* Altezza = quanto resta incollato + il tratto da scorrere. Il primo addendo
+     e' l'altezza del blocco (schermo meno intestazione), non lo schermo
+     intero: solo cosi' l'intervallo `contain` torna esattamente pari al
+     tratto, e la fila finisce la corsa nell'istante in cui il blocco si
+     stacca — niente scorrimento a vuoto in coda.
+     Il rapporto fra i due e' `--ritmo`, e main.js lo rilegge da qui per
+     portare in vista una scheda raggiunta col tabulatore. */
+  /* `svh` e non `vh`: su iOS `100vh` e' l'altezza con la barra dell'indirizzo
+     gia' ritirata, quindi il blocco sborderebbe. E nemmeno `dvh`, che cambia
+     mentre la barra si ritira: cambierebbe l'altezza della sezione a meta'
+     corsa, e con essa il rapporto fra scorrimento e spostamento. `svh` e'
+     l'unica delle tre che sta ferma. La riga con `vh` resta per i browser che
+     non conoscono le unita' nuove. */
+  height: calc(100vh - var(--header-h) + var(--corsa) / var(--ritmo));
+  height: calc(100svh - var(--header-h) + var(--corsa) / var(--ritmo));
+  padding: 0;
+
+  view-timeline-name: --vetrina;
+  /* L'intestazione del sito e' appiccicata in alto: la timeline deve partire
+     da sotto, altrimenti va fuori passo di quei pixel. */
+  view-timeline-inset: var(--header-h) 0px;
+}
+
+.showcase.e-bloccata .showcase-pin {
+  position: sticky;
+  top: var(--header-h);
+  height: calc(100vh - var(--header-h));
+  height: calc(100svh - var(--header-h));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Da quando la fila prende lo spazio che avanza, l'intestazione finisce
+     appiccicata sotto quella del sito: questo respiro glielo restituisce. */
+  padding: 1.25rem 0 0.75rem;
+  /* `clip` e non `hidden`: `hidden` creerebbe un contenitore di scorrimento, e
+     portando a fuoco una scheda fuori campo il browser lo farebbe scorrere di
+     nascosto, sfasando tutto rispetto alla pagina. */
+  overflow: clip;
+}
+
+.showcase.e-bloccata .showcase-scroll {
+  overflow: clip;
+  scroll-snap-type: none;
+}
+
+/* Intestazione, fila e barra devono stare nei pixel del blocco: se sforano,
+   `overflow: clip` taglia in cima e l'occhiello sparisce. */
+.showcase.e-bloccata .showcase-head { margin-bottom: 1.75rem; }
+
+/* La scheda prende lo spazio che avanza invece di avere un'altezza indovinata
+   in `vh`: il blocco e' una colonna flessibile, la fila e' l'unico elemento
+   che si allunga. Cosi' non c'e' una combinazione di schermo e lunghezza del
+   titolo che possa far sforare il contenuto — e sui telefoni piccoli la
+   fotografia guadagna spazio invece di perderlo. */
+.showcase.e-bloccata .showcase-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+.showcase.e-bloccata .showcase-track { align-items: stretch; }
+.showcase.e-bloccata .showcase-item {
+  height: auto;
+  max-height: 520px;   /* oltre, la scheda si allunga senza guadagnarci */
+}
+
+/* Sotto i 760px l'altezza utile e' poca e l'intestazione se la mangia: il
+   titolo va su due righe e il testo introduttivo su quattro. Si stringe
+   quello che si puo' e si toglie l'introduzione, che qui e' un di piu': il
+   titolo dice gia' cosa sono le schede. */
+@media (max-width: 760px) {
+  .showcase { --carta: 260px; }
+
+  .showcase.e-bloccata .showcase-head { margin-bottom: 1.25rem; }
+  .showcase.e-bloccata .showcase-head .lead { display: none; }
+  .showcase.e-bloccata .showcase-head h2 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
+  .showcase.e-bloccata .showcase-head .gold-rule { margin: 1rem 0; }
+  .showcase.e-bloccata .showcase-avanzamento { margin-top: 1.25rem; }
+
+  /* Su schermi bassi ogni riga di testo la paga la fotografia. L'estratto e'
+     la parte piu' sacrificabile: titolo, localita' e numeri dicono gia' tutto
+     quello che serve per decidere se aprire la scheda. */
+  .showcase.e-bloccata .showcase-item .property-excerpt { display: none; }
+  /* Senza l'estratto la riga dei numeri resterebbe a mezz'aria. */
+  .showcase.e-bloccata .showcase-item .property-specs {
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+  }
+}
+
+.showcase.e-bloccata .showcase-track {
+  /* Si sposta di `--corsa`, non di `-100% + 100vw`: la percentuale
+     dipenderebbe dalla larghezza calcolata dell'elemento, che e' proprio il
+     dato di cui non ci si puo' fidare ovunque. */
+  transform: translateX(calc(var(--avanzamento, 0) * -1 * var(--corsa)));
+  will-change: transform;
+}
+
+.showcase.e-bloccata .showcase-avanzamento {
+  display: block;
+  position: relative;
+  height: 2px;
+  margin: 2rem var(--bordo) 0;
+  background: var(--border);
+}
+.showcase.e-bloccata .showcase-avanzamento span {
+  position: absolute;
+  inset: 0 0 0 0;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(var(--avanzamento, 0));
+}
+
+/* Dove il browser sa animare sulla posizione dello scorrimento, se ne occupa
+   lui: gira sul compositor, non tocca il main thread e non perde un fotogramma
+   nemmeno scorrendo di scatto. */
+@supports (animation-timeline: view()) {
+  .showcase.e-bloccata .showcase-track {
+    animation: vetrina-scorri linear both;
+    animation-timeline: --vetrina;
+    /* `contain` e' esattamente il tratto in cui la sezione copre lo schermo,
+       cioe' quello in cui il blocco resta incollato. */
+    animation-range: contain 0% contain 100%;
+  }
+  .showcase.e-bloccata .showcase-avanzamento span {
+    animation: vetrina-avanza linear both;
+    animation-timeline: --vetrina;
+    animation-range: contain 0% contain 100%;
+  }
+}
+
+@keyframes vetrina-scorri {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-1 * var(--corsa))); }
+}
+
+@keyframes vetrina-avanza {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+
+/* ==========================================================================
    Animazioni
    Attive solo se <html> porta la classe .js-anim, aggiunta dallo script inline
    in <head> quando: JS e' attivo, IntersectionObserver esiste e l'utente non ha
@@ -1178,6 +1524,45 @@ textarea { resize: vertical; min-height: 140px; }
     opacity: 1;
     transform: none;
   }
+}
+
+/* ---------- Entrata a scossa ----------
+   Le schede compaiono una alla volta e si assestano con un'oscillazione
+   smorzata: entra, sbanda, rientra.
+
+   A differenza della rivelazione qui l'animazione e' legata al *tempo*, non
+   alla posizione nello scorrimento: un'oscillazione su timeline di scorrimento
+   si fermerebbe a meta' non appena si smette di scorrere, e fermando il dito
+   si vedrebbe una scheda storta. Quindi parte una volta — quando il gruppo
+   entra in campo — e poi va per conto suo.
+
+   Il ritardo lo detta `--i`, che arriva da `data-stagger`. Con `both` la
+   scheda resta invisibile per tutta l'attesa, ed e' quello che fa leggere la
+   sequenza come "una alla volta" invece che "tutte insieme sfalsate". */
+
+.js-anim [data-scossa] > * {
+  opacity: 0;
+  /* Perno vicino alla base: la scheda sembra appoggiata e spinta, non
+     appesa e fatta girare. */
+  transform-origin: 50% 90%;
+}
+
+/* Il ritardo lo scrive main.js sulla singola scheda, in base a quante ne
+   sono entrate in campo insieme a lei. */
+.js-anim [data-scossa] > .e-in-scena {
+  animation: ev-scossa 820ms ease-out both;
+  animation-delay: var(--ritardo-scossa, 0ms);
+}
+
+@keyframes ev-scossa {
+  0%   { opacity: 0; transform: translate3d(0, 26px, 0)    rotate(-4deg); }
+  20%  { opacity: 1; transform: translate3d(0, 0, 0)       rotate(3deg); }
+  38%  {             transform: translate3d(-13px, 0, 0)   rotate(-2.1deg); }
+  54%  {             transform: translate3d(9px, 0, 0)     rotate(1.4deg); }
+  68%  {             transform: translate3d(-5.5px, 0, 0)  rotate(-0.8deg); }
+  82%  {             transform: translate3d(2.5px, 0, 0)   rotate(0.4deg); }
+  92%  {             transform: translate3d(-1px, 0, 0)    rotate(-0.15deg); }
+  100% { opacity: 1; transform: none; }
 }
 
 /* Indice progressivo per scaglionare i figli di un contenitore */
@@ -1298,11 +1683,16 @@ html.ev-intro .intro {
 
 /* ---------- Sequenza di ingresso della home ---------- */
 /* Lieve zoom all'indietro sulla fotografia dell'hero */
-.js-anim .hero-media img {
+.js-anim .hero-media img,
+.js-anim .hero-media video {
   transform: scale(1.07);
-  transition: transform 2200ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* L'opacita' resta nella lista: sul video serve per la comparsa in
+     dissolvenza, e sulla fotografia non fa nulla. */
+  transition: transform 2200ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 900ms ease;
 }
-.js-anim.is-loaded .hero-media img { transform: none; }
+.js-anim.is-loaded .hero-media img,
+.js-anim.is-loaded .hero-media video { transform: none; }
 
 /* Testo dell'hero: comparsa scaglionata dall'alto verso il basso.
    Non usa [data-reveal] perche' non dipende dallo scroll ma dal caricamento. */
@@ -1337,7 +1727,8 @@ html.ev-intro .intro {
     opacity: 1 !important;
     transform: none !important;
   }
-  .js-anim .hero-media img { transform: none !important; }
+  .js-anim .hero-media img,
+  .js-anim .hero-media video { transform: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

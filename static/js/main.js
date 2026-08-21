@@ -188,6 +188,52 @@
       });
     }
 
+    /* --- Entrata a scossa ---
+       Si osservano le singole schede, e il ritardo lo detta la posizione
+       dentro il *lotto* che entra in campo nello stesso momento.
+
+       E' quello che fa funzionare la sequenza sia in riga che in colonna:
+       su schermo largo le tre schede varcano la soglia nello stesso
+       fotogramma, arrivano in un'unica chiamata e prendono ritardi 0, 200,
+       400ms — una alla volta. Sul telefono la griglia e' a una colonna, si
+       incontrano una per volta scorrendo, ogni chiamata ne porta una sola e il
+       ritardo e' sempre zero: la sequenza la fa gia' lo scorrimento, un attesa
+       in piu' sarebbe solo una scheda che tarda a comparire.
+
+       Osservare il gruppo invece delle schede sarebbe stato piu' corto ma
+       sbagliato in colonna: la seconda e la terza si sarebbero animate fuori
+       campo, e arrivandoci si sarebbero trovate gia' ferme.
+
+       Vale sempre, anche dove il browser ha le timeline di scorrimento: qui
+       serve il tempo. Un'oscillazione legata alla posizione si fermerebbe a
+       meta' fermando il dito, lasciando una scheda storta. */
+    var schede = document.querySelectorAll("[data-scossa] > *");
+    if (schede.length && "IntersectionObserver" in window) {
+      var PASSO_SCOSSA = 200;   // ms fra una scheda e la successiva
+      var scossaViva = false;
+
+      var osservaScossa = new IntersectionObserver(
+        function (voci) {
+          scossaViva = true;
+          var entranti = voci.filter(function (v) { return v.isIntersecting; });
+          entranti.forEach(function (v, i) {
+            v.target.style.setProperty("--ritardo-scossa", i * PASSO_SCOSSA + "ms");
+            v.target.classList.add("e-in-scena");
+            osservaScossa.unobserve(v.target);   // una volta sola
+          });
+        },
+        { rootMargin: "0px 0px -10% 0px", threshold: 0.2 }
+      );
+      schede.forEach(function (c) { osservaScossa.observe(c); });
+
+      // Stessa rete di sicurezza della rivelazione: se l'observer non da'
+      // segni di vita si mostra tutto. Meglio senza effetto che vuoto.
+      setTimeout(function () {
+        if (scossaViva) return;
+        schede.forEach(function (c) { c.classList.add("e-in-scena"); });
+      }, 2000);
+    }
+
     // Rivelazione allo scroll.
     // Se il browser sa animare sulla timeline dello scroll, il CSS fa tutto da
     // solo (vedi il blocco @supports in style.css) e qui non si crea nulla:
@@ -221,6 +267,87 @@
         if (observerAlive) return;
         targets.forEach(function (el) { el.classList.add("is-visible"); });
       }, 2000);
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Video di sfondo dell'hero
+     Il markup non porta `src`: e' qui che si decide se vale la pena
+     scaricarlo. Se la risposta e' no — e anche se questo file non gira
+     affatto — l'hero resta sulla fotografia, che e' un fotogramma dello
+     stesso video.
+     ------------------------------------------------------------------ */
+  var video = document.getElementById("hero-video");
+  var comandoVideo = document.getElementById("hero-video-toggle");
+
+  if (video) {
+    var rete = navigator.connection || {};
+    var saltaVideo =
+      rete.saveData === true ||                             // risparmio dati
+      /(^|-)2g$/.test(rete.effectiveType || "") ||           // rete lenta
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (!saltaVideo) {
+      var pausaUtente = false;
+
+      function riprendiVideo() {
+        if (pausaUtente || !video.paused) return;
+        var p = video.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+
+      function attaccaVideo() {
+        // La sorgente si sceglie una volta sola, sulla larghezza d'apertura:
+        // cambiarla dopo farebbe ricominciare lo scaricamento da zero.
+        var piccolo = window.innerWidth <= 760;
+        video.src = video.getAttribute(piccolo ? "data-src-piccolo" : "data-src-grande");
+        video.muted = true;          // senza questo l'avvio automatico e' vietato
+        video.preload = "auto";
+
+        video.addEventListener("playing", function () {
+          video.classList.add("e-pronto");
+          if (comandoVideo) comandoVideo.hidden = false;
+        }, { once: true });
+
+        var avvio = video.play();
+        // Avvio automatico negato o formato rifiutato: si resta sulla
+        // fotografia. Non e' un errore da segnalare in console.
+        if (avvio && avvio.catch) avvio.catch(function () {});
+      }
+
+      // Si parte a pagina caricata: il video non deve contendere la banda alla
+      // fotografia dell'hero, che e' l'elemento misurato come LCP.
+      if (document.readyState === "complete") attaccaVideo();
+      else window.addEventListener("load", attaccaVideo, { once: true });
+
+      // Fuori dallo schermo o in una scheda in secondo piano non si decodifica
+      // nulla: e' batteria e ventola risparmiate senza che nessuno lo noti.
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) video.pause();
+        else riprendiVideo();
+      });
+
+      if ("IntersectionObserver" in window) {
+        new IntersectionObserver(function (voci) {
+          voci.forEach(function (v) {
+            if (v.isIntersecting) riprendiVideo();
+            else video.pause();
+          });
+        }, { threshold: 0 }).observe(video);
+      }
+
+      if (comandoVideo) {
+        comandoVideo.addEventListener("click", function () {
+          pausaUtente = !pausaUtente;
+          comandoVideo.classList.toggle("in-pausa", pausaUtente);
+          comandoVideo.setAttribute(
+            "aria-label",
+            pausaUtente ? "Riprendi il video di sfondo" : "Metti in pausa il video di sfondo"
+          );
+          if (pausaUtente) video.pause();
+          else { var p = video.play(); if (p && p.catch) p.catch(function () {}); }
+        });
+      }
     }
   }
 
@@ -259,6 +386,111 @@
         navToggle.setAttribute("aria-expanded", "false");
         syncHeader();
       }
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Vetrina bloccata: schede raggiunte col tabulatore
+     Quando la sezione e' incollata, la fila non e' un contenitore di
+     scorrimento: il browser non sa come portare in vista una scheda fuori
+     campo. Ci pensiamo noi scorrendo la pagina, che e' quello che muove la
+     fila. Il rapporto e' 1 a 1 — l'altezza della sezione e' calcolata apposta
+     in style.css — quindi lo spostamento richiesto e' anche i pixel da
+     scorrere, senza conversioni.
+     ------------------------------------------------------------------ */
+  var pista = document.getElementById("showcase-track");
+  var vetrina = pista && pista.closest(".showcase");
+  var blocco = pista && pista.closest(".showcase-pin");
+
+  if (pista && vetrina && blocco) {
+    /* --- quando bloccare ---
+       Schermo largo e nessuna richiesta di ridurre le animazioni. Sotto quella
+       soglia, o con la preferenza attiva, resta la fila trascinabile: cambiare
+       il senso dello scorrimento e' esattamente la sorpresa che quella
+       preferenza vuole evitare, e su un telefono il gesto naturale e' gia'
+       quello laterale. */
+    /* Vale anche sul telefono: il pollice scorre in verticale come sempre e la
+       fila avanza. Il vincolo non e' la larghezza ma l'altezza — sotto i 520px
+       (telefono coricato) non resterebbe spazio per una scheda leggibile, e li'
+       si torna alla fila trascinabile. */
+    var alto = window.matchMedia("(min-height: 520px)");
+    var fermo = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    /* Le timeline di scorrimento del CSS non ci sono ovunque: oggi mancano a
+       Firefox e alle versioni di Safari precedenti alla 26. Dove ci sono fa
+       tutto il CSS sul compositor; dove mancano l'avanzamento lo calcoliamo
+       qui e lo passiamo come `--avanzamento`. Il layout e' lo stesso nei due
+       casi, cambia solo chi muove la fila. */
+    var timelineCSS =
+      window.CSS && CSS.supports && CSS.supports("animation-timeline", "view()");
+
+    var inCoda = false;
+    function aggiornaAvanzamento() {
+      inCoda = false;
+      /* Le due misure si prendono dal layout vero, non da `innerHeight` e
+         `--header-h`: su iOS `innerHeight` cambia mentre la barra
+         dell'indirizzo si ritira, mentre il blocco e' alto in `svh` e sta
+         fermo. Leggendo l'elemento non c'e' modo che i due numeri divergano. */
+      var q = vetrina.getBoundingClientRect();
+      var attacco = parseFloat(getComputedStyle(blocco).top) || 0;
+      var tratto = q.height - blocco.getBoundingClientRect().height;
+      if (tratto <= 0) return;
+      // Quando `q.top` vale `attacco` il blocco si incolla: li' siamo a 0.
+      var p = (attacco - q.top) / tratto;
+      vetrina.style.setProperty("--avanzamento", Math.min(1, Math.max(0, p)));
+    }
+
+    function alloScroll() {
+      if (inCoda) return;
+      inCoda = true;
+      requestAnimationFrame(aggiornaAvanzamento);
+    }
+
+    var ascolta = false;
+    function sincronizza() {
+      var deve = alto.matches && !fermo.matches;
+      vetrina.classList.toggle("e-bloccata", deve);
+
+      // L'ascoltatore serve solo dove il CSS non sa fare da solo.
+      var serve = deve && !timelineCSS;
+      if (serve && !ascolta) {
+        window.addEventListener("scroll", alloScroll, { passive: true });
+        ascolta = true;
+        aggiornaAvanzamento();
+      } else if (!serve && ascolta) {
+        window.removeEventListener("scroll", alloScroll);
+        ascolta = false;
+        vetrina.style.removeProperty("--avanzamento");
+      }
+    }
+
+    sincronizza();
+    window.addEventListener("resize", sincronizza, { passive: true });
+    // Su Safari vecchio `addEventListener` sulle media query non c'e'.
+    [alto, fermo].forEach(function (mq) {
+      if (mq.addEventListener) mq.addEventListener("change", sincronizza);
+      else if (mq.addListener) mq.addListener(sincronizza);
+    });
+
+    document.addEventListener("focusin", function (e) {
+      // Nella variante trascinabile il contenitore scorre da solo: non tocchiamo.
+      if (getComputedStyle(blocco).position !== "sticky") return;
+
+      var tessera = e.target.closest ? e.target.closest(".showcase-item") : null;
+      if (!tessera || !pista.contains(tessera)) return;
+
+      var q = tessera.getBoundingClientRect();
+      var margine = 32;
+      var delta = 0;
+      if (q.right > window.innerWidth - margine) {
+        delta = q.right - (window.innerWidth - margine);
+      } else if (q.left < margine) {
+        delta = q.left - margine;
+      }
+      // `--ritmo` dice quanti pixel percorre la fila per pixel scorso: per
+      // spostarla di `delta` bisogna scorrere di `delta / ritmo`.
+      var ritmo = parseFloat(getComputedStyle(vetrina).getPropertyValue("--ritmo")) || 1;
+      if (delta) window.scrollBy({ top: delta / ritmo, behavior: "smooth" });
     });
   }
 

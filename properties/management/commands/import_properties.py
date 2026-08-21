@@ -12,6 +12,7 @@ le scarica dal CDN del portale dentro MEDIA_ROOT, saltando quelle già presenti.
 
 import json
 import pathlib
+import re
 import time
 import urllib.error
 import urllib.request
@@ -25,6 +26,43 @@ from properties.models import Amenity, Property, PropertyImage
 from properties.utils import testo_alternativo
 
 SNAPSHOT = pathlib.Path(__file__).resolve().parents[2] / "data" / "portale_immobili.json"
+# Il portale antepone alla descrizione un blocco di dati: "Descrizione",
+# ospiti, camere, bagni, codici. Sono cose che il sito tiene gia' nei propri
+# campi, e in cima al testo diventano rumore — in home, dentro le schede, si
+# leggeva "Descrizione 4 Ospiti 2 camere da letto 1 bagno Codice..." al posto
+# della presentazione dell'immobile.
+RIGA_DI_SERVIZIO = re.compile(
+    r"""^\s*[-–•]?\s*(?:      # a volte la riga e' puntata: "-1° piano"
+          descrizione\b[^:\n]*:?            # "Descrizione", "DESCRIZIONE ALLOGGIO:"
+        | \d+(?:[.,]\d+)?\s+ospit[ei]
+        | \d+(?:[.,]\d+)?\s+camer[ae](?:\s+da\s+letto)?
+        | \d+(?:[.,]\d+)?\s+bagn[oi]
+        | \d+(?:[.,]\d+)?\s+lett[oi]
+        | \d+(?:[.,]\d+)?\s*°?\s*piano          # "1° piano"
+        | \d+(?:[.,]\d+)?\s*m\s*[²2]\b           # "100 m2"
+        | codice\s+licenza\s*:.*
+        | codice\s+identificativo\s+nazionale\s*:.*
+        | cin\s*:.*
+    )\s*$""",
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
+def ripulisci_descrizione(testo):
+    """Toglie l'intestazione del portale, fermandosi alla prima riga di prosa.
+
+    Salta solo le righe in testa: una riga di servizio che comparisse in mezzo
+    al testo resta dov'e', perche' li' potrebbe essere voluta. Se dopo la
+    pulizia non resta nulla si tiene il testo originale — meglio un'intestazione
+    che una scheda vuota.
+    """
+    righe = testo.replace("\r\n", "\n").split("\n")
+    i = 0
+    while i < len(righe) and (not righe[i].strip() or RIGA_DI_SERVIZIO.match(righe[i])):
+        i += 1
+    return "\n".join(righe[i:]).strip() or testo.strip()
+
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
     "Referer": "https://evhouse.kross.travel/",
@@ -97,7 +135,7 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------ dati
 
     def _salva(self, r, mappa):
-        descrizione = r["descrizione"].strip()
+        descrizione = ripulisci_descrizione(r["descrizione"])
         breve = Truncator(descrizione.replace("\n", " ")).chars(300, truncate="…")
         citta = r["citta"] or "Sardegna"
 

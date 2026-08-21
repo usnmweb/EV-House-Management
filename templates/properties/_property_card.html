@@ -1,5 +1,10 @@
 {% load static %}
-<article class="property-card" data-reveal>
+{% comment %}
+  `senza_reveal` serve al carosello della home: li' animazione di rivelazione
+  e legata alla posizione verticale, e dentro un contenitore bloccato che
+  scorre in orizzontale non avanzerebbe mai — le schede resterebbero invisibili.
+{% endcomment %}
+<article class="property-card"{% if not senza_reveal %} data-reveal{% endif %}>
   <div class="property-card-media">
     {% with cover=property.cover_image %}
       {% if cover %}
@@ -19,9 +24,9 @@
     <p class="property-excerpt">{{ property.short_description|truncatewords:20 }}</p>
 
     <div class="property-specs">
-      <span><strong>{{ property.guests }}</strong> ospiti</span>
-      {% if property.bedrooms %}<span><strong>{{ property.bedrooms }}</strong> camere</span>{% endif %}
-      {% if property.bathrooms %}<span><strong>{{ property.bathrooms }}</strong> bagni</span>{% endif %}
+      <span><strong>{{ property.guests }}</strong> ospit{{ property.guests|pluralize:"e,i" }}</span>
+      {% if property.bedrooms %}<span><strong>{{ property.bedrooms }}</strong> camer{{ property.bedrooms|pluralize:"a,e" }}</span>{% endif %}
+      {% if property.bathrooms %}<span><strong>{{ property.bathrooms }}</strong> bagn{{ property.bathrooms|pluralize:"o,i" }}</span>{% endif %}
     </div>
   </div>
 </article>

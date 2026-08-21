@@ -13,10 +13,12 @@ from .forms import ContactForm
 
 def home(request):
     pubblicati = Property.objects.published()
-    featured = (
-        pubblicati.filter(featured=True).prefetch_related("images")[:3]
-        or pubblicati.prefetch_related("images")[:3]
-    )
+
+    # Nove immobili per il carosello della home. Solo con almeno una fotografia:
+    # una scheda con il segnaposto "EV" in mezzo alla vetrina stona.
+    # `distinct()` serve perche' il join sulle immagini duplica le righe.
+    con_foto = pubblicati.filter(images__isnull=False).distinct().prefetch_related("images")
+    featured = con_foto.filter(featured=True)[:9] or con_foto[:9]
     return render(
         request,
         "core/home.html",
