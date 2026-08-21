@@ -489,10 +489,14 @@ body.has-hero .site-header:not(.is-solid) .nav-toggle span { background: #f7f4ee
   box-shadow: var(--card-shadow);
   overflow: hidden;
   display: flex; flex-direction: column;
-  transition: border-color var(--transition), transform var(--transition),
+  transition: border-color var(--transition), translate var(--transition),
               background-color var(--transition);
 }
-.property-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+/* Il sollevamento usa `translate`, non `transform`: l'animazione di rivelazione
+   occupa `transform` e, avendo un'animazione la precedenza sulle dichiarazioni
+   normali, il sollevamento verrebbe ignorato. `translate` e' una proprieta'
+   indipendente e si compone con l'altra invece di scontrarsi. */
+.property-card:hover { border-color: var(--accent); translate: 0 -4px; }
 
 .property-card-media {
   position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface-alt);
@@ -867,6 +871,141 @@ textarea { resize: vertical; min-height: 140px; }
   .cookie-actions { flex-shrink: 0; }
 }
 
+
+/* ==========================================================================
+   Micro-interazioni
+   Tutte in CSS, nessuna libreria. Animano solo `transform` e `opacity`, che il
+   browser compone sulla GPU senza ricalcolare il layout.
+
+   Ogni effetto vale anche per `:focus-visible`, non solo per `:hover`: chi
+   naviga da tastiera deve ricevere lo stesso segnale di chi usa il mouse.
+   Sono decorazioni: nessun contenuto compare solo al passaggio del mouse,
+   perche' sui dispositivi tattili quel passaggio non esiste.
+   Il blocco `prefers-reduced-motion` in fondo al file le azzera tutte.
+   ========================================================================== */
+
+/* ---------- Sottolineatura che si disegna ---------- */
+.primary-nav > ul > li > a:not(.nav-cta),
+.footer-col a,
+.prose p a,
+.breadcrumb a {
+  position: relative;
+}
+.primary-nav > ul > li > a:not(.nav-cta)::after,
+.footer-col a::after,
+.prose p a::after,
+.breadcrumb a::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--transition);
+}
+.primary-nav > ul > li > a:not(.nav-cta):hover::after,
+.primary-nav > ul > li > a:not(.nav-cta):focus-visible::after,
+.footer-col a:hover::after,
+.footer-col a:focus-visible::after,
+.prose p a:hover::after,
+.prose p a:focus-visible::after,
+.breadcrumb a:hover::after,
+.breadcrumb a:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ---------- Bottoni ---------- */
+/* Il bordato si riempie da sinistra: il colore entra, non si accende di colpo. */
+.btn-outline,
+.btn-quiet,
+.nav-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-outline::before,
+.btn-quiet::before,
+.nav-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--accent-dim);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition);
+}
+.btn-outline:hover::before,
+.btn-outline:focus-visible::before,
+.btn-quiet:hover::before,
+.btn-quiet:focus-visible::before,
+.nav-cta:hover::before,
+.nav-cta:focus-visible::before {
+  transform: scaleX(1);
+}
+
+/* Il pieno non puo' riempirsi ancora: si solleva. */
+.btn-primary {
+  transition: transform var(--transition), background-color var(--transition),
+              border-color var(--transition), box-shadow var(--transition);
+}
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px var(--accent-dim);
+}
+.btn:active { transform: translateY(1px); }
+
+/* ---------- Card immobile ---------- */
+/* Il titolo si sottolinea quando il mouse e' sulla card, non solo sul titolo:
+   il bersaglio percepito e' la card intera. */
+.property-card-body h3 a { position: relative; }
+.property-card-body h3 a::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -4px;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--transition);
+}
+.property-card:hover .property-card-body h3 a::after,
+.property-card-body h3 a:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+/* La targhetta della tipologia rientra di un soffio. */
+.badge-cat { transition: transform var(--transition); }
+.property-card:hover .badge-cat { transform: translateX(4px); }
+
+/* ---------- Campi del modulo ---------- */
+/* Una riga dorata si apre sotto al campo attivo, oltre al bordo. */
+.form-field, .filter-bar > div { position: relative; }
+.form-field::after, .filter-bar > div::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform var(--transition);
+}
+.form-field:focus-within::after,
+.filter-bar > div:focus-within::after { transform: scaleX(1); }
+
+/* ---------- Selettore del tema ---------- */
+.theme-toggle svg { transition: transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.theme-toggle:hover svg,
+.theme-toggle:focus-visible svg { transform: rotate(-18deg) scale(1.1); }
+.theme-toggle:active svg { transform: rotate(-18deg) scale(0.92); }
+
+/* ---------- Miniature della galleria ---------- */
+.gallery-thumb img { transition: transform var(--transition); }
+.gallery-thumb:hover img { transform: scale(1.08); }
+
 /* ==========================================================================
    Breakpoints
    ========================================================================== */
@@ -947,6 +1086,100 @@ textarea { resize: vertical; min-height: 140px; }
 .js-anim [data-reveal="fade"] { transform: none; }
 .js-anim [data-reveal].is-visible { opacity: 1; transform: none; }
 
+/* ---------- Parallax dell'hero ----------
+   La fotografia scorre piu' lentamente della pagina. Due accorgimenti:
+
+   1. Il movimento e' sul contenitore `.hero-media`, non sull'immagine: l'immagine
+      ha gia' il proprio `transform` per lo zoom d'ingresso, e due animazioni sulla
+      stessa proprieta' dello stesso elemento si escluderebbero a vicenda.
+   2. Il contenitore e' piu' alto dell'hero, altrimenti scorrendo verso il basso
+      si scoprirebbe una striscia vuota sul bordo superiore.
+
+   Sta dentro `.js-anim`, quindi con `prefers-reduced-motion` non esiste: e' proprio
+   il tipo di movimento che da' fastidio a chi soffre di disturbi vestibolari. */
+
+@keyframes ev-parallax {
+  from { transform: translateY(0); }
+  to   { transform: translateY(15%); }
+}
+
+@supports (animation-timeline: scroll()) {
+  .js-anim .hero-media {
+    /* Il margine deve superare lo spostamento massimo, altrimenti a fondo
+       corsa il bordo superiore si scopre. Lo spostamento e' il 15% dell'altezza
+       del contenitore, che a sua volta e' il 140% dell'hero: 0,15 x 1,40 = 0,21,
+       sotto il margine superiore di 0,22. */
+    top: -22%;
+    height: 140%;
+    animation: ev-parallax linear both;
+    /* `scroll(root)` e non `scroll()`: quest'ultimo vale `scroll(nearest)` e
+       aggancerebbe .hero, che avendo `overflow: hidden` e' un contenitore di
+       scorrimento a tutti gli effetti — ma non scorre mai, quindi la timeline
+       resterebbe ferma a zero. */
+    animation-timeline: scroll(root);
+    /* Si esaurisce nel primo schermo di scorrimento: oltre, l'hero e' gia' via. */
+    animation-range: 0 100vh;
+  }
+}
+
+/* ---------- Variante nativa: animazioni guidate dallo scroll ----------
+   Dove il browser supporta `animation-timeline: view()` la rivelazione smette di
+   essere una transizione pilotata da JavaScript e diventa un'animazione legata
+   alla posizione dell'elemento nello scrollport. Tre vantaggi concreti:
+
+     - gira sul compositor, quindi non occupa il main thread (meglio per INP);
+     - non dipende da callback: con lo scorrimento veloce nessun elemento resta
+       indietro, perche' lo stato e' funzione della posizione, non di un evento;
+     - il JavaScript dell'observer non viene nemmeno creato (vedi main.js).
+
+   Resta tutto dentro `.js-anim`, quindi valgono ancora le due garanzie di prima:
+   senza JavaScript non si nasconde nulla, e con `prefers-reduced-motion` la
+   classe non viene aggiunta e le animazioni non esistono. */
+
+@keyframes ev-reveal {
+  from { opacity: 0; transform: translateY(56px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes ev-reveal-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@supports (animation-timeline: view()) {
+  .js-anim [data-reveal] {
+    /* La transizione non serve piu': lo stato lo detta il keyframe.
+       `both` tiene l'elemento allo stato iniziale prima del range e a quello
+       finale dopo, cosi' non ricompare mai a meta'. */
+    transition: none;
+    animation: ev-reveal linear both;
+    animation-timeline: view();
+    /* L'intervallo resta dentro la fase `entry`, cioe' il tratto in cui
+       l'elemento sta entrando dal basso. Usare `cover` come estremo finale
+       spalmava la comparsa su oltre 700px di scorrimento: tecnicamente
+       un'animazione, in pratica una velatura che l'occhio non legge.
+       Qui si apre e si chiude mentre l'elemento entra, quindi si nota.
+
+       Lo scaglionamento sposta l'intervallo in avanti in base a --i: i figli
+       successivi completano un po' piu' tardi e si ottiene la cascata senza
+       ritardi temporali, che su una timeline di scroll non esistono. Il
+       moltiplicatore e' basso di proposito, per non sforare il 100%. */
+    animation-range:
+      entry calc(14% + var(--i, 0) * 2.5%)
+      entry calc(56% + var(--i, 0) * 2.5%);
+  }
+
+  .js-anim [data-reveal="fade"] {
+    animation-name: ev-reveal-fade;
+  }
+
+  /* Con la timeline non serve piu' la classe applicata dall'observer. */
+  .js-anim [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Indice progressivo per scaglionare i figli di un contenitore */
 .js-anim [data-stagger] > :nth-child(1) { --i: 0; }
 .js-anim [data-stagger] > :nth-child(2) { --i: 1; }
@@ -960,6 +1193,108 @@ textarea { resize: vertical; min-height: 140px; }
 .js-anim [data-stagger] > :nth-child(10) { --i: 9; }
 .js-anim [data-stagger] > :nth-child(11) { --i: 10; }
 .js-anim [data-stagger] > :nth-child(12) { --i: 11; }
+
+/* ---------- Sipario d'ingresso ----------
+   Schermo nero con logo e claim, poi si dissolve sulla home.
+
+   Il movimento e' tutto in CSS: JavaScript si limita ad aggiungere la classe
+   `ev-intro` su <html> e a togliere il blocco dello scorrimento alla fine.
+   Cosi', se lo script si interrompe a meta', il sipario se ne va lo stesso —
+   l'animazione finale termina su `visibility: hidden`, che smette anche di
+   intercettare i click.
+
+   Le due durate sono dichiarate qui e rilette da main.js: un solo posto da
+   toccare per cambiare il ritmo. Vanno tenute in millisecondi. */
+:root {
+  --intro-attesa: 1700ms;   /* dal caricamento all'inizio della dissolvenza */
+  --intro-uscita: 620ms;    /* durata della dissolvenza */
+}
+
+/* Senza la classe su <html> il sipario non esiste. */
+.intro { display: none; }
+
+/* Niente scorrimento mentre il sipario e' alzato: sotto c'e' la home che si
+   sta preparando, e uno scroll a vuoto tradirebbe il trucco. */
+html.ev-intro { overflow: hidden; }
+
+html.ev-intro .intro {
+  display: grid;
+  place-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;          /* sopra header (100) e banner cookie (200) */
+  background: #0a0a0a;
+  animation: ev-intro-esce cubic-bezier(0.65, 0, 0.35, 1) both;
+  animation-duration: var(--intro-uscita);
+  animation-delay: var(--intro-attesa);
+}
+
+.intro-inner {
+  display: grid;
+  justify-items: center;
+  gap: 1.6rem;
+  padding: 2rem;
+  text-align: center;
+  /* Il gruppo si allarga appena mentre il nero svanisce: da' l'impressione
+     che il sipario si apra invece di spegnersi. */
+  animation: ev-intro-allarga cubic-bezier(0.65, 0, 0.35, 1) both;
+  animation-duration: var(--intro-uscita);
+  animation-delay: var(--intro-attesa);
+}
+
+.intro-logo {
+  width: min(400px, 66vw);
+  height: auto;
+  animation: ev-intro-logo 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.intro-riga {
+  display: block;
+  width: min(260px, 52vw);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #dcbb4e 22%, #dcbb4e 78%, transparent);
+  transform-origin: center;
+  animation: ev-intro-riga 520ms cubic-bezier(0.16, 1, 0.3, 1) 340ms both;
+}
+
+.intro-claim {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 4.4vw, 1.9rem);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #f4efe4;
+  animation: ev-intro-claim 620ms cubic-bezier(0.16, 1, 0.3, 1) 560ms both;
+}
+
+@keyframes ev-intro-logo {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes ev-intro-riga {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+@keyframes ev-intro-claim {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes ev-intro-allarga {
+  from { transform: scale(1); }
+  to   { transform: scale(1.06); }
+}
+
+/* `visibility` non si interpola: resta `visible` per tutta l'animazione e
+   scatta a `hidden` sull'ultimo fotogramma. E' quello che serve — il sipario
+   smette di coprire e di ricevere click anche se il JS non arriva a togliere
+   la classe. */
+@keyframes ev-intro-esce {
+  from { opacity: 1; visibility: visible; }
+  to   { opacity: 0; visibility: hidden; }
+}
 
 /* ---------- Sequenza di ingresso della home ---------- */
 /* Lieve zoom all'indietro sulla fotografia dell'hero */
@@ -1006,6 +1341,11 @@ textarea { resize: vertical; min-height: 140px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Ridondante — senza `js-anim` la classe `ev-intro` non viene mai aggiunta —
+     ma copre il caso in cui la preferenza cambi a pagina gia' aperta. */
+  .intro { display: none !important; }
+  html.ev-intro { overflow: visible !important; }
+
   html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

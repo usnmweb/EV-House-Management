@@ -1,0 +1,21 @@
+{% load static %}
+{% comment %}
+  Sipario d'ingresso della home.
+
+  Non e' visibile per impostazione predefinita: il CSS lo tiene a `display: none`
+  finche' <html> non porta la classe `ev-intro`, che lo script in <head> aggiunge
+  solo quando le animazioni sono ammesse e il sipario non e' gia' stato mostrato
+  in questa sessione. Senza JavaScript, o con "riduci movimento" attivo, questo
+  markup non produce nulla e la home si apre subito.
+
+  E' decorativo: `aria-hidden` lo esclude dalle tecnologie assistive, che
+  leggono direttamente il contenuto della pagina sottostante.
+{% endcomment %}
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro-inner">
+    <img class="intro-logo" src="{% static 'img/logo-su-scuro.png' %}"
+         alt="" width="760" height="198" fetchpriority="high" decoding="async">
+    <span class="intro-riga"></span>
+    <p class="intro-claim">Scegli i professionisti</p>
+  </div>
+</div>

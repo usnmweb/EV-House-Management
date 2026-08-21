@@ -311,7 +311,32 @@ rapporto 16:9.
 
 ## Animazioni
 
-Due meccanismi distinti.
+Tre meccanismi distinti.
+
+**Il sipario** (solo home): schermo nero con logo e claim *Scegli i
+professionisti*, poi dissolvenza sulla home. Dura circa 2,3 secondi in tutto e si
+salta con un click, un tasto, la rotella o un tocco.
+
+Compare **una volta per sessione del browser**: la seconda visita alla home apre
+la pagina direttamente. Per rivederlo senza chiudere il browser si aggiunge
+`?intro=1` all'indirizzo.
+
+Il markup sta in `templates/_intro.html`, incluso dalla home tramite i blocchi
+`sipario` e `intro` di `base.html`. Per metterlo anche altrove basta ridefinire
+quei due blocchi nella pagina; per toglierlo del tutto si cancellano dalla home.
+
+Il ritmo si regola da due token in `static/css/style.css`:
+
+```css
+:root {
+  --intro-attesa: 1700ms;   /* quanto resta fermo prima di dissolversi */
+  --intro-uscita: 620ms;    /* durata della dissolvenza */
+}
+```
+
+`main.js` li rilegge da lì, quindi non c'è un secondo posto da aggiornare. La
+comparsa della home parte quando il nero inizia a svanire, non quando è sparito:
+i due movimenti si sovrappongono e il passaggio non ha stacchi.
 
 **All'ingresso** (solo home): la fotografia dell'hero fa un lieve zoom
 all'indietro (`scale(1.07)` → `1`) mentre eyebrow, titolo, testo e bottoni
@@ -341,6 +366,12 @@ In più, se l'observer viene creato ma non emette mai la prima callback (un
 observer sano la emette sempre, anche per elementi non intersecanti), dopo 2
 secondi un timer mostra tutto. Meglio perdere l'animazione che lasciare la
 pagina vuota.
+
+Lo stesso vale per il sipario, che è governato dalla classe `ev-intro`: se JS è
+spento la classe non c'è e il CSS lo tiene a `display: none`. E se lo script si
+interrompe a metà il sipario se ne va lo stesso, perché l'animazione finale
+termina su `visibility: hidden` — smette di coprire e di intercettare i click
+anche senza che nessuno tolga la classe.
 
 ---
 

@@ -3,6 +3,18 @@
 
 {% block body_class %}has-hero{% endblock %}
 
+{# La home e' l'unica pagina con il sipario d'ingresso. #}
+{% block sipario %}true{% endblock %}
+{% block intro %}{% include "_intro.html" %}{% endblock %}
+
+{% block extra_head %}
+  {% comment %}
+    Stesso file del logo in header: il precarico non e' mai sprecato, ma qui
+    evita che il sipario resti nero per una frazione di secondo.
+  {% endcomment %}
+  <link rel="preload" as="image" href="{% static 'img/logo-su-scuro.png' %}" fetchpriority="high">
+{% endblock %}
+
 {% block content %}
 <section class="hero">
   <div class="hero-media">

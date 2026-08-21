@@ -122,18 +122,80 @@
      La classe .js-anim e' gia' stata messa (o no) dallo script inline in
      <head>: qui ci limitiamo a far scattare le sequenze.
      ------------------------------------------------------------------ */
-  var root = document.documentElement;
   var animate = root.classList.contains("js-anim");
 
   if (animate) {
     // Ingresso: due frame di attesa perche' lo stato iniziale sia stato
     // dipinto, altrimenti il browser salta la transizione.
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () { root.classList.add("is-loaded"); });
-    });
+    function avviaHome() {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { root.classList.add("is-loaded"); });
+      });
+    }
 
-    // Rivelazione allo scroll
-    var targets = document.querySelectorAll("[data-reveal]");
+    /* ---------------- Sipario d'ingresso ----------------
+       Il movimento e' gia' scritto in CSS. Qui restano due cose: far partire
+       la home mentre il nero si dissolve (i due tempi si sovrappongono, cosi'
+       non c'e' uno stacco) e togliere il blocco dello scorrimento alla fine.
+
+       Le durate si leggono dai token CSS: sono dichiarate una volta sola in
+       style.css e non possono andare fuori sincrono con quelle qui. */
+    var sipario = document.getElementById("intro");
+    var conSipario = sipario && root.classList.contains("ev-intro");
+
+    if (!conSipario) {
+      avviaHome();
+    } else {
+      var stili = getComputedStyle(root);
+
+      function durata(nome, ripiego) {
+        var v = stili.getPropertyValue(nome).trim();
+        var n = parseFloat(v);
+        if (!n) return ripiego;
+        return /ms$/.test(v) ? n : n * 1000;   // i token sono in ms, ma non si sa mai
+      }
+
+      var attesa = durata("--intro-attesa", 1700);
+      var uscita = durata("--intro-uscita", 620);
+
+      var chiuso = false;
+      function chiudiSipario() {
+        if (chiuso) return;
+        chiuso = true;
+        root.classList.remove("ev-intro");   // sblocca lo scorrimento
+        avviaHome();                          // se non era ancora partita
+      }
+
+      // Chi ha fretta lo salta: un click, un tasto, una rotella, un tocco.
+      var saltato = false;
+      function salta() {
+        if (chiuso || saltato) return;
+        saltato = true;
+        sipario.style.animation = "ev-intro-esce 260ms ease both";
+        avviaHome();
+        setTimeout(chiudiSipario, 280);
+      }
+      ["click", "keydown", "wheel", "touchstart"].forEach(function (evento) {
+        document.addEventListener(evento, salta, { once: true, passive: true });
+      });
+
+      setTimeout(avviaHome, attesa);
+      // Rete di sicurezza: se `animationend` non arriva (scheda in secondo
+      // piano, animazione interrotta) il sipario se ne va lo stesso.
+      setTimeout(chiudiSipario, attesa + uscita + 150);
+      sipario.addEventListener("animationend", function (e) {
+        if (e.target === sipario) chiudiSipario();
+      });
+    }
+
+    // Rivelazione allo scroll.
+    // Se il browser sa animare sulla timeline dello scroll, il CSS fa tutto da
+    // solo (vedi il blocco @supports in style.css) e qui non si crea nulla:
+    // niente observer, niente cambi di classe, niente lavoro sul main thread.
+    var timelineNativa =
+      window.CSS && CSS.supports && CSS.supports("animation-timeline", "view()");
+
+    var targets = timelineNativa ? [] : document.querySelectorAll("[data-reveal]");
     if (targets.length) {
       var observerAlive = false;
 
