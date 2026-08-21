@@ -627,6 +627,80 @@ mai spostare niente. Verificato a metà rivelazione: tutti i bordi superiori
 allo stesso pixel, tutte le trasformazioni all'identità.
 
 
+## Galleria
+
+Rifatta partendo da un difetto di dati, non di grafica: erano le **prime 120
+fotografie ordinate per titolo dell'immobile**. Otto scatti per casa, quindi in
+pagina finivano gli immobili di quindici case su sessantatre. Le altre
+quarantotto non comparivano affatto.
+
+E cliccare una foto portava alla scheda dell'immobile: la galleria era un muro
+di miniature che non si potevano guardare.
+
+Ora sono **due scatti per immobile, presi a giro** — 126 in tutto, tutti e 63
+gli immobili rappresentati, e due tessere vicine vengono quasi sempre da case
+diverse.
+
+### Il mosaico
+
+Le fotografie sono tutte in 3:2. Con tessere tutte uguali una griglia di 126
+immagini somiglia a un foglio di calcolo, quindi il mosaico alterna quattro
+forme su un ritmo di sei: **grande (2×2), normale, normale, alta (1×2),
+normale, larga (2×1)**. Il taglio lo fa `object-fit: cover`, nessuna foto viene
+deformata.
+
+Il ritmo lo assegna `main.js` con `data-forma`, e lo **riassegna dopo ogni
+filtro**. Le regole `:nth-child` in CSS servono da ripiego per chi non ha
+JavaScript, ma da sole non basterebbero: `:nth-child` conta anche le tessere
+nascoste, quindi filtrando il ritmo si sfalderebbe.
+
+Sotto i 1000px le tessere tornano tutte uguali: su due colonne il ritmo non si
+leggerebbe comunque.
+
+### I filtri
+
+Per località, solo quelle con almeno due immobili — sotto, un filtro
+selezionerebbe una manciata di scatti. Sono nascosti nel markup e scoperti da
+`main.js`: mostrare comandi che senza JavaScript non fanno niente è peggio che
+non mostrarli. Il filtro attivo finisce nell'indirizzo (`#luogo=la-caletta`) con
+`replaceState`, così una vista si può mandare a qualcuno e viene ripristinata al
+caricamento.
+
+### Il visore
+
+Un `<dialog>` aperto con `showModal()`. La scelta non è stilistica: porta con sé
+gratis quattro cose che in un finto modale vanno scritte a mano, e quasi sempre
+scritte male —
+
+- la **trappola del fuoco**;
+- la chiusura con **Esc**;
+- l'**inertizzazione** del resto della pagina;
+- il **ritorno del fuoco** alla tessera di partenza.
+
+Verificato: aprendo con Invio da una tessera a fuoco, il fuoco entra nel visore
+e alla chiusura torna **esattamente su quella tessera**.
+
+Si sfoglia con le frecce, con i pulsanti, o col dito (soglia 45px). Le vicine
+si precaricano, quindi il passaggio è istantaneo. Il contatore usa
+`font-variant-numeric: tabular-nums` per non ballare. Alle estremità le frecce
+si disabilitano invece di girare in tondo. Alla chiusura la sorgente si svuota:
+una foto a piena risoluzione tenuta in memoria dopo non serve.
+
+Senza JavaScript, o su un browser senza `<dialog>`, ogni tessera resta il link
+alla scheda dell'immobile che è già nel markup: la galleria funziona,
+semplicemente non si sfoglia.
+
+### Due dettagli che sembrano pignoleria
+
+- **`.tessera[hidden] { display: none }`** serve davvero. La regola d'autore
+  `display: block` batte quella del browser per `[hidden]`, quindi senza questa
+  riga le tessere filtrate resterebbero in pagina.
+- La scena del visore ha **`grid-template-rows: minmax(0, 1fr)`**. Con la riga
+  `auto` si dimensiona sul contenuto, quindi il `max-height: 100%` della
+  fotografia non ha una base su cui risolversi e viene ignorato: la foto
+  sfondava sotto la didascalia di 149px.
+
+
 ## Tipografia
 
 **Fraunces** per i titoli, **Archivo** per tutto il resto. Prima erano Cormorant

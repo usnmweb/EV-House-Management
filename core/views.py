@@ -1,8 +1,11 @@
+from collections import Counter
+
 from django.conf import settings
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.text import slugify
 from django.views.decorators.http import require_GET
 
 from properties.models import Property, PropertyImage
@@ -132,19 +135,57 @@ def services(request):
 
 
 def gallery(request):
-    images = (
+    """Galleria: due scatti per immobile, alternati fra immobili diversi.
+
+    Prima erano le prime 120 fotografie ordinate per titolo dell'immobile:
+    otto per casa, quindi in pagina finivano gli scatti di quindici immobili
+    su sessantatre. Gli altri quarantotto non comparivano affatto.
+    """
+    scatti = (
         PropertyImage.objects.select_related("property")
         .filter(property__status=Property.Status.PUBLISHED)
-        .order_by("property__title", "order")[:120]
+        .order_by("property__title", "order")
     )
+
+    per_immobile = {}
+    for scatto in scatti:
+        per_immobile.setdefault(scatto.property_id, []).append(scatto)
+
+    # Due per immobile, presi a giro: cosi' due tessere vicine vengono quasi
+    # sempre da case diverse, invece di otto foto di fila della stessa.
+    QUANTI = 2
+    galleria = []
+    for giro in range(QUANTI):
+        for elenco in per_immobile.values():
+            if giro < len(elenco):
+                galleria.append(elenco[giro])
+
+    # Filtri per localita'. Solo quelle con almeno due immobili: sotto, un
+    # filtro selezionerebbe una manciata di scatti e non serve a nessuno.
+    conteggi = Counter(s.property.location for s in galleria)
+    immobili_per_luogo = Counter(
+        p.location for p in Property.objects.published().only("location")
+    )
+    luoghi = [
+        {"nome": nome, "slug": slugify(nome), "quanti": conteggi[nome]}
+        for nome in sorted(conteggi, key=lambda n: (-conteggi[n], n))
+        if immobili_per_luogo[nome] >= 2
+    ]
+
+    for scatto in galleria:
+        scatto.slug_luogo = slugify(scatto.property.location)
+
     return render(
         request,
         "core/gallery.html",
         {
-            "images": images,
+            "scatti": galleria,
+            "luoghi": luoghi,
+            "totale": len(galleria),
             "page_title": "Galleria",
             "meta_description": (
-                "Una selezione di immagini degli immobili gestiti da EV House Management."
+                "Gli interni, i dettagli e le viste degli immobili gestiti da "
+                "EV House Management in Sardegna."
             ),
         },
     )

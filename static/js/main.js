@@ -495,6 +495,164 @@
   }
 
   /* ------------------------------------------------------------------
+     Galleria: filtri per localita' e visore a schermo intero
+
+     Il visore e' un <dialog> aperto con `showModal()`, e questo porta con se'
+     gratis quattro cose che in un finto modale andrebbero scritte a mano:
+     la trappola del fuoco, la chiusura con Esc, l'inertizzazione del resto
+     della pagina e il ritorno del fuoco alla tessera di partenza.
+
+     Senza JavaScript, o su un browser senza <dialog>, ogni tessera resta il
+     link alla scheda dell'immobile che e' gia' nel markup: la galleria
+     funziona, semplicemente non si sfoglia.
+     ------------------------------------------------------------------ */
+  var mosaico = document.getElementById("mosaico");
+  var visore = document.getElementById("visore");
+
+  if (mosaico && visore && typeof visore.showModal === "function") {
+    var tessere = Array.prototype.slice.call(mosaico.querySelectorAll(".tessera"));
+    var filtri = document.getElementById("filtri-luogo");
+    var esito = document.getElementById("filtri-esito");
+    var foto = document.getElementById("visore-foto");
+    var conta = document.getElementById("visore-conta");
+    var titolo = document.getElementById("visore-titolo");
+    var luogoVis = document.getElementById("visore-luogo");
+    var scheda = document.getElementById("visore-scheda");
+    var prec = document.getElementById("visore-prec");
+    var succ = document.getElementById("visore-succ");
+
+    var visibili = tessere.slice();
+    var indice = 0;
+
+    /* Il ritmo del mosaico. Le regole `:nth-child` in CSS servono da ripiego,
+       ma con parte delle tessere nascoste conterebbero anche quelle: il ritmo
+       si sfalderebbe. Qui si riassegna sulle sole tessere visibili. */
+    var FORME = ["grande", "normale", "normale", "alta", "normale", "larga"];
+    function ridisegna() {
+      visibili.forEach(function (t, i) {
+        t.setAttribute("data-forma", FORME[i % FORME.length]);
+      });
+    }
+
+    function due(n) { return n < 10 ? "0" + n : String(n); }
+
+    /* ---- filtri ---- */
+    function filtra(luogo, scrivi) {
+      visibili = tessere.filter(function (t) {
+        var dentro = luogo === "tutte" || t.getAttribute("data-luogo") === luogo;
+        t.hidden = !dentro;
+        return dentro;
+      });
+      ridisegna();
+
+      if (filtri) {
+        filtri.querySelectorAll(".chip").forEach(function (c) {
+          var attiva = c.getAttribute("data-luogo") === luogo;
+          c.classList.toggle("is-attiva", attiva);
+          c.setAttribute("aria-pressed", attiva ? "true" : "false");
+        });
+      }
+      if (esito) {
+        esito.textContent = luogo === "tutte"
+          ? ""
+          : visibili.length + (visibili.length === 1 ? " fotografia" : " fotografie");
+      }
+      // L'indirizzo tiene conto del filtro, cosi' una vista si puo' mandare a
+      // qualcuno. `replaceState` e non un salto all'ancora: non deve scorrere.
+      if (scrivi && window.history && history.replaceState) {
+        history.replaceState(null, "",
+          luogo === "tutte" ? location.pathname : location.pathname + "#luogo=" + luogo);
+      }
+    }
+
+    if (filtri) {
+      filtri.hidden = false;
+      filtri.addEventListener("click", function (e) {
+        var chip = e.target.closest ? e.target.closest(".chip") : null;
+        if (chip) filtra(chip.getAttribute("data-luogo"), true);
+      });
+    }
+
+    var daIndirizzo = /#luogo=([\w-]+)/.exec(location.hash);
+    filtra(daIndirizzo ? daIndirizzo[1] : "tutte", false);
+
+    /* ---- visore ---- */
+    function precarica(i) {
+      var t = visibili[i];
+      if (!t) return;
+      var img = new Image();
+      img.src = t.querySelector("img").getAttribute("src");
+    }
+
+    function mostra(i) {
+      if (i < 0 || i >= visibili.length) return;
+      indice = i;
+      var t = visibili[i];
+      foto.setAttribute("src", t.querySelector("img").getAttribute("src"));
+      foto.setAttribute("alt", t.getAttribute("data-alt") || "");
+      conta.textContent = due(i + 1) + " / " + due(visibili.length);
+      titolo.textContent = t.getAttribute("data-titolo") || "";
+      luogoVis.textContent = t.getAttribute("data-localita") || "";
+      scheda.setAttribute("href", t.getAttribute("href"));
+      prec.disabled = i === 0;
+      succ.disabled = i === visibili.length - 1;
+      // Le vicine arrivano prima che servano: sfogliare deve essere istantaneo.
+      precarica(i + 1);
+      precarica(i - 1);
+    }
+
+    function apri(i) {
+      mostra(i);
+      document.documentElement.classList.add("visore-aperto");
+      visore.showModal();
+    }
+
+    mosaico.addEventListener("click", function (e) {
+      var t = e.target.closest ? e.target.closest(".tessera") : null;
+      if (!t) return;
+      var i = visibili.indexOf(t);
+      if (i === -1) return;
+      e.preventDefault();          // il link alla scheda vive dentro al visore
+      apri(i);
+    });
+
+    prec.addEventListener("click", function () { mostra(indice - 1); });
+    succ.addEventListener("click", function () { mostra(indice + 1); });
+    document.getElementById("visore-chiudi")
+      .addEventListener("click", function () { visore.close(); });
+
+    visore.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight") { e.preventDefault(); mostra(indice + 1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); mostra(indice - 1); }
+    });
+
+    // Click sullo sfondo (fuori dalla fotografia): chiude.
+    visore.addEventListener("click", function (e) {
+      if (e.target === visore) visore.close();
+    });
+
+    visore.addEventListener("close", function () {
+      document.documentElement.classList.remove("visore-aperto");
+      // La sorgente si svuota: una fotografia a piena risoluzione tenuta in
+      // memoria dopo la chiusura non serve a niente.
+      foto.removeAttribute("src");
+    });
+
+    // Scorrimento col dito.
+    var partenza = null;
+    visore.addEventListener("touchstart", function (e) {
+      partenza = e.changedTouches[0].clientX;
+    }, { passive: true });
+    visore.addEventListener("touchend", function (e) {
+      if (partenza === null) return;
+      var salto = e.changedTouches[0].clientX - partenza;
+      partenza = null;
+      if (Math.abs(salto) < 45) return;
+      mostra(indice + (salto < 0 ? 1 : -1));
+    }, { passive: true });
+  }
+
+  /* ------------------------------------------------------------------
      Galleria immobile: click sulla miniatura aggiorna l'immagine principale
      ------------------------------------------------------------------ */
   var mainImg = document.getElementById("gallery-main-img");
