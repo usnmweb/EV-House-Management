@@ -3,17 +3,68 @@
 
 {% block body_class %}has-hero{% endblock %}
 
+{# La home e' l'unica pagina con il sipario d'ingresso. #}
+{% block sipario %}true{% endblock %}
+{% block intro %}{% include "_intro.html" %}{% endblock %}
+
+{% block extra_head %}
+  {% comment %}
+    Stesso file del logo in header: il precarico non e' mai sprecato, ma qui
+    evita che il sipario resti nero per una frazione di secondo.
+  {% endcomment %}
+  <link rel="preload" as="image" href="{% static 'img/logo-su-scuro.png' %}" fetchpriority="high">
+{% endblock %}
+
 {% block content %}
 <section class="hero">
+  {% comment %}
+    Sfondo dell'hero: una fotografia sotto e il video sopra.
+
+    La fotografia e' un fotogramma del video stesso, quindi i due strati
+    combaciano e il passaggio dall'una all'altro non si vede.
+
+    Il video non ha `src` nel markup: e' main.js a deciderlo, dopo l'evento
+    `load` e solo se ha senso scaricarlo (larghezza dello schermo, preferenze
+    di movimento, risparmio dati, rete lenta). Cosi' non contende mai la banda
+    alla fotografia, che e' quello che riempie l'hero da subito. Se il
+    controllo dice di no, o se JavaScript e' spento, resta la fotografia.
+
+    Nota: una volta dipinto, il video diventa lui l'elemento piu' grande e
+    quindi la LCP misurata; e' normale per gli sfondi video. Quello che il
+    rinvio garantisce non e' che la LCP resti la fotografia, ma che nessuno
+    veda un buco al posto dell'hero mentre il video arriva.
+  {% endcomment %}
   <div class="hero-media">
-    <img src="{% static 'img/hero-1600.jpg' %}"
-         srcset="{% static 'img/hero-1000.jpg' %} 1000w,
-                 {% static 'img/hero-1600.jpg' %} 1600w,
-                 {% static 'img/hero-2400.jpg' %} 2400w"
+    <img src="{% static 'img/hero-video-1600.jpg' %}"
+         srcset="{% static 'img/hero-video-1000.jpg' %} 1000w,
+                 {% static 'img/hero-video-1600.jpg' %} 1600w,
+                 {% static 'img/hero-video-2400.jpg' %} 2400w"
          sizes="100vw" width="2400" height="1350"
          alt="" fetchpriority="high" decoding="async">
+
+    <video class="hero-video" id="hero-video"
+           data-src-piccolo="{% static 'video/hero-960.mp4' %}"
+           data-src-grande="{% static 'video/hero.mp4' %}"
+           width="1920" height="1080"
+           muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
   </div>
   <div class="hero-scrim" aria-hidden="true"></div>
+
+  {% comment %}
+    WCAG 2.2.2: un movimento che parte da solo e dura piu' di cinque secondi
+    deve poter essere fermato. Il bottone resta nascosto finche' il video non
+    parte davvero, cosi' non compare quando lo sfondo e' una fotografia ferma.
+  {% endcomment %}
+  <button class="hero-video-toggle" id="hero-video-toggle" type="button" hidden
+          aria-label="Metti in pausa il video di sfondo">
+    <svg class="icona-pausa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="7" y="5" width="3.4" height="14" rx="1"/>
+      <rect x="13.6" y="5" width="3.4" height="14" rx="1"/>
+    </svg>
+    <svg class="icona-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M8 5.2v13.6a1 1 0 0 0 1.53.85l10.2-6.8a1 1 0 0 0 0-1.7L9.53 4.35A1 1 0 0 0 8 5.2z"/>
+    </svg>
+  </button>
 
   <div class="container">
     <div class="hero-inner">
@@ -57,11 +108,30 @@
 </section>
 
 {% if featured_properties %}
-<section class="section" id="immobili-evidenza">
-  <div class="container">
-    <div class="section-head" data-reveal>
+{% comment %}
+  Carosello degli immobili in evidenza.
+
+  Ha due comportamenti, e il markup e' lo stesso per entrambi:
+
+  1. Di base — e quindi anche senza JavaScript, su schermi stretti, con
+     "riduci movimento" attivo o su un browser che non conosce le timeline di
+     scorrimento — e' una fila che si trascina in orizzontale, con aggancio
+     alle schede. Funziona col dito, con la barra, con le frecce.
+
+  2. Dove il browser sa animare sulla posizione dello scorrimento e lo schermo
+     e' abbastanza largo, la sezione si blocca a schermo pieno e lo scorrimento
+     verticale diventa avanzamento orizzontale. Finite le schede, la pagina
+     riprende a scorrere in verticale da sola: non c'e' nessun `preventDefault`
+     sulla rotella, e' la pagina che scorre come sempre.
+
+  L'ultima tessera e' l'invito a vedere tutti gli immobili, cosi' la corsa
+  orizzontale finisce su una destinazione e non nel vuoto.
+{% endcomment %}
+<section class="showcase" id="immobili-evidenza" aria-labelledby="titolo-evidenza">
+  <div class="showcase-pin">
+    <div class="container section-head showcase-head">
       <span class="eyebrow">Selezione</span>
-      <h2>Immobili in evidenza</h2>
+      <h2 id="titolo-evidenza">Immobili in evidenza</h2>
       <hr class="gold-rule">
       <p class="lead">
         Una selezione fra gli immobili in gestione. Disponibilità e tariffe
@@ -69,15 +139,34 @@
       </p>
     </div>
 
-    <div class="property-grid" data-stagger>
-      {% for property in featured_properties %}
-        {% include "properties/_property_card.html" with property=property %}
-      {% endfor %}
+    <div class="showcase-scroll" id="showcase-scroll">
+      <ol class="showcase-track" id="showcase-track">
+        {% for property in featured_properties %}
+        <li class="showcase-item">
+          {% include "properties/_property_card.html" with property=property senza_reveal=1 %}
+        </li>
+        {% endfor %}
+
+        <li class="showcase-item showcase-item-fine">
+          <a class="showcase-fine" href="{% url 'properties:list' %}">
+            <span class="showcase-fine-eyebrow">E gli altri</span>
+            <span class="showcase-fine-titolo">Vedi tutti gli immobili</span>
+            <span class="showcase-fine-freccia" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </span>
+          </a>
+        </li>
+      </ol>
     </div>
 
-    <div class="btn-group" style="margin-top:3rem;" data-reveal="fade">
-      <a class="btn btn-outline" href="{% url 'properties:list' %}">Vedi tutti gli immobili</a>
-    </div>
+    {% comment %}
+      Barra di avanzamento: dice a che punto si e' della fila. Si riempie sulla
+      stessa timeline che muove le schede, quindi non puo' andare fuori passo.
+    {% endcomment %}
+    <div class="showcase-avanzamento" aria-hidden="true"><span></span></div>
   </div>
 </section>
 {% endif %}
@@ -90,20 +179,28 @@
       <hr class="gold-rule">
     </div>
 
-    <div class="service-grid" data-stagger>
-      <article class="service-card" data-reveal>
+    {% comment %}
+      `data-scossa` al posto di `data-reveal`: qui le schede entrano una per
+      volta con una scrollata, e per oscillare serve il tempo — la rivelazione
+      normale e' legata alla posizione nello scorrimento e si fermerebbe a
+      meta' movimento appena si smette di scorrere. Lo scaglionamento non
+      arriva da `data-stagger`: lo decide main.js scheda per scheda, perche'
+      dipende da quante ne entrano in campo insieme.
+    {% endcomment %}
+    <div class="service-grid" data-scossa>
+      <article class="service-card">
         <span class="idx">01</span>
         <h3>Gestione operativa</h3>
         <p>Check-in, pulizie, biancheria, manutenzione ordinaria e straordinaria. Coordiniamo
            tutti i fornitori e garantiamo standard costanti a ogni soggiorno.</p>
       </article>
-      <article class="service-card" data-reveal>
+      <article class="service-card">
         <span class="idx">02</span>
         <h3>Revenue management</h3>
         <p>Analisi di mercato e prezzi dinamici per ottimizzare occupazione e ricavi,
            adattandosi a stagionalita ed eventi locali.</p>
       </article>
-      <article class="service-card" data-reveal>
+      <article class="service-card">
         <span class="idx">03</span>
         <h3>Presenza online</h3>
         <p>Fotografia professionale, annunci curati e distribuzione sui principali portali,

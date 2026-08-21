@@ -15,61 +15,118 @@
 {% endblock %}
 
 {% block content %}
-<section class="section">
+
+{% comment %}
+  Testata della pagina. Porta l'unico H1: prima la pagina cominciava con un H2
+  e non aveva un titolo di primo livello — un difetto sia per chi naviga con
+  uno screen reader sia per i motori di ricerca.
+{% endcomment %}
+<section class="page-head">
+  <div class="container" data-reveal>
+    <span class="eyebrow">Servizi</span>
+    <h1>Un solo interlocutore,<br><em>dalla A alla Z</em></h1>
+    <hr class="gold-rule">
+    <p class="lead">
+      Operatività quotidiana, ottimizzazione dei ricavi e adempimenti amministrativi.
+      Tu resti il proprietario, di tutto il resto ci occupiamo noi.
+    </p>
+  </div>
+</section>
+
+
+{% comment %}
+  Come si comincia. Apre la pagina: prima si dice da dove si parte, poi cosa
+  comprende il servizio.
+
+  Quattro passi *in ordine*, quindi disegnati come una sequenza: una linea che
+  li unisce e si traccia mentre si scorre, e i numeri che si riempiono man
+  mano. Prima erano quattro schede identiche a quelle dei servizi e nulla
+  diceva che fossero passi consecutivi.
+  E' una lista ordinata anche nel markup: l'ordine e' contenuto, non grafica.
+{% endcomment %}
+<section class="section" aria-labelledby="t-percorso">
   <div class="container">
     <div class="section-head" data-reveal>
-      <span class="eyebrow">Servizi</span>
-      <h2>Gestione completa, dalla A alla Z</h2>
+      <span class="eyebrow">Come si comincia</span>
+      <h2 id="t-percorso">Quattro passi</h2>
       <hr class="gold-rule">
-      <p class="lead">
-        Un unico interlocutore per tutto il ciclo di vita del tuo immobile in affitto breve:
-        operativita quotidiana, ottimizzazione dei ricavi e adempimenti amministrativi.
-      </p>
+      <p class="lead">Dal primo contatto alla gestione a regime.</p>
     </div>
 
-    <div class="service-grid" data-stagger>
-      {% for service in services %}
-      <article class="service-card" data-reveal>
-        <span class="idx">{{ forloop.counter|stringformat:"02d" }}</span>
-        <h3>{{ service.title }}</h3>
-        <p>{{ service.text }}</p>
-      </article>
+    <ol class="percorso" data-stagger>
+      {% for passo in percorso %}
+      <li class="percorso-passo" data-reveal="fade">
+        <span class="percorso-nodo" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+        <div class="percorso-testo">
+          <h3>{{ passo.title }}</h3>
+          <p>{{ passo.text }}</p>
+        </div>
+      </li>
       {% endfor %}
+    </ol>
+  </div>
+</section>
+
+
+{% comment %}
+  Cosa comprende. Sei voci con un'icona ciascuna: prima erano sei blocchi di
+  testo identici numerati da 01 a 06, e la numerazione suggeriva un ordine che
+  non c'e' — l'ordine e' quello del percorso, qui sopra.
+{% endcomment %}
+<section class="section section-dark" aria-labelledby="t-comprende">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Cosa comprende</span>
+      <h2 id="t-comprende">Sei fronti, un solo referente</h2>
+      <hr class="gold-rule">
+    </div>
+
+    <ul class="servizi-lista" data-stagger>
+      {% for servizio in servizi %}
+      <li class="servizio" data-reveal="fade">
+        {% include "core/_icona_servizio.html" with icona=servizio.icona %}
+        <h3>{{ servizio.title }}</h3>
+        <p>{{ servizio.text }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+
+{% comment %}
+  Chi fa cosa. E' la sezione che risponde alla domanda vera del proprietario —
+  «e io cosa devo fare?» — e la risposta la da' il confronto fra le due liste,
+  non un aggettivo: tre voci da una parte, sei dall'altra.
+{% endcomment %}
+<section class="section" aria-labelledby="t-riparto">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Chi fa cosa</span>
+      <h2 id="t-riparto">Il confronto in due colonne</h2>
+      <hr class="gold-rule">
+    </div>
+
+    <div class="riparto" data-stagger>
+      <div class="riparto-col riparto-tuo" data-reveal>
+        <span class="riparto-etichetta">Tu</span>
+        <p class="riparto-conteggio"><strong>{{ riparto.tuo|length }}</strong> cose</p>
+        <ul>
+          {% for voce in riparto.tuo %}<li>{{ voce }}</li>{% endfor %}
+        </ul>
+      </div>
+
+      <div class="riparto-col riparto-nostro" data-reveal>
+        <span class="riparto-etichetta">Noi</span>
+        <p class="riparto-conteggio"><strong>{{ riparto.nostro|length }}</strong> cose</p>
+        <ul>
+          {% for voce in riparto.nostro %}<li>{{ voce }}</li>{% endfor %}
+        </ul>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="section section-dark">
-  <div class="container">
-    <div class="section-head" data-reveal>
-      <span class="eyebrow">Come lavoriamo</span>
-      <h2>Quattro passi</h2>
-      <hr class="gold-rule">
-    </div>
-    <div class="service-grid" data-stagger>
-      <article class="service-card" data-reveal>
-        <span class="idx">01</span>
-        <h3>Sopralluogo</h3>
-        <p>Visitiamo l'immobile, valutiamo posizione, stato e potenziale di rendita.</p>
-      </article>
-      <article class="service-card" data-reveal>
-        <span class="idx">02</span>
-        <h3>Proposta</h3>
-        <p>Ti presentiamo un piano di gestione con stime di occupazione e ricavo.</p>
-      </article>
-      <article class="service-card" data-reveal>
-        <span class="idx">03</span>
-        <h3>Attivazione</h3>
-        <p>Styling, servizio fotografico, pubblicazione degli annunci e avvio operativo.</p>
-      </article>
-      <article class="service-card" data-reveal>
-        <span class="idx">04</span>
-        <h3>Gestione</h3>
-        <p>Operativita continua e rendiconti mensili trasparenti, senza pensieri per te.</p>
-      </article>
-    </div>
-  </div>
-</section>
 
 <section class="cta-band">
   <div class="container" data-reveal>

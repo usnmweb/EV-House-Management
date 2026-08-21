@@ -15,26 +15,71 @@
 {% endblock %}
 
 {% block content %}
-<section class="section">
-  <div class="container">
-    <div class="section-head" data-reveal>
-      <span class="eyebrow">Galleria</span>
-      <h2>Gli spazi che gestiamo</h2>
-      <hr class="gold-rule">
-      <p class="lead">
-        Una selezione di immagini dagli immobili in gestione: interni, dettagli e viste.
-      </p>
-    </div>
 
-    {% if images %}
-      <div class="masonry" data-stagger>
-        {% for img in images %}
-        <figure data-reveal>
-          <a href="{{ img.property.get_absolute_url }}">
-            <img src="{{ img.image.url }}" alt="{{ img.display_alt }}" loading="lazy" width="800" height="600">
-          </a>
-          <figcaption>{{ img.property.title }} &middot; {{ img.property.location }}</figcaption>
-        </figure>
+<section class="page-head">
+  <div class="container" data-reveal>
+    <span class="eyebrow">Galleria</span>
+    <h1>Gli spazi che <em>gestiamo</em></h1>
+    <hr class="gold-rule">
+    <p class="lead">
+      Interni, dettagli e viste dagli immobili in gestione. Due scatti per casa,
+      {{ totale }} in tutto. Aprine uno per sfogliare la raccolta a schermo intero.
+    </p>
+  </div>
+</section>
+
+
+<section class="section" aria-labelledby="t-galleria">
+  <div class="container">
+    <h2 id="t-galleria" class="solo-lettori">Raccolta fotografica</h2>
+
+    {% if scatti %}
+      {% comment %}
+        Filtri per localita'. Nascosti nel markup e scoperti da main.js: senza
+        JavaScript non filtrerebbero nulla, e mostrare comandi che non fanno
+        niente e' peggio che non mostrarli. Chi arriva senza JS vede la
+        raccolta intera, che e' un ripiego perfettamente utile.
+      {% endcomment %}
+      <div class="filtri-luogo" id="filtri-luogo" role="group"
+           aria-label="Filtra le fotografie per localita" hidden>
+        <button type="button" class="chip is-attiva" data-luogo="tutte" aria-pressed="true">
+          Tutte <span class="chip-conta">{{ totale }}</span>
+        </button>
+        {% for luogo in luoghi %}
+        <button type="button" class="chip" data-luogo="{{ luogo.slug }}" aria-pressed="false">
+          {{ luogo.nome }} <span class="chip-conta">{{ luogo.quanti }}</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <p class="filtri-esito" id="filtri-esito" role="status" aria-live="polite"></p>
+
+      {% comment %}
+        Mosaico. Le tessere non hanno tutte la stessa forma: il ritmo lo detta
+        `data-forma`, che main.js riassegna dopo ogni filtro perche' resti
+        regolare anche quando parte delle tessere sono nascoste. Senza JS
+        pensano a tutto le regole `:nth-child` di ripiego.
+
+        Ogni tessera e' un link alla scheda dell'immobile: e' il
+        comportamento senza JavaScript. Con JavaScript il click apre invece il
+        visore, e il link alla scheda si trova li' dentro.
+      {% endcomment %}
+      <div class="mosaico" id="mosaico" data-stagger>
+        {% for scatto in scatti %}
+        <a class="tessera" data-reveal="fade"
+           href="{{ scatto.property.get_absolute_url }}"
+           data-luogo="{{ scatto.slug_luogo }}"
+           data-titolo="{{ scatto.property.title }}"
+           data-localita="{{ scatto.property.location }}"
+           data-alt="{{ scatto.display_alt }}">
+          <img src="{{ scatto.image.url }}" alt="{{ scatto.display_alt }}"
+               loading="lazy" decoding="async" width="1200" height="800"
+               sizes="(min-width: 1200px) 25vw, (min-width: 700px) 33vw, 50vw">
+          <span class="tessera-velo" aria-hidden="true">
+            <span class="tessera-titolo">{{ scatto.property.title }}</span>
+            <span class="tessera-luogo">{{ scatto.property.location }}</span>
+          </span>
+        </a>
         {% endfor %}
       </div>
     {% else %}
@@ -45,4 +90,49 @@
     {% endif %}
   </div>
 </section>
+
+
+{% comment %}
+  Visore a schermo intero. E' un <dialog>: `showModal()` porta con se' la
+  trappola del fuoco, la chiusura con Esc, l'inertizzazione del resto della
+  pagina e il ritorno del fuoco all'elemento di partenza — tutte cose che in un
+  finto modale andrebbero scritte a mano, e quasi sempre scritte male.
+  Resta vuoto finche' non serve: le fotografie ci finiscono al momento.
+{% endcomment %}
+<dialog class="visore" id="visore" aria-label="Fotografie a schermo intero">
+  <div class="visore-scena">
+    <img class="visore-foto" id="visore-foto" alt="">
+  </div>
+
+  <button type="button" class="visore-freccia visore-prec" id="visore-prec"
+          aria-label="Fotografia precedente">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M15 5 8 12l7 7"/>
+    </svg>
+  </button>
+  <button type="button" class="visore-freccia visore-succ" id="visore-succ"
+          aria-label="Fotografia successiva">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m9 5 7 7-7 7"/>
+    </svg>
+  </button>
+
+  <button type="button" class="visore-chiudi" id="visore-chiudi" aria-label="Chiudi">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+         stroke-linecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18"/>
+    </svg>
+  </button>
+
+  <div class="visore-piede">
+    <span class="visore-conta" id="visore-conta"></span>
+    <span class="visore-didascalia">
+      <span class="visore-titolo" id="visore-titolo"></span>
+      <span class="visore-luogo" id="visore-luogo"></span>
+    </span>
+    <a class="visore-scheda" id="visore-scheda" href="#">Vedi l'immobile</a>
+  </div>
+</dialog>
 {% endblock %}

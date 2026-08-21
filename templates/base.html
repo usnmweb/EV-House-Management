@@ -18,8 +18,26 @@
       // classe il CSS non nasconde nulla: niente JS o niente
       // IntersectionObserver significa sito statico ma completo.
       var motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if ("IntersectionObserver" in window && motionOk) {
-        document.documentElement.classList.add("js-anim");
+      var animazioni = "IntersectionObserver" in window && motionOk;
+      if (animazioni) document.documentElement.classList.add("js-anim");
+
+      // Sipario d'ingresso: lo chiede la singola pagina con il blocco `sipario`.
+      // Anche qui e' la classe a comandare: senza `ev-intro` il CSS lo tiene a
+      // display:none, quindi JS spento o movimento ridotto = nessun sipario.
+      if (animazioni && {% block sipario %}false{% endblock %}) {
+        // `?intro=1` lo riapre a comando: serve per rivederlo senza dover
+        // chiudere il browser. Una volta per sessione, altrimenti diventa
+        // un pedaggio da pagare a ogni ritorno in home.
+        var forzato = /[?&]intro=1/.test(location.search);
+        var visto = false;
+        try { visto = sessionStorage.getItem("ev-intro") === "1"; } catch (e) {}
+        if (forzato || !visto) {
+          document.documentElement.classList.add("ev-intro");
+          try { sessionStorage.setItem("ev-intro", "1"); } catch (e) {}
+          // Il ripristino automatico dello scroll riaprirebbe la pagina a
+          // meta', dietro al sipario: la home deve ricominciare dall'alto.
+          if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+        }
       }
     })();
   </script>
@@ -48,9 +66,19 @@
   {% endblock %}
 
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  {% comment %}
+    I caratteri sono ospitati qui, non su Google Fonts: nessuna richiesta a un
+    terzo dominio prima del consenso, e due connessioni in meno da aprire.
+    Il precarico serve perche' i file sono citati dentro il foglio di stile, e
+    senza il browser li scoprirebbe solo dopo averlo scaricato e interpretato.
+    Solo i due file usati da ogni pagina: il corsivo e i `latin-ext` si
+    caricano da soli quando servono davvero.
+  {% endcomment %}
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="{% static 'fonts/fraunces-var-latin.woff2' %}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="{% static 'fonts/archivo-var-latin.woff2' %}">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
 
@@ -83,6 +111,8 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
+  {% block intro %}{% endblock %}
+
   <a class="skip-link" href="#main">Salta al contenuto</a>
 
   <header class="site-header" id="site-header">
