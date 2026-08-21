@@ -15,7 +15,8 @@ gestione, servizi offerti, galleria e modulo contatti.
 | Database | SQLite (file `db.sqlite3`) |
 
 Nessuna dipendenza JavaScript esterna: il front-end usa CSS e JS vanilla.
-L'unica risorsa remota sono i font Google (Cormorant Garamond + Inter).
+**Nessuna risorsa remota**: i caratteri sono ospitati insieme al sito, quindi
+una pagina non apre connessioni verso domini di terzi.
 
 ---
 
@@ -569,9 +570,13 @@ La pagina ora è in quattro momenti, ognuno con una forma diversa:
 | sezione | forma | cosa risponde |
 |---|---|---|
 | Testata | titolo + occhiello | dove sono |
+| Come si comincia | percorso in quattro passi | da dove parto |
 | Cosa comprende | sei voci con icona | cosa ricevo |
 | Chi fa cosa | due colonne a confronto | e io cosa devo fare |
-| Come si comincia | percorso in quattro passi | da dove parto |
+
+Gli sfondi si alternano chiaro / scuro / chiaro: due sezioni consecutive con lo
+stesso fondo si fonderebbero in una sola. Spostando il percorso in testa vanno
+riassegnati, non basta muovere il blocco.
 
 **La testata porta l'H1.** Prima la pagina cominciava con un `<h2>` e non aveva
 un titolo di primo livello — un difetto per gli screen reader e per i motori di
@@ -620,6 +625,107 @@ si vedrebbe una fila storta.
 La variante `fade` scaglionata solo nell'opacità dà la stessa sequenza senza
 mai spostare niente. Verificato a metà rivelazione: tutti i bordi superiori
 allo stesso pixel, tutte le trasformazioni all'identità.
+
+
+## Tipografia
+
+**Fraunces** per i titoli, **Archivo** per tutto il resto. Prima erano Cormorant
+Garamond e Inter: elegante ma è l'accoppiata che si trova su metà dei siti
+"eleganti", e Inter è il font che si sceglie quando non si sceglie.
+
+| ruolo | carattere | perché |
+|---|---|---|
+| Titoli | Fraunces | serif contemporaneo, alto contrasto, con **asse di dimensione ottica** |
+| Testo e interfaccia | Archivo | grottesco stretto, molto leggibile ai corpi piccoli, con terminali suoi |
+
+### L'asse ottico non è un vezzo
+
+Fraunces è variabile su `opsz` (9–144), e `font-optical-sizing: auto` lo muove
+in funzione del corpo: nei titoli grandi le grazie si assottigliano e il
+contrasto cresce, in quelli piccoli si ispessiscono e il disegno si apre.
+È il motivo per cui un H1 da 87px e un H3 non sembrano *lo stesso disegno
+scalato* — che è esattamente il difetto da cui siamo partiti.
+
+### Quattro trame, non quattro corpi
+
+Il salto di gerarchia non è solo dimensionale. Il sistema distingue per
+**famiglia e trattamento**:
+
+| livello | trama |
+|---|---|
+| Titoli di pagina e sezione | Fraunces, interlinea sotto l'unità (0,98), spaziatura −0,03em |
+| Nomi propri (immobili) | Fraunces, peso 500, corpo medio |
+| Etichette e categorie (servizi, passi) | **Archivo maiuscolo**, peso 600, spaziatura +0,1em |
+| Micro-etichette (occhielli, menu, bottoni) | Archivo, corpo minimo, spaziatura +0,26em |
+| Testo corrente | Archivo 400 |
+| Sottotitoli | Archivo **300**, corpo più grande del testo |
+
+La distinzione fra le righe 2 e 3 è la scelta di sistema: *una casa ha un nome*
+e resta nel carattere da titoli; *un servizio è una categoria* e va in maiuscolo
+spaziato. Non è decorazione, è una regola che si può applicare a contenuti nuovi.
+
+### La scala
+
+Prima c'erano **66 dichiarazioni di `font-size` decise una per una** e sette
+valori di `letter-spacing` a occhio. Ora ci sono nove corpi
+(`--t-2xs` → `--t-4xl`), cinque spaziature e quattro interlinee, e ogni regola
+del foglio pesca da lì.
+
+L'ingrandimento sopra i 900px sta su `:root`, non su `body`: le misure sono in
+`rem`, che si riferiscono alla radice. Prima cresceva solo il testo corrente e
+tutti i rapporti si sfasavano del 6%.
+
+### Perché i caratteri sono ospitati qui
+
+Due ragioni, e la prima non è tecnica.
+
+**Conformità.** Chiamare `fonts.gstatic.com` manda l'indirizzo IP del visitatore
+a Google prima ancora che veda il banner cookie. È il genere di trasferimento
+che la privacy policy di questo sito dichiara di non fare, ed è quello che il
+tribunale di Monaco ha già considerato una violazione del GDPR.
+
+**Prestazione.** Spariscono due `preconnect` verso un dominio terzo e un foglio
+di stile che bloccava il rendering. I file partono a **34ms** invece che dopo
+la catena DNS + TLS + CSS di Google.
+
+Fraunces e Archivo sono entrambi in licenza SIL Open Font, quindi
+ridistribuibili con il sito.
+
+### Cosa si scarica davvero
+
+| file | peso | quando |
+|---|---|---|
+| `fraunces-var-latin.woff2` | 66 KB | sempre (precaricato) |
+| `archivo-var-latin.woff2` | 34 KB | sempre (precaricato) |
+| `fraunces-italic-latin.woff2` | 22 KB | dove c'è un `<em>` in un titolo |
+| `*-latin-ext.woff2` | 59 + 32 KB | quasi mai |
+
+**122 KB** su una pagina italiana. I `latin-ext` esistono ma non partono:
+`unicode-range` li lascia a terra finché in pagina non compare un carattere che
+li richiede, e l'italiano sta tutto in `latin`. Per questo non è un dettaglio.
+
+Il corsivo di Fraunces è **statico a un peso solo**, non variabile: serve per
+poche parole dentro i titoli grandi, e la versione variabile costava 80 KB
+invece di 22.
+
+I due file sempre usati sono in `<link rel="preload">`, perché citati dentro il
+foglio di stile il browser li scoprirebbe solo dopo averlo scaricato e
+interpretato.
+
+### Rigenerare i file
+
+```bash
+# Fraunces variabile (pesi 300-700, dimensioni ottiche 9-144)
+https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700
+# Fraunces corsivo, un peso solo, dimensione ottica massima
+https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,144,400
+# Archivo variabile
+https://fonts.googleapis.com/css2?family=Archivo:wght@300..700
+```
+
+Vanno richiesti con uno user-agent recente (altrimenti Google serve TTF al posto
+di WOFF2), si tengono solo i sottoinsiemi `latin` e `latin-ext`, e gli
+`unicode-range` vanno copiati da lì dentro `@font-face`.
 
 
 ## Animazioni

@@ -9,6 +9,88 @@
      - data-theme="dark"  -> scuro forzato dall'utente
    ========================================================================== */
 
+
+/* ==========================================================================
+   Caratteri — ospitati qui, non su Google Fonts
+
+   Due ragioni. La prima e' di conformita': chiamare fonts.gstatic.com manda
+   l'indirizzo IP del visitatore a Google prima ancora che abbia visto il
+   banner cookie, ed e' proprio il genere di trasferimento che la privacy
+   policy di questo sito dichiara di non fare. La seconda e' di prestazione:
+   spariscono due connessioni verso un terzo dominio e un foglio di stile che
+   bloccava il rendering.
+
+   Fraunces e Archivo sono entrambi in licenza SIL Open Font, quindi
+   ridistribuibili con il sito.
+
+   I file `latin-ext` si scaricano solo se in pagina compare un carattere che
+   li richiede: l'italiano sta quasi tutto in `latin`, quindi in pratica non
+   vengono mai chiesti. Per questo `unicode-range` non e' un dettaglio.
+   ========================================================================== */
+
+/* Fraunces variabile: un solo file copre i pesi 300-700 e tutte le dimensioni
+   ottiche. Costa piu' di un peso statico ma meno di tre, e in cambio da'
+   `font-optical-sizing`, che a corpo grande assottiglia le grazie e a corpo
+   piccolo le ispessisce. E' il motivo per cui un titolo da 4rem e uno da
+   1.3rem non sembrano lo stesso disegno rimpicciolito. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../fonts/fraunces-var-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+                 U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+                 U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../fonts/fraunces-var-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+                 U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+                 U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Il corsivo serve solo per le parole in risalto dentro i titoli grandi:
+   quindi un peso solo, dimensione ottica fissa sul massimo. 21 KB invece dei
+   79 della versione variabile. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/fraunces-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+                 U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+                 U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Archivo variabile: pesi 300-700 in un file solo. */
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../fonts/archivo-var-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+                 U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+                 U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../fonts/archivo-var-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+                 U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+                 U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+
 /* ---------- Tema chiaro (base) ---------- */
 :root {
   color-scheme: light;
@@ -41,8 +123,45 @@
   --danger:        #a63d21;
   --success:       #3f6b2b;
 
-  --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --font-sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* ---- Caratteri ----
+     Fraunces per i titoli: serif contemporaneo, alto contrasto, con asse di
+     dimensione ottica. Archivo per tutto il resto: grottesco stretto, molto
+     leggibile ai corpi piccoli, con una personalita' che Inter non ha.
+     I due alias storici restano per non riscrivere ogni regola del foglio. */
+  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-testo:   "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-display);
+  --font-sans:  var(--font-testo);
+
+  /* ---- Scala dei corpi ----
+     Una scala sola per tutto il sito. Prima c'erano sessantasei dichiarazioni
+     di `font-size` decise una per una, e infatti i salti fra un livello e
+     l'altro non erano regolari. */
+  --t-2xs: 0.68rem;
+  --t-xs:  0.76rem;
+  --t-sm:  0.875rem;
+  --t-md:  1rem;
+  --t-lg:  1.0625rem;
+  --t-xl:  clamp(1.15rem, 1.06rem + 0.45vw, 1.4rem);
+  --t-2xl: clamp(1.45rem, 1.15rem + 1.5vw, 2.05rem);
+  --t-3xl: clamp(2rem, 1.3rem + 3.2vw, 3.15rem);
+  --t-4xl: clamp(2.6rem, 1.35rem + 5.6vw, 4.6rem);
+
+  /* ---- Spaziatura fra le lettere ----
+     Cinque valori al posto dei sette a occhio di prima. Negativa sui titoli
+     grandi, dove le lettere hanno gia' abbastanza aria; larga sulle etichette
+     maiuscole, dove serve per non farle sembrare una parola sola. */
+  --tr-display:   -0.03em;
+  --tr-titolo:    -0.012em;
+  --tr-corpo:      0em;
+  --tr-etichetta:  0.14em;
+  --tr-occhiello:  0.26em;
+
+  /* ---- Interlinee ---- */
+  --lh-display: 0.98;
+  --lh-titolo:  1.16;
+  --lh-corpo:   1.72;
+  --lh-stretto: 1.4;
 
   --header-h: 78px;
   --container: 1200px;
@@ -126,27 +245,53 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 300;
-  line-height: 1.7;
+  font-family: var(--font-testo);
+  font-size: var(--t-md);      /* la misura vera la detta :root */
+  /* 400 e non 300: Archivo e' piu' asciutta di Inter e a peso 300 il testo
+     corrente si sfilaccia. Il peso leggero resta, ma dove ha un ruolo — sui
+     sottotitoli. */
+  font-weight: 400;
+  line-height: var(--lh-corpo);
+  letter-spacing: var(--tr-corpo);
+  /* Fa muovere l'asse `opsz` di Fraunces in funzione del corpo: le grazie si
+     assottigliano nei titoli grandi e si ispessiscono in quelli piccoli. E'
+     il motivo per cui un H1 e un H3 non sembrano lo stesso disegno scalato. */
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   transition: background-color var(--transition), color var(--transition);
 }
 
-h1, h2, h3, h4 {
-  font-family: var(--font-serif);
+/* I titoli grandi sono voce editoriale: Fraunces, interlinea sotto l'unita',
+   spaziatura negativa. Devono sembrare composti, non impaginati. */
+h1, h2 {
+  font-family: var(--font-display);
   font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: 0.01em;
-  margin: 0 0 0.6em;
+  line-height: var(--lh-display);
+  letter-spacing: var(--tr-display);
+  margin: 0 0 0.5em;
+  text-wrap: balance;
 }
 
-h1 { font-size: clamp(2.2rem, 7vw, 4.2rem); }
-h2 { font-size: clamp(1.8rem, 5vw, 2.9rem); }
-h3 { font-size: clamp(1.2rem, 3vw, 1.5rem); }
+/* I titoli piccoli restano nella stessa famiglia ma cambiano registro: un
+   filo piu' pesanti, interlinea normale, spaziatura quasi neutra. */
+h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: var(--lh-titolo);
+  letter-spacing: var(--tr-titolo);
+  margin: 0 0 0.5em;
+}
 
-p { margin: 0 0 1.2em; }
+h1 { font-size: var(--t-4xl); }
+h2 { font-size: var(--t-3xl); }
+h3 { font-size: var(--t-xl); }
+h4 { font-size: var(--t-lg); }
+
+/* Il corsivo di Fraunces e' l'accento del sistema: una sola parola per
+   titolo, mai frasi intere. */
+h1 em, h2 em { font-style: italic; font-weight: 400; }
+
+p { margin: 0 0 1.35em; }
 p:last-child { margin-bottom: 0; }
 
 a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
@@ -172,36 +317,94 @@ ul { margin: 0; padding: 0; list-style: none; }
 .skip-link:focus { left: 0; }
 
 /* ---------- Tipografia di supporto ---------- */
+/* Occhiello: la voce piu' piccola del sistema e insieme la piu' spaziata.
+   E' quel contrasto — corpo minimo, spaziatura massima — a farla leggere come
+   etichetta e non come testo. */
 .eyebrow {
-  font-family: var(--font-sans);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
+  font-family: var(--font-testo);
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-occhiello);
   text-transform: uppercase;
   color: var(--accent);
-  margin-bottom: 1rem;
+  margin-bottom: 1.1rem;
   display: block;
 }
 
-.lead { font-size: 1.05rem; color: var(--text-muted); max-width: 62ch; }
+/* Sottotitolo: corpo piu' grande del testo corrente ma peso piu' leggero.
+   Prima era la stessa cosa del paragrafo, appena piu' grande. */
+.lead {
+  font-family: var(--font-testo);
+  font-size: var(--t-xl);
+  font-weight: 300;
+  line-height: 1.62;
+  letter-spacing: -0.002em;
+  color: var(--text-muted);
+  max-width: 56ch;
+}
 
-.section { padding: 4.5rem 0; }
+/* Piu' respiro fra le sezioni e sotto le intestazioni: la gerarchia si legge
+   anche nel vuoto, non solo nei corpi. */
+.section { padding: 5.5rem 0; }
 .section-dark { background: var(--bg-soft); transition: background-color var(--transition); }
 
-.section-head { margin-bottom: 2.5rem; max-width: 70ch; }
+.section-head { margin-bottom: 3.25rem; max-width: 62ch; }
 
 .gold-rule {
   width: 56px; height: 1px; background: var(--accent);
   margin: 1.5rem 0; border: 0;
 }
 
+/* ---------- Micro-titolo ----------
+   Dove il titolo di un elemento e' un'etichetta e non un nome proprio, cambia
+   famiglia: Archivo maiuscolo al posto di Fraunces. Non e' un vezzo — e' la
+   distinzione che il sistema fa fra "questa cosa ha un nome" (una casa: resta
+   in Fraunces) e "questa cosa e' una categoria" (un servizio, un passo: va in
+   maiuscolo spaziato). E' il salto di trama che evita che tutta la pagina
+   sembri lo stesso testo a corpi diversi. */
+.service-card h3,
+.servizio h3,
+.percorso-testo h3 {
+  font-family: var(--font-testo);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.35;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+
+/* ---------- Link nel testo ----------
+   Sottolineatura che non tocca le discendenti e si ispessisce al passaggio.
+   `text-decoration` invece di uno pseudo-elemento perche' cosi' segue
+   l'andamento della riga anche quando il link va a capo. */
+.prose a,
+.footer-col a,
+.cookie-copy a,
+.list-meta a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color var(--transition), color var(--transition),
+              text-decoration-thickness var(--transition);
+}
+.prose a:hover,
+.footer-col a:hover,
+.cookie-copy a:hover,
+.list-meta a:hover {
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+}
+
 /* ---------- Bottoni ---------- */
 .btn {
   display: inline-block;
-  font-family: var(--font-sans);
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-family: var(--font-testo);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
   text-transform: uppercase;
   padding: 1rem 2rem;
   border: 1px solid var(--accent);
@@ -314,7 +517,8 @@ ul { margin: 0; padding: 0; list-style: none; }
 .primary-nav a {
   display: block; padding: 0.85rem 0;
   color: var(--text);
-  font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase;
+  font-size: var(--t-xs); font-weight: 500;
+  letter-spacing: var(--tr-etichetta); text-transform: uppercase;
   border-bottom: 1px solid var(--border);
 }
 .primary-nav a:hover { color: var(--accent); }
@@ -430,8 +634,8 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
 
 .hero-eyebrow {
   display: flex; align-items: center; gap: 0.9rem;
-  font-size: 0.7rem; font-weight: 500;
-  letter-spacing: 0.24em; text-transform: uppercase;
+  font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-occhiello); text-transform: uppercase;
   color: var(--hero-accent);
   margin-bottom: 1.75rem;
 }
@@ -441,17 +645,19 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
 }
 
 .hero h1 {
-  font-size: clamp(2.6rem, 8vw, 5rem);
-  line-height: 1.03;
-  letter-spacing: -0.005em;
+  font-size: clamp(2.7rem, 1.4rem + 6vw, 5.1rem);
+  line-height: var(--lh-display);
+  letter-spacing: var(--tr-display);
   margin-bottom: 1.75rem;
   text-wrap: balance;
 }
 .hero h1 em { font-style: italic; color: var(--hero-accent); }
 
 .hero-lead {
-  font-size: clamp(1rem, 1.6vw, 1.15rem);
-  line-height: 1.75;
+  font-size: var(--t-xl);
+  font-weight: 300;
+  line-height: 1.62;
+  letter-spacing: -0.002em;
   color: var(--hero-muted);
   max-width: 46ch;
   margin-bottom: 2.75rem;
@@ -493,14 +699,16 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
 }
 .stats-grid .num {
   display: block;
-  font-family: var(--font-serif);
-  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 500;
+  letter-spacing: var(--tr-titolo);
   line-height: 1;
   color: var(--accent);
   margin-bottom: 0.55rem;
 }
 .stats-grid .label {
-  font-size: 0.66rem; letter-spacing: 0.15em;
+  font-size: var(--t-2xs); font-weight: 600; letter-spacing: var(--tr-etichetta);
   text-transform: uppercase; color: var(--text-muted);
 }
 
@@ -562,14 +770,15 @@ body.has-hero .site-header:not(.is-solid) .nav-toggle span { background: #f7f4ee
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   color: var(--text-muted); opacity: 0.35;
-  font-family: var(--font-serif); font-size: 2.5rem;
+  font-family: var(--font-display); font-size: var(--t-3xl);
   background: var(--surface-alt);
 }
 
 .badge-featured {
   position: absolute; top: 1rem; left: 1rem;
   background: var(--accent-solid); color: var(--on-accent);
-  font-size: 0.62rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-etichetta); text-transform: uppercase;
   padding: 0.35rem 0.75rem;
 }
 
@@ -579,17 +788,18 @@ body.has-hero .site-header:not(.is-solid) .nav-toggle span { background: #f7f4ee
 .property-card-body h3 a:hover { color: var(--accent); }
 
 .property-location {
-  font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+  font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-etichetta); text-transform: uppercase;
   color: var(--accent); margin-bottom: 1rem;
 }
 
-.property-excerpt { color: var(--text-muted); font-size: 0.92rem; flex: 1; }
+.property-excerpt { color: var(--text-muted); font-size: var(--t-sm); flex: 1; }
 
 .property-specs {
   display: flex; flex-wrap: wrap; gap: 1.25rem;
   margin-top: 1.5rem; padding-top: 1.25rem;
   border-top: 1px solid var(--border);
-  font-size: 0.78rem; color: var(--text-muted);
+  font-size: var(--t-xs); color: var(--text-muted);
 }
 .property-specs span strong { color: var(--text); font-weight: 500; }
 
@@ -604,7 +814,8 @@ body.has-hero .site-header:not(.is-solid) .nav-toggle span { background: #f7f4ee
   transition: background-color var(--transition), border-color var(--transition);
 }
 .filter-bar label {
-  display: block; font-size: 0.7rem; letter-spacing: 0.14em;
+  display: block; font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
   text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem;
 }
 
@@ -616,7 +827,7 @@ input[type="number"], select, textarea {
   border: 1px solid var(--border);
   color: var(--text);
   font-family: var(--font-sans);
-  font-size: 0.95rem;
+  font-size: var(--t-md);
   padding: 0.85rem 1rem;
   border-radius: var(--radius);
   transition: border-color var(--transition), background-color var(--transition);
@@ -627,7 +838,8 @@ textarea { resize: vertical; min-height: 140px; }
 
 .form-field { margin-bottom: 1.5rem; }
 .form-field > label {
-  display: block; font-size: 0.72rem; letter-spacing: 0.14em;
+  display: block; font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
   text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;
 }
 .form-field.required > label::after { content: " *"; color: var(--accent); }
@@ -636,19 +848,19 @@ textarea { resize: vertical; min-height: 140px; }
 .form-check input[type="checkbox"] {
   width: 18px; height: 18px; margin-top: 3px; accent-color: var(--accent-solid); flex-shrink: 0;
 }
-.form-check label { font-size: 0.88rem; color: var(--text-muted); text-transform: none; letter-spacing: 0; }
+.form-check label { font-size: var(--t-sm); color: var(--text-muted); text-transform: none; letter-spacing: 0; }
 
 .errorlist { list-style: none; margin: 0.5rem 0 0; padding: 0; }
-.errorlist li { color: var(--danger); font-size: 0.82rem; }
+.errorlist li { color: var(--danger); font-size: var(--t-xs); }
 
-.helptext { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem; }
+.helptext { display: block; font-size: var(--t-xs); color: var(--text-muted); margin-top: 0.4rem; }
 
 .alert {
   padding: 1rem 1.25rem;
   border-left: 2px solid var(--accent);
   background: var(--surface);
   box-shadow: var(--card-shadow);
-  font-size: 0.92rem;
+  font-size: var(--t-sm);
   margin-bottom: 1rem;
 }
 .alert-success { border-left-color: var(--success); }
@@ -658,7 +870,8 @@ textarea { resize: vertical; min-height: 140px; }
 /* ---------- Dettaglio immobile ---------- */
 .detail-hero { padding: 3rem 0 0; }
 .breadcrumb {
-  font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-etichetta); text-transform: uppercase;
   color: var(--text-muted); margin-bottom: 1.5rem;
 }
 .breadcrumb a { color: var(--text-muted); }
@@ -692,9 +905,14 @@ textarea { resize: vertical; min-height: 140px; }
   padding: 1.75rem 0;
 }
 .spec-item { text-align: center; }
-.spec-item .num { font-family: var(--font-serif); font-size: 1.9rem; color: var(--accent); display: block; }
+.spec-item .num {
+  font-family: var(--font-display); font-size: var(--t-2xl); font-weight: 500;
+  letter-spacing: var(--tr-titolo);
+  color: var(--accent); display: block;
+}
 .spec-item .label {
-  font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted);
+  font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-etichetta); text-transform: uppercase; color: var(--text-muted);
 }
 
 .booking-box {
@@ -706,7 +924,7 @@ textarea { resize: vertical; min-height: 140px; }
   transition: background-color var(--transition), border-color var(--transition);
 }
 .booking-box h3 { color: var(--text); }
-.booking-box .price-note { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+.booking-box .price-note { font-size: var(--t-xs); color: var(--text-muted); margin-bottom: 1.5rem; }
 
 /* ---------- Servizi ---------- */
 .service-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
@@ -719,10 +937,11 @@ textarea { resize: vertical; min-height: 140px; }
 }
 .service-card:hover { border-color: var(--accent); }
 .service-card .idx {
-  font-family: var(--font-serif); font-size: 0.9rem; color: var(--accent);
-  display: block; margin-bottom: 1rem; letter-spacing: 0.1em;
+  font-family: var(--font-display); font-size: var(--t-lg); font-weight: 500;
+  color: var(--accent); display: block; margin-bottom: 1.1rem;
+  letter-spacing: var(--tr-titolo);
 }
-.service-card p { color: var(--text-muted); font-size: 0.92rem; margin: 0; }
+.service-card p { color: var(--text-muted); font-size: var(--t-sm); margin: 0; }
 
 /* ==========================================================================
    Pagina Servizi
@@ -767,8 +986,8 @@ textarea { resize: vertical; min-height: 140px; }
 .servizio p {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.92rem;
-  line-height: 1.7;
+  font-size: var(--t-sm);
+  line-height: var(--lh-stretto);
 }
 
 .servizio-icona {
@@ -804,19 +1023,22 @@ textarea { resize: vertical; min-height: 140px; }
 
 .riparto-etichetta {
   display: block;
-  font-family: var(--font-serif);
-  font-size: 1.9rem;
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 500;
+  letter-spacing: var(--tr-titolo);
   line-height: 1;
   color: var(--accent);
 }
 .riparto-conteggio {
   margin: 0.35rem 0 1.5rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
   text-transform: uppercase;
   color: var(--text-muted);
 }
-.riparto-conteggio strong { color: var(--text); font-size: 0.95rem; }
+.riparto-conteggio strong { color: var(--text); font-size: var(--t-sm); }
 
 .riparto-col ul {
   list-style: none;
@@ -828,7 +1050,7 @@ textarea { resize: vertical; min-height: 140px; }
 .riparto-col li {
   position: relative;
   padding-left: 1.6rem;
-  font-size: 0.94rem;
+  font-size: var(--t-sm);
   line-height: 1.6;
   color: var(--text-muted);
 }
@@ -866,6 +1088,12 @@ textarea { resize: vertical; min-height: 140px; }
   grid-template-columns: var(--percorso-nodo) 1fr;
   column-gap: 1.25rem;
   align-items: start;
+  /* Le tessere sono alte quanto la piu' alta, e senza questo lo spazio che
+     avanza verrebbe distribuito fra le righe interne: il passo col testo piu'
+     lungo ne avrebbe meno da distribuire e il suo titolo si troverebbe piu' in
+     alto degli altri. Con `start` l'eccedenza resta in fondo e i titoli si
+     allineano. */
+  align-content: start;
 }
 
 /* Il collegamento al passo successivo e' un tratto per passo, non una linea
@@ -894,8 +1122,9 @@ textarea { resize: vertical; min-height: 140px; }
   /* Opaco: la linea passa dietro e non deve attraversare il numero. */
   background: var(--bg);
   color: var(--accent);
-  font-family: var(--font-serif);
-  font-size: 1.05rem;
+  font-family: var(--font-display);
+  font-size: var(--t-md);
+  font-weight: 500;
   transition: background-color 600ms ease, color 600ms ease, border-color 600ms ease;
 }
 
@@ -903,8 +1132,8 @@ textarea { resize: vertical; min-height: 140px; }
 .percorso-testo p {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.94rem;
-  line-height: 1.7;
+  font-size: var(--t-sm);
+  line-height: 1.65;
 }
 
 @media (min-width: 900px) {
@@ -949,7 +1178,7 @@ textarea { resize: vertical; min-height: 140px; }
 }
 .masonry figure:hover img { transform: scale(1.05); }
 .masonry figcaption {
-  padding: 0.75rem 1rem; font-size: 0.78rem; color: var(--text-muted);
+  padding: 0.75rem 1rem; font-size: var(--t-xs); color: var(--text-muted);
   background: var(--surface);
 }
 
@@ -970,7 +1199,7 @@ textarea { resize: vertical; min-height: 140px; }
 
 /* ---------- Contenuto legale / prosa ---------- */
 .prose { max-width: 72ch; }
-.prose h2 { margin-top: 2.5rem; font-size: clamp(1.4rem, 3.5vw, 1.9rem); }
+.prose h2 { margin-top: 3rem; font-size: var(--t-2xl); }
 .prose h3 { margin-top: 2rem; }
 .prose ul { list-style: disc; padding-left: 1.4rem; margin-bottom: 1.2em; color: var(--text-muted); }
 .prose li { margin-bottom: 0.5rem; }
@@ -991,7 +1220,7 @@ textarea { resize: vertical; min-height: 140px; }
 }
 .pagination a, .pagination span {
   padding: 0.6rem 1rem; border: 1px solid var(--border);
-  font-size: 0.82rem; color: var(--text-muted);
+  font-size: var(--t-xs); color: var(--text-muted);
 }
 .pagination a:hover { border-color: var(--accent); color: var(--accent); }
 .pagination .current { border-color: var(--accent); color: var(--accent); }
@@ -1006,21 +1235,22 @@ textarea { resize: vertical; min-height: 140px; }
 }
 .footer-grid { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
 .footer-col h3 {
-  font-family: var(--font-sans);
-  font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+  font-family: var(--font-testo);
+  font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-etichetta); text-transform: uppercase;
   color: var(--accent); margin-bottom: 1.25rem;
 }
-.footer-col li { margin-bottom: 0.6rem; font-size: 0.88rem; color: var(--text-muted); }
+.footer-col li { margin-bottom: 0.6rem; font-size: var(--t-sm); color: var(--text-muted); }
 .footer-col a { color: var(--text-muted); }
 .footer-col a:hover { color: var(--accent); }
 .brand-footer { margin-bottom: 1.25rem; }
-.footer-tagline { font-size: 0.88rem; color: var(--text-muted); max-width: 32ch; }
+.footer-tagline { font-size: var(--t-sm); color: var(--text-muted); max-width: 32ch; }
 
 .footer-bottom {
   margin-top: 3rem; padding-top: 1.75rem;
   border-top: 1px solid var(--border);
   display: flex; flex-direction: column; gap: 1rem;
-  font-size: 0.8rem; color: var(--text-muted);
+  font-size: var(--t-xs); color: var(--text-muted);
 }
 .footer-bottom p { margin: 0; }
 .footer-legal-links { display: flex; gap: 1.5rem; }
@@ -1028,39 +1258,40 @@ textarea { resize: vertical; min-height: 140px; }
 
 
 /* ---------- Dotazioni, badge e meta ---------- */
-.amenities-title { font-size: clamp(1.4rem, 3vw, 1.75rem); margin: 3rem 0 1.5rem; color: var(--text); }
+.amenities-title { font-size: var(--t-2xl); margin: 3rem 0 1.5rem; color: var(--text); }
 .amenities-grid {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1.5rem;
 }
 .amenities-grid li {
   display: flex; align-items: center; gap: 0.7rem;
-  font-size: 0.88rem; color: var(--text-muted);
+  font-size: var(--t-sm); color: var(--text-muted);
 }
 .amenities-grid svg { color: var(--accent); flex-shrink: 0; }
 
 .license-note {
   margin-top: 2.5rem; padding: 1rem 1.25rem;
   border-left: 2px solid var(--accent); background: var(--surface);
-  font-size: 0.82rem; color: var(--text-muted);
+  font-size: var(--t-xs); color: var(--text-muted);
 }
 .license-note strong { color: var(--text); font-weight: 500; }
 
 .badge-cat {
   position: absolute; top: 1rem; left: 1rem;
   background: var(--accent-solid); color: var(--on-accent);
-  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-etichetta); text-transform: uppercase;
   padding: 0.35rem 0.75rem;
 }
 
 .list-meta {
   display: flex; justify-content: space-between; align-items: baseline;
-  margin-bottom: 1.5rem; font-size: 0.82rem; color: var(--text-muted);
+  margin-bottom: 1.5rem; font-size: var(--t-xs); color: var(--text-muted);
 }
 
-.booking-host { margin-top: 0.75rem; text-align: center; font-size: 0.75rem; }
+.booking-host { margin-top: 0.75rem; text-align: center; font-size: var(--t-xs); }
 .booking-address {
   margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
-  font-size: 0.82rem; color: var(--text-muted);
+  font-size: var(--t-xs); color: var(--text-muted);
 }
 
 @media (min-width: 900px) {
@@ -1085,13 +1316,13 @@ textarea { resize: vertical; min-height: 140px; }
 
 .cookie-inner { display: flex; flex-direction: column; gap: 1.25rem; }
 .cookie-copy h2 {
-  font-size: 1.25rem; color: var(--text); margin: 0 0 0.5rem;
+  font-size: var(--t-xl); color: var(--text); margin: 0 0 0.6rem;
 }
 .cookie-copy p {
-  margin: 0; font-size: 0.88rem; line-height: 1.65; color: var(--text-muted);
+  margin: 0; font-size: var(--t-sm); line-height: 1.65; color: var(--text-muted);
 }
 .cookie-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
-.cookie-actions .btn { padding: 0.85rem 1.5rem; font-size: 0.72rem; }
+.cookie-actions .btn { padding: 0.85rem 1.5rem; font-size: var(--t-2xs); }
 
 .btn-quiet {
   background: transparent; border-color: var(--border); color: var(--text);
@@ -1102,17 +1333,17 @@ textarea { resize: vertical; min-height: 140px; }
   margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
 }
 .cookie-prefs[hidden] { display: none; }
-.cookie-prefs h3 { font-size: 1.15rem; color: var(--text); margin-bottom: 1rem; }
+.cookie-prefs h3 { font-size: var(--t-lg); color: var(--text); margin-bottom: 1rem; }
 
 .cookie-row {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem;
   padding: 1rem 0; border-top: 1px solid var(--border);
 }
 .cookie-row-name {
-  display: block; font-size: 0.9rem; color: var(--text); margin-bottom: 0.25rem;
+  display: block; font-size: var(--t-sm); color: var(--text); margin-bottom: 0.25rem;
 }
 .cookie-row-text {
-  display: block; font-size: 0.82rem; line-height: 1.6; color: var(--text-muted);
+  display: block; font-size: var(--t-xs); line-height: 1.6; color: var(--text-muted);
 }
 .cookie-check {
   width: 20px; height: 20px; flex-shrink: 0; margin-top: 0.2rem;
@@ -1291,8 +1522,12 @@ textarea { resize: vertical; min-height: 140px; }
 }
 
 @media (min-width: 900px) {
-  body { font-size: 17px; }
-  .section { padding: 6rem 0; }
+  /* L'ingrandimento va sulla radice, non sul body: le misure della scala sono
+     in `rem`, che si riferiscono alla radice. Alzando solo il body il testo
+     corrente cresceva e tutto il resto restava fermo, e i rapporti fra i
+     livelli si sfasavano del 6%. */
+  :root { font-size: 17px; }
+  .section { padding: 7rem 0; }
 
   .nav-toggle { display: none; }
 
@@ -1303,7 +1538,7 @@ textarea { resize: vertical; min-height: 140px; }
     order: 2;              /* dopo il brand, prima del toggle tema */
   }
   .primary-nav ul { flex-direction: row; gap: 2.25rem; padding: 0; align-items: center; }
-  .primary-nav a { padding: 0; border: 0; font-size: 0.74rem; }
+  .primary-nav a { padding: 0; border: 0; font-size: var(--t-2xs); }
   .primary-nav .nav-cta {
     border: 1px solid var(--accent); padding: 0.65rem 1.4rem;
   }
@@ -1452,13 +1687,14 @@ textarea { resize: vertical; min-height: 140px; }
 }
 .showcase-fine:hover { background: var(--surface); translate: 0 -4px; }
 .showcase-fine-eyebrow {
-  font-size: 0.7rem; font-weight: 500;
-  letter-spacing: 0.22em; text-transform: uppercase;
+  font-size: var(--t-2xs); font-weight: 600;
+  letter-spacing: var(--tr-occhiello); text-transform: uppercase;
   color: var(--accent);
 }
 .showcase-fine-titolo {
-  font-family: var(--font-serif);
-  font-size: 1.6rem; line-height: 1.15;
+  font-family: var(--font-display);
+  font-size: var(--t-2xl); font-weight: 500;
+  line-height: var(--lh-titolo); letter-spacing: var(--tr-titolo);
 }
 .showcase-fine-freccia svg { width: 30px; height: 30px; color: var(--accent); }
 .showcase-fine:hover .showcase-fine-freccia svg { translate: 6px 0; }
@@ -1559,7 +1795,7 @@ textarea { resize: vertical; min-height: 140px; }
 
   .showcase.e-bloccata .showcase-head { margin-bottom: 1.25rem; }
   .showcase.e-bloccata .showcase-head .lead { display: none; }
-  .showcase.e-bloccata .showcase-head h2 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
+  .showcase.e-bloccata .showcase-head h2 { font-size: var(--t-2xl); }
   .showcase.e-bloccata .showcase-head .gold-rule { margin: 1rem 0; }
   .showcase.e-bloccata .showcase-avanzamento { margin-top: 1.25rem; }
 
@@ -1919,10 +2155,10 @@ html.ev-intro .intro {
 
 .intro-claim {
   margin: 0;
-  font-family: var(--font-serif);
-  font-size: clamp(1.35rem, 4.4vw, 1.9rem);
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 400;
+  letter-spacing: var(--tr-titolo);
   color: #f4efe4;
   animation: ev-intro-claim 620ms cubic-bezier(0.16, 1, 0.3, 1) 560ms both;
 }

@@ -66,9 +66,19 @@
   {% endblock %}
 
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  {% comment %}
+    I caratteri sono ospitati qui, non su Google Fonts: nessuna richiesta a un
+    terzo dominio prima del consenso, e due connessioni in meno da aprire.
+    Il precarico serve perche' i file sono citati dentro il foglio di stile, e
+    senza il browser li scoprirebbe solo dopo averlo scaricato e interpretato.
+    Solo i due file usati da ogni pagina: il corsivo e i `latin-ext` si
+    caricano da soli quando servono davvero.
+  {% endcomment %}
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="{% static 'fonts/fraunces-var-latin.woff2' %}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="{% static 'fonts/archivo-var-latin.woff2' %}">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
 

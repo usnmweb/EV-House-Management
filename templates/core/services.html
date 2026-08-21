@@ -35,11 +35,45 @@
 
 
 {% comment %}
+  Come si comincia. Apre la pagina: prima si dice da dove si parte, poi cosa
+  comprende il servizio.
+
+  Quattro passi *in ordine*, quindi disegnati come una sequenza: una linea che
+  li unisce e si traccia mentre si scorre, e i numeri che si riempiono man
+  mano. Prima erano quattro schede identiche a quelle dei servizi e nulla
+  diceva che fossero passi consecutivi.
+  E' una lista ordinata anche nel markup: l'ordine e' contenuto, non grafica.
+{% endcomment %}
+<section class="section" aria-labelledby="t-percorso">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Come si comincia</span>
+      <h2 id="t-percorso">Quattro passi</h2>
+      <hr class="gold-rule">
+      <p class="lead">Dal primo contatto alla gestione a regime.</p>
+    </div>
+
+    <ol class="percorso" data-stagger>
+      {% for passo in percorso %}
+      <li class="percorso-passo" data-reveal="fade">
+        <span class="percorso-nodo" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+        <div class="percorso-testo">
+          <h3>{{ passo.title }}</h3>
+          <p>{{ passo.text }}</p>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+
+
+{% comment %}
   Cosa comprende. Sei voci con un'icona ciascuna: prima erano sei blocchi di
   testo identici numerati da 01 a 06, e la numerazione suggeriva un ordine che
-  non c'e' — l'ordine e' quello del percorso, piu' in basso.
+  non c'e' — l'ordine e' quello del percorso, qui sopra.
 {% endcomment %}
-<section class="section" aria-labelledby="t-comprende">
+<section class="section section-dark" aria-labelledby="t-comprende">
   <div class="container">
     <div class="section-head" data-reveal>
       <span class="eyebrow">Cosa comprende</span>
@@ -65,7 +99,7 @@
   «e io cosa devo fare?» — e la risposta la da' il confronto fra le due liste,
   non un aggettivo: tre voci da una parte, sei dall'altra.
 {% endcomment %}
-<section class="section section-dark" aria-labelledby="t-riparto">
+<section class="section" aria-labelledby="t-riparto">
   <div class="container">
     <div class="section-head" data-reveal>
       <span class="eyebrow">Chi fa cosa</span>
@@ -90,37 +124,6 @@
         </ul>
       </div>
     </div>
-  </div>
-</section>
-
-
-{% comment %}
-  Come si comincia. Quattro passi *in ordine*, quindi disegnati come una
-  sequenza: una linea che li unisce e si traccia mentre si scorre, e i numeri
-  che si riempiono man mano. Prima erano quattro schede uguali alle sei qui
-  sopra, e nulla diceva che fossero passi consecutivi.
-  E' una lista ordinata anche nel markup: l'ordine e' contenuto, non grafica.
-{% endcomment %}
-<section class="section" aria-labelledby="t-percorso">
-  <div class="container">
-    <div class="section-head" data-reveal>
-      <span class="eyebrow">Come si comincia</span>
-      <h2 id="t-percorso">Quattro passi</h2>
-      <hr class="gold-rule">
-      <p class="lead">Dal primo contatto alla gestione a regime.</p>
-    </div>
-
-    <ol class="percorso" data-stagger>
-      {% for passo in percorso %}
-      <li class="percorso-passo" data-reveal="fade">
-        <span class="percorso-nodo" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
-        <div class="percorso-testo">
-          <h3>{{ passo.title }}</h3>
-          <p>{{ passo.text }}</p>
-        </div>
-      </li>
-      {% endfor %}
-    </ol>
   </div>
 </section>
 
