@@ -1,0 +1,36 @@
+{% comment %}
+  Icone dei servizi. Sono qui e non nella vista per non dover marcare del
+  markup come `safe`: la vista passa solo una chiave, il disegno sta nel
+  template. Tutte 24x24, solo tratto, colore ereditato da `currentColor`.
+  Decorative: chi le legge con uno screen reader ha gia' il titolo accanto.
+{% endcomment %}
+<svg class="servizio-icona" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  {% if icona == "casa" %}
+    <path d="M3.5 10.8 12 4l8.5 6.8"/>
+    <path d="M6 9.6V20h12V9.6"/>
+    <path d="m9.4 14.6 1.9 1.9 3.6-3.6"/>
+  {% elif icona == "andamento" %}
+    <path d="m3 17.5 6-6 3.5 3.5L21 6.5"/>
+    <path d="M15.2 6.5H21v5.8"/>
+    <path d="M3 21h18"/>
+  {% elif icona == "canali" %}
+    <circle cx="6" cy="12" r="2.6"/>
+    <circle cx="18" cy="6" r="2.6"/>
+    <circle cx="18" cy="18" r="2.6"/>
+    <path d="m8.3 10.7 7.4-3.5"/>
+    <path d="m8.3 13.3 7.4 3.5"/>
+  {% elif icona == "fotocamera" %}
+    <path d="M4 8h3l1.6-2h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+    <circle cx="12" cy="13.4" r="3.4"/>
+  {% elif icona == "rendiconto" %}
+    <path d="M6 3h8l5 5v13H6z"/>
+    <path d="M14 3v5h5"/>
+    <path d="M9.5 17.2v-3.8"/>
+    <path d="M12.5 17.2v-6"/>
+    <path d="M15.5 17.2v-2.6"/>
+  {% elif icona == "conformita" %}
+    <path d="m12 3 7 3v6.2c0 4.2-2.9 7.4-7 8.8-4.1-1.4-7-4.6-7-8.8V6z"/>
+    <path d="m9 12 2.2 2.2L15.5 10"/>
+  {% endif %}
+</svg>

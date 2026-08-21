@@ -724,6 +724,220 @@ textarea { resize: vertical; min-height: 140px; }
 }
 .service-card p { color: var(--text-muted); font-size: 0.92rem; margin: 0; }
 
+/* ==========================================================================
+   Pagina Servizi
+   ========================================================================== */
+
+/* ---------- Testata di pagina ----------
+   Apre le pagine interne con il titolo di primo livello. Stessa fascia della
+   `cta-band` ma allineata a sinistra: e' un'apertura, non un invito. */
+.page-head {
+  padding: 4rem 0 3.25rem;
+  background:
+    linear-gradient(var(--band-veil), var(--band-veil)),
+    radial-gradient(ellipse at 82% 40%, var(--band-glow), transparent 62%),
+    var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--transition), border-color var(--transition);
+}
+.page-head h1 { max-width: 18ch; margin-bottom: 0; }
+.page-head h1 em { font-style: italic; color: var(--accent); }
+.page-head .lead { max-width: 56ch; margin-bottom: 0; }
+
+
+/* ---------- Elenco dei servizi ----------
+   Sei voci con un'icona. L'icona non e' decorazione: e' quello che rende
+   l'elenco scorribile con lo sguardo invece che da leggere riga per riga. */
+.servizi-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;                       /* le voci si toccano: il fondo fa da griglia */
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.servizio {
+  background: var(--surface);
+  padding: 2.25rem 2rem;
+  transition: background-color var(--transition);
+}
+.servizio h3 { margin-bottom: 0.5rem; }
+.servizio p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.servizio-icona {
+  display: block;
+  width: 30px; height: 30px;
+  color: var(--accent);
+  margin-bottom: 1.4rem;
+  /* `translate` e non `transform`: la rivelazione allo scroll occupa gia'
+     `transform` sull'antenato e le due proprieta' si compongono invece di
+     scontrarsi. */
+  transition: translate var(--transition), color var(--transition);
+}
+.servizio:hover { background: var(--surface-alt); }
+.servizio:hover .servizio-icona { translate: 0 -3px; }
+
+
+/* ---------- Chi fa cosa ----------
+   Due colonne affiancate. Il messaggio e' la differenza di lunghezza fra le
+   due liste, quindi le colonne restano allineate in cima e crescono verso il
+   basso: il confronto si vede a colpo d'occhio. */
+.riparto {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.riparto-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2rem;
+}
+.riparto-nostro { border-color: var(--accent); }
+
+.riparto-etichetta {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 1.9rem;
+  line-height: 1;
+  color: var(--accent);
+}
+.riparto-conteggio {
+  margin: 0.35rem 0 1.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.riparto-conteggio strong { color: var(--text); font-size: 0.95rem; }
+
+.riparto-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+.riparto-col li {
+  position: relative;
+  padding-left: 1.6rem;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+/* Trattino invece di una spunta: non c'e' niente da confermare, e' un elenco. */
+.riparto-col li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.7em;
+  width: 12px; height: 1px;
+  background: var(--accent);
+}
+
+
+/* ---------- Percorso in quattro passi ----------
+   E' una sequenza, e va vista come tale: una linea che unisce i passi e si
+   traccia man mano che si scorre, con i numeri che si riempiono al passaggio.
+   Prima erano quattro schede uguali a quelle dei servizi e niente diceva che
+   fossero consecutive. */
+.percorso {
+  --percorso-nodo: 52px;
+  --percorso-gap: 2.5rem;
+
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--percorso-gap);
+}
+
+.percorso-passo {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--percorso-nodo) 1fr;
+  column-gap: 1.25rem;
+  align-items: start;
+}
+
+/* Il collegamento al passo successivo e' un tratto per passo, non una linea
+   sola tirata da un capo all'altro. Cosi' non c'e' niente da calcolare: ogni
+   tratto va dal proprio nodo a quello dopo, e resta esatto qualunque sia
+   l'altezza delle righe o il numero dei passi. Sull'ultimo non c'e'. */
+.percorso-passo::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: calc(var(--percorso-nodo) / 2);
+  top: var(--percorso-nodo);
+  bottom: calc(-1 * var(--percorso-gap));
+  width: 1px;
+  background: var(--accent);
+  transform-origin: top center;
+}
+.percorso-passo:last-child::before { content: none; }
+
+.percorso-nodo {
+  display: grid;
+  place-items: center;
+  width: var(--percorso-nodo); height: var(--percorso-nodo);
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  /* Opaco: la linea passa dietro e non deve attraversare il numero. */
+  background: var(--bg);
+  color: var(--accent);
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  transition: background-color 600ms ease, color 600ms ease, border-color 600ms ease;
+}
+
+.percorso-testo h3 { margin-bottom: 0.4rem; }
+.percorso-testo p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
+@media (min-width: 900px) {
+  .percorso {
+    --percorso-gap: 2rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .percorso-passo { grid-template-columns: 1fr; column-gap: 0; }
+  .percorso-nodo { margin-bottom: 1.5rem; }
+
+  /* Da qui in su i passi sono in riga: il tratto diventa orizzontale. */
+  .percorso-passo::before {
+    left: var(--percorso-nodo);
+    right: calc(-1 * var(--percorso-gap));
+    top: calc(var(--percorso-nodo) / 2);
+    bottom: auto;
+    width: auto;
+    height: 1px;
+    transform-origin: left center;
+  }
+}
+
+@media (min-width: 600px) {
+  .servizi-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .riparto { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 900px) {
+  .servizi-lista { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .page-head { padding: 5.5rem 0 4.5rem; }
+  .riparto { gap: 2rem; }
+}
+
 /* ---------- Galleria ---------- */
 .masonry { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 .masonry figure {
@@ -1432,6 +1646,20 @@ textarea { resize: vertical; min-height: 140px; }
 .js-anim [data-reveal="fade"] { transform: none; }
 .js-anim [data-reveal].is-visible { opacity: 1; transform: none; }
 
+/* I tratti che uniscono i passi del percorso non compaiono: si tracciano.
+   Ripiego senza timeline di scorrimento — il tratto segue la rivelazione del
+   proprio passo. */
+.js-anim .percorso-passo[data-reveal]::before {
+  transform: scaleY(0);
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.js-anim .percorso-passo[data-reveal].is-visible::before { transform: scaleY(1); }
+
+@media (min-width: 900px) {
+  .js-anim .percorso-passo[data-reveal]::before { transform: scaleX(0); }
+  .js-anim .percorso-passo[data-reveal].is-visible::before { transform: scaleX(1); }
+}
+
 /* ---------- Parallax dell'hero ----------
    La fotografia scorre piu' lentamente della pagina. Due accorgimenti:
 
@@ -1519,6 +1747,31 @@ textarea { resize: vertical; min-height: 140px; }
     animation-name: ev-reveal-fade;
   }
 
+  /* Ogni tratto si disegna quando si arriva al proprio passo: la sequenza si
+     costruisce sotto gli occhi invece di essere gia' li'. Lo scaglionamento
+     con `--i` serve sopra i 900px, dove i quattro passi sono alla stessa
+     altezza e senza sfasamento partirebbero tutti insieme. */
+  .js-anim .percorso-passo::before {
+    animation: ev-linea-verticale linear both;
+    animation-timeline: view();
+    animation-range:
+      entry calc(32% + var(--i, 0) * 6%)
+      entry calc(82% + var(--i, 0) * 6%);
+  }
+  @media (min-width: 900px) {
+    .js-anim .percorso-passo::before { animation-name: ev-linea-orizzontale; }
+  }
+
+  /* I numeri si riempiono al passaggio, scaglionati da `--i` come le schede:
+     la sequenza si legge anche stando fermi a meta' sezione. */
+  .js-anim .percorso-nodo {
+    animation: ev-nodo linear both;
+    animation-timeline: view();
+    animation-range:
+      entry calc(34% + var(--i, 0) * 6%)
+      entry calc(78% + var(--i, 0) * 6%);
+  }
+
   /* Con la timeline non serve piu' la classe applicata dall'observer. */
   .js-anim [data-reveal].is-visible {
     opacity: 1;
@@ -1563,6 +1816,28 @@ textarea { resize: vertical; min-height: 140px; }
   82%  {             transform: translate3d(2.5px, 0, 0)   rotate(0.4deg); }
   92%  {             transform: translate3d(-1px, 0, 0)    rotate(-0.15deg); }
   100% { opacity: 1; transform: none; }
+}
+
+@keyframes ev-linea-verticale {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+@keyframes ev-linea-orizzontale {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes ev-nodo {
+  from { background-color: var(--bg); color: var(--accent); border-color: var(--border); }
+  to   { background-color: var(--accent-solid); color: var(--on-accent); border-color: var(--accent-solid); }
+}
+
+/* Ripiego senza timeline: il numero si riempie con la rivelazione del passo. */
+.js-anim .percorso-passo[data-reveal].is-visible .percorso-nodo {
+  background-color: var(--accent-solid);
+  color: var(--on-accent);
+  border-color: var(--accent-solid);
 }
 
 /* Indice progressivo per scaglionare i figli di un contenitore */

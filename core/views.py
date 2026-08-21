@@ -36,47 +36,96 @@ def home(request):
 
 
 def services(request):
-    service_list = [
+    # I contenuti stanno qui e non nel template: sono dati, e averli in un punto
+    # solo evita che descrizione, ordine e icona vadano fuori sincrono.
+    # `icona` e' la chiave letta da core/_icona_servizio.html.
+    servizi = [
         {
-            "title": "Gestione completa",
-            "text": "Ci occupiamo di ogni aspetto operativo: check-in, pulizie, manutenzione e "
-                    "assistenza agli ospiti 24/7.",
+            "icona": "casa",
+            "title": "Gestione operativa",
+            "text": "Check-in e check-out, pulizie, biancheria, manutenzione ordinaria e "
+                    "straordinaria. Coordiniamo i fornitori e assistiamo gli ospiti.",
         },
         {
+            "icona": "andamento",
             "title": "Revenue management",
             "text": "Prezzi dinamici e analisi di mercato costanti per massimizzare la resa "
                     "del tuo immobile senza sacrificare la qualità.",
         },
         {
+            "icona": "canali",
             "title": "Distribuzione multicanale",
             "text": "Pubblicazione e sincronizzazione su Airbnb, Booking.com e canali diretti, "
                     "con calendario unico e zero overbooking.",
         },
         {
+            "icona": "fotocamera",
             "title": "Fotografia e styling",
             "text": "Servizi fotografici professionali e home staging per presentare la "
                     "proprietà al massimo del suo potenziale.",
         },
         {
+            "icona": "rendiconto",
             "title": "Reportistica trasparente",
             "text": "Rendiconti mensili chiari su occupazione, ricavi e costi, sempre "
                     "accessibili al proprietario.",
         },
         {
-            "title": "Conformita e burocrazia",
+            "icona": "conformita",
+            "title": "Conformità e adempimenti",
             "text": "Contratti, notifiche agli enti, tassa di soggiorno e adempimenti locali "
                     "gestiti integralmente da noi.",
         },
     ]
+
+    # Il confronto fra le due colonne e' il messaggio: e' la lunghezza delle due
+    # liste a dire come si dividono i compiti, non un aggettivo.
+    riparto = {
+        "tuo": [
+            "Ci consegni le chiavi",
+            "Approvi il piano di gestione",
+            "Ricevi il rendiconto ogni mese",
+        ],
+        "nostro": [
+            "Accoglienza e assistenza agli ospiti",
+            "Pulizie, biancheria e riassetto",
+            "Manutenzione e coordinamento dei fornitori",
+            "Prezzi, calendario e pubblicazione sui portali",
+            "Fotografia e presentazione dell'immobile",
+            "Adempimenti, tassa di soggiorno e comunicazioni agli enti",
+        ],
+    }
+
+    percorso = [
+        {
+            "title": "Sopralluogo",
+            "text": "Visitiamo l'immobile e ne valutiamo posizione, stato e potenziale di rendita.",
+        },
+        {
+            "title": "Proposta",
+            "text": "Ti presentiamo un piano di gestione con stime di occupazione e ricavo.",
+        },
+        {
+            "title": "Attivazione",
+            "text": "Styling, servizio fotografico, pubblicazione degli annunci e avvio operativo.",
+        },
+        {
+            "title": "Gestione",
+            "text": "Operatività continua e rendiconti mensili trasparenti, senza pensieri per te.",
+        },
+    ]
+
     return render(
         request,
         "core/services.html",
         {
-            "services": service_list,
+            "servizi": servizi,
+            "riparto": riparto,
+            "percorso": percorso,
             "page_title": "Servizi",
             "meta_description": (
                 "Gestione completa, revenue management, distribuzione multicanale e "
-                "reportistica trasparente per il tuo immobile."
+                "reportistica trasparente per il tuo immobile in Sardegna."
             ),
         },
     )

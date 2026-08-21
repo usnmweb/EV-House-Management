@@ -558,6 +558,70 @@ Due punti, da tenere allineati: `[:9]` in `core/views.py` e `--tessere` in
 
 ---
 
+## Pagina Servizi
+
+Rifatta partendo dal difetto principale: i **quattro passi** del percorso erano
+resi con le stesse schede dei **sei servizi**, quindi niente diceva che fossero
+consecutivi. Una sequenza mostrata come griglia non si legge come sequenza.
+
+La pagina ora è in quattro momenti, ognuno con una forma diversa:
+
+| sezione | forma | cosa risponde |
+|---|---|---|
+| Testata | titolo + occhiello | dove sono |
+| Cosa comprende | sei voci con icona | cosa ricevo |
+| Chi fa cosa | due colonne a confronto | e io cosa devo fare |
+| Come si comincia | percorso in quattro passi | da dove parto |
+
+**La testata porta l'H1.** Prima la pagina cominciava con un `<h2>` e non aveva
+un titolo di primo livello — un difetto per gli screen reader e per i motori di
+ricerca. *Restano senza H1 `/properties/`, `/gallery/` e `/contact/`.*
+
+**Le icone non sono decorazione**: sono quello che rende scorribile con lo
+sguardo un elenco di sei voci altrimenti da leggere riga per riga. Stanno in
+`core/_icona_servizio.html`, una sola chiave per servizio nella vista, nessun
+markup da marcare `safe`. Solo tratto, `currentColor`, 24×24.
+
+**La numerazione 01–06 è sparita dai servizi.** Non erano passi: numerarli
+suggeriva un ordine che non esiste. I numeri restano dove l'ordine c'è
+davvero, nel percorso.
+
+**Il confronto in due colonne** è la sezione che risponde alla domanda vera del
+proprietario. Il messaggio lo dà la lunghezza delle due liste — tre voci contro
+sei — non un aggettivo.
+
+### Il percorso
+
+Quattro passi uniti da una linea che si traccia mentre si scorre, con i numeri
+che si riempiono al passaggio. In riga sopra i 900px, in colonna sotto.
+
+**La linea è un tratto per passo, non una linea sola.** La prima versione era
+un unico elemento tirato da un capo all'altro, e sbordava: `right: 26px` lo
+porta al bordo del contenitore, non al centro dell'ultimo nodo. Si poteva
+calcolare — con N colonne uguali il centro dell'ultimo nodo cade a
+`100% − (100%/N − gap·(N−1)/N − nodo/2)` — ma in colonna non basta, perché le
+righe hanno altezze diverse e non c'è formula.
+
+Con un `::before` per passo non c'è niente da calcolare: ogni tratto va dal
+proprio nodo a quello dopo e resta esatto a qualunque misura, con qualunque
+numero di passi. Sull'ultimo `content: none`. In più ogni tratto si disegna
+quando si arriva al proprio passo, quindi la sequenza si costruisce sotto gli
+occhi invece di essere già lì.
+
+### Perché griglia e percorso usano `data-reveal="fade"`
+
+La rivelazione normale sposta in verticale di 22px, scaglionata. Dove gli
+elementi sono uniti — da una linea, o da una griglia a filetti come l'elenco dei
+servizi — bastano pochi pixel di sfasamento perché si legga come
+**disallineamento** invece che come animazione. E su una timeline di
+scorrimento lo sfasamento resta finché non si scorre oltre: fermandosi a metà
+si vedrebbe una fila storta.
+
+La variante `fade` scaglionata solo nell'opacità dà la stessa sequenza senza
+mai spostare niente. Verificato a metà rivelazione: tutti i bordi superiori
+allo stesso pixel, tutte le trasformazioni all'identità.
+
+
 ## Animazioni
 
 Tre meccanismi distinti.
