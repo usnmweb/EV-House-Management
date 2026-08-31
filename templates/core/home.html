@@ -124,16 +124,17 @@
       {% if stagione.occupazione and stagione.anno %}Stagione {{ stagione.anno }}{% else %}Il portfolio{% endif %}
     </span>
 
-    {% if stagione.occupazione %}
-      <p class="stagione-cifra" data-reveal="fade">{{ stagione.occupazione }}%</p>
+    {% comment %}
+      La cifra d'apertura non ripete nessuno dei dati qui sotto. Occupazione e
+      notti sono passate nella riga dei numeri: se restassero anche qui, la
+      sezione direbbe tre volte la stessa cosa in mezzo schermo, e un numero
+      ripetuto perde il peso che aveva.
+    {% endcomment %}
+    {% if stagione.stagioni %}
+      <p class="stagione-cifra" data-reveal="fade">{{ stagione.stagioni }}</p>
       <h2 id="t-numeri" class="stagione-frase" data-reveal="fade">
-        di occupazione nella settimana di punta.
+        stagioni complete in Sardegna, dal {{ stagione.primo_anno }}.
       </h2>
-      {% if stagione.notti_vendute and stagione.notti_disponibili %}
-        <p class="stagione-dettaglio" data-reveal="fade">
-          {{ stagione.notti_vendute }} notti vendute su {{ stagione.notti_disponibili }} disponibili{% if stagione.settimana %}, {{ stagione.settimana }}{% endif %}.
-        </p>
-      {% endif %}
     {% else %}
       <p class="stagione-cifra" data-reveal="fade">{{ immobili_gestiti }}</p>
       <h2 id="t-numeri" class="stagione-frase" data-reveal="fade">
@@ -147,43 +148,52 @@
         <span class="label">Immobili gestiti</span>
       </li>
 
+      {% if stagione.occupazione %}
       <li data-reveal="fade">
-        {% if ospiti %}
-          {% comment %}
-            Il valore vero e' gia' nel markup: se JavaScript non gira, o se
-            l'utente ha chiesto di ridurre le animazioni, il numero c'e'
-            comunque. L'animazione lo sostituisce, non lo crea.
-          {% endcomment %}
-          <span class="num contatore"
-                data-totale="{{ ospiti.totale }}"
-                data-al-secondo="{{ ospiti.al_secondo|stringformat:'.9f' }}"
-                data-da-quando="{{ ospiti.da_quando }}">{{ ospiti.totale }}</span>
-        {% else %}
-          <span class="num"><span class="placeholder">[da inserire]</span></span>
-        {% endif %}
+        <span class="num">{{ stagione.occupazione }}%</span>
+        <span class="label">Occupazione{% if stagione.settimana %} tra {{ stagione.settimana }}{% endif %}</span>
+      </li>
+      {% endif %}
+
+      {% if stagione.notti_vendute and stagione.notti_disponibili %}
+      <li data-reveal="fade">
+        <span class="num">{{ stagione.notti_vendute }} / {{ stagione.notti_disponibili }}</span>
+        <span class="label">Notti occupate su notti disponibili</span>
+      </li>
+      {% endif %}
+
+      {% comment %}
+        Ospiti accolti e rinnovi dei proprietari restano previsti, ma senza
+        segnaposto: finche' i numeri non arrivano dalle impostazioni la
+        casella non c'e' proprio. Un «[da inserire]» in mezzo alla prova
+        sociale e' peggio di un dato in meno — dice al visitatore che il sito
+        non e' finito. Appena GUESTS_TOTAL / OWNERS_SERVED sono valorizzati,
+        le due caselle tornano da sole.
+      {% endcomment %}
+      {% if ospiti %}
+      <li data-reveal="fade">
+        {% comment %}
+          Il valore vero e' gia' nel markup: se JavaScript non gira, o se
+          l'utente ha chiesto di ridurre le animazioni, il numero c'e'
+          comunque. L'animazione lo sostituisce, non lo crea.
+        {% endcomment %}
+        <span class="num contatore"
+              data-totale="{{ ospiti.totale }}"
+              data-al-secondo="{{ ospiti.al_secondo|stringformat:'.9f' }}"
+              data-da-quando="{{ ospiti.da_quando }}">{{ ospiti.totale }}</span>
         <span class="label">Ospiti accolti</span>
       </li>
+      {% endif %}
 
+      {% if rinnovi %}
       <li data-reveal="fade">
-        {% if rinnovi %}
-          <span class="num">{{ rinnovi.percentuale }}%</span>
-          <span class="label">
-            Proprietari che rinnovano
-            <span class="label-sotto">{{ rinnovi.rimasti }} ancora con noi su {{ rinnovi.serviti }} serviti</span>
-          </span>
-        {% else %}
-          <span class="num"><span class="placeholder">[da inserire]</span></span>
-          <span class="label">Proprietari che rinnovano</span>
-        {% endif %}
-      </li>
-
-      <li data-reveal="fade">
-        <span class="num">{{ stagione.primo_anno|default:"—" }}</span>
+        <span class="num">{{ rinnovi.percentuale }}%</span>
         <span class="label">
-          Dal {{ stagione.primo_anno|default:"—" }}
-          {% if stagione.stagioni %}<span class="label-sotto">{{ stagione.stagioni }} stagioni complete</span>{% endif %}
+          Proprietari che rinnovano
+          <span class="label-sotto">{{ rinnovi.rimasti }} ancora con noi su {{ rinnovi.serviti }} serviti</span>
         </span>
       </li>
+      {% endif %}
     </ul>
   </div>
 </section>

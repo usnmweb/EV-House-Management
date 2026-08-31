@@ -832,8 +832,10 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
   max-width: 22ch;
 }
 
-/* I quattro numeri di supporto. Il filetto sopra ciascuno li separa senza
-   bisogno di riquadri. */
+/* I numeri di supporto. Il filetto sopra ciascuno li separa senza bisogno di
+   riquadri. Quante siano non e' deciso qui: le caselle senza dato non vengono
+   stampate, quindi la griglia si conta da sola con auto-fit invece di avere
+   un numero di colonne fisso che lascerebbe buchi in fondo alla riga. */
 .stagione-dati {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -856,16 +858,6 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
   color: var(--accent);
   margin-bottom: 0.5rem;
 }
-/* Il segnaposto non deve avere il peso di un numero: al posto della cifra si
-   fa piccolo e in secondo piano, cosi' si legge come «manca questo dato» e non
-   come un titolo. */
-.stagione-dati .num .placeholder {
-  font-family: var(--font-testo);
-  font-size: var(--t-sm);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
 .stagione-dati .label {
   display: block;
   font-size: var(--t-xs);
@@ -881,8 +873,15 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
   color: var(--text-muted);
 }
 
+/* Sul telefono le colonne sono due: se le caselle sono in numero dispari,
+   l'ultima resta sola con un filetto lungo meta' riga e sembra un pezzo
+   mancante. Le si fa occupare la riga intera. */
+@media (max-width: 699.98px) {
+  .stagione-dati li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+
 @media (min-width: 700px) {
-  .stagione-dati { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2rem; }
+  .stagione-dati { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 2rem; }
 }
 
 @media (min-width: 900px) {
@@ -1356,13 +1355,7 @@ textarea { resize: vertical; min-height: 140px; }
    Home: esperienza dell'ospite, recensioni, zone coperte
    ========================================================================== */
 
-/* Dettaglio sotto la cifra grande e sottoetichette dei quattro dati. */
-.stagione-dettaglio {
-  margin: 1rem 0 0;
-  font-size: var(--t-sm);
-  color: var(--text-muted);
-  max-width: 46ch;
-}
+/* Sottoetichetta dentro una casella dei numeri. */
 .label-sotto {
   display: block;
   margin-top: 0.35rem;

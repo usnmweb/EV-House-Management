@@ -717,23 +717,39 @@ fonderebbero in una sola.
 
 ### Barra dei numeri
 
-Cifra grande d'apertura, quattro dati sotto un filetto. I numeri sono
+Cifra grande d'apertura e le caselle sotto un filetto. I numeri sono
 **affermazioni commerciali**, non dati che il sito ricava da sé: stanno tutti
 in `settings.py`, in un punto solo, aggiornabili senza toccare un template.
 
-| dato | da dove |
-|---|---|
-| Immobili gestiti | `PROPERTIES_MANAGED` (`+100`) |
-| Ospiti accolti | `GUESTS_TOTAL`, `GUESTS_LAST_12M`, `GUESTS_AS_OF` |
-| Proprietari che rinnovano | `OWNERS_SERVED`, `OWNERS_RETAINED` |
-| Dal … | `SEASON_FIRST_YEAR` |
+| casella | da dove | oggi |
+|---|---|---|
+| Immobili gestiti | `PROPERTIES_MANAGED` | `+100` |
+| Occupazione tra … | `SEASON_OCCUPANCY`, `SEASON_WEEK` | `93,19%`, `10–16 agosto 2026` |
+| Notti occupate su disponibili | `SEASON_NIGHTS_SOLD`, `SEASON_NIGHTS_AVAILABLE` | `424 / 455` |
+| Ospiti accolti | `GUESTS_TOTAL`, `GUESTS_LAST_12M`, `GUESTS_AS_OF` | *da fornire* |
+| Proprietari che rinnovano | `OWNERS_SERVED`, `OWNERS_RETAINED` | *da fornire* |
 
-**Nessuno ha un valore di comodo.** Dove il dato manca compare `[da inserire]`,
-composto piccolo e in secondo piano. Un numero inventato su un sito commerciale
-è una pratica ingannevole (Codice del Consumo, art. 21-22), non un riempitivo.
+La cifra d'apertura è `SEASON_FIRST_YEAR`: quante stagioni complete e da quando.
+Non ripete nessuna delle caselle — occupazione e notti stavano anche lì, e la
+sezione diceva tre volte la stessa cosa in mezzo schermo.
+
+**Nessuna casella ha un valore di comodo, e nessuna mostra un segnaposto.**
+Finché i numeri non ci sono, la casella non viene stampata affatto: un
+`[da inserire]` in mezzo alla prova sociale dice al visitatore che il sito non è
+finito. Appena `GUESTS_TOTAL` e `OWNERS_SERVED` sono valorizzati, le due caselle
+tornano da sole. Un numero inventato, invece, sarebbe una pratica ingannevole
+(Codice del Consumo, art. 21-22), non un riempitivo.
+
+La griglia si conta da sé (`auto-fit`) proprio perché il numero di caselle non è
+fisso: tre oggi, cinque quando arrivano gli altri dati, senza buchi in fondo alla
+riga. Sul telefono le colonne sono due e l'ultima casella, se resta spaiata,
+occupa la riga intera.
 
 La percentuale di rinnovo **non si scrive a mano**: si calcola da serviti e
 rimasti, così i tre numeri non possono raccontare cose diverse.
+
+I decimali si scrivono con la virgola (`93,19`): il sito è in italiano, e il
+punto lì dentro è un separatore delle migliaia.
 
 ### Due numeri diversi, due parole diverse
 

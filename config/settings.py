@@ -171,7 +171,7 @@ BOOKING_URL = os.environ.get("BOOKING_URL", "https://evhouse.kross.travel/")
 # --- Stagione (forniti dal gestore) ---
 SEASON_YEAR = os.environ.get("SEASON_YEAR", "2026")
 SEASON_OCCUPANCY = os.environ.get("SEASON_OCCUPANCY", "93,19")
-SEASON_WEEK = os.environ.get("SEASON_WEEK", "10-16 agosto 2026")
+SEASON_WEEK = os.environ.get("SEASON_WEEK", "10–16 agosto 2026")
 SEASON_NIGHTS_SOLD = os.environ.get("SEASON_NIGHTS_SOLD", "424")
 SEASON_NIGHTS_AVAILABLE = os.environ.get("SEASON_NIGHTS_AVAILABLE", "455")
 SEASON_FIRST_YEAR = os.environ.get("SEASON_FIRST_YEAR", "2021")
