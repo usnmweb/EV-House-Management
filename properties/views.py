@@ -48,7 +48,7 @@ class PropertyListView(ListView):
         )
         ctx["page_title"] = "Immobili in gestione"
         ctx["meta_description"] = (
-            f"{ctx['total_count']} immobili in gestione EV House Management in Sardegna: "
+            f"{ctx['total_count']} immobili in vetrina di EV House Management in Sardegna: "
             "appartamenti, aparthotel e ville per soggiorni brevi."
         )
         return ctx

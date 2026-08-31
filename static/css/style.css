@@ -511,7 +511,12 @@ ul { margin: 0; padding: 0; list-style: none; }
   max-height: 0; overflow: hidden;
   transition: max-height var(--transition);
 }
-.primary-nav.is-open { max-height: 420px; }
+.primary-nav.is-open {
+  /* Con la tendina delle localita' aperta 420px non bastavano piu': il fondo
+     dell'elenco finiva tagliato. */
+  max-height: min(80vh, 820px);
+  overflow-y: auto;
+}
 
 .primary-nav ul { display: flex; flex-direction: column; padding: 0.5rem 1.25rem 1.5rem; }
 .primary-nav a {
@@ -523,6 +528,111 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .primary-nav a:hover { color: var(--accent); }
 .primary-nav .nav-cta { color: var(--accent); }
+
+/* ---------- Voce «Immobili» con tendina delle localita' ----------
+   Il link alla pagina completa e il pulsante che apre la tendina sono due
+   bersagli distinti: «Immobili» porta all'elenco intero con un colpo solo,
+   il triangolino apre la scelta per localita'. Accorpare i due gesti in un
+   elemento solo costringerebbe a rinunciare a uno dei due. */
+.nav-riga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.nav-riga > a { flex: 1; }
+
+.nav-freccia {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px; height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  /* `rotate` e non `transform`: proprieta' indipendente, non litiga con le
+     animazioni che nel sito occupano gia' `transform`. */
+  transition: color var(--transition), rotate var(--transition);
+}
+.nav-freccia svg { width: 16px; height: 16px; }
+.nav-freccia:hover { color: var(--accent); }
+.ha-tendina.e-aperta > .nav-riga .nav-freccia { rotate: 180deg; color: var(--accent); }
+
+/* Sotto i 900px la tendina e' un sotto-elenco che si apre dentro al menu.
+   Chiuse dentro la loro media query, e non lasciate come regole di base: la
+   riga `.ha-tendina.e-aperta > .tendina` ha specificita' 0,3,0 e batteva la
+   `.tendina { max-height: none }` del blocco desktop (0,1,0). Il risultato era
+   che sul desktop la tendina, se aperta *col click*, si ritrovava alta al
+   massimo 60vh con uno scorrimento interno: su una finestra da 760px il
+   pannello veniva tagliato a 456px contro 478 di contenuto, e le ultime
+   localita' sparivano. Aprendola col passaggio del mouse invece no, perche'
+   li' la classe `e-aperta` non c'e'. */
+@media (max-width: 899.98px) {
+  .tendina {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition);
+  }
+  .ha-tendina.e-aperta > .tendina { max-height: 60vh; overflow-y: auto; }
+}
+
+.tendina-titolo {
+  margin: 0.75rem 0 0.25rem;
+  font-family: var(--font-testo);
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-occhiello);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Qualificate con `.primary-nav`: senza, `.primary-nav ul` e `.primary-nav a`
+   hanno specificita' piu' alta e vincono loro — l'elenco tornava una fila
+   orizzontale larga duemila pixel. */
+.primary-nav .tendina-elenco {
+  display: block;
+  padding: 0;
+  gap: 0;
+}
+.primary-nav .tendina a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0 0.55rem 0.9rem;
+  border-bottom: 0;
+  border-left: 1px solid var(--border);
+  font-size: var(--t-2xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0.04em;
+  transition: color var(--transition), border-color var(--transition);
+}
+.primary-nav .tendina a:hover { color: var(--accent); border-left-color: var(--accent); }
+.primary-nav .tendina a.e-corrente { color: var(--accent); border-left-color: var(--accent); }
+
+/* Il conteggio e' informazione di servizio: resta in secondo piano. */
+.tendina-conta {
+  font-size: 0.9em;
+  font-weight: 400;
+  color: var(--placeholder);
+  font-variant-numeric: tabular-nums;
+}
+
+.primary-nav .tendina .tendina-tutte {
+  margin-top: 0.5rem;
+  border-left: 0;
+  padding-left: 0;
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--text);
+}
+.primary-nav .tendina .tendina-tutte:hover { color: var(--accent); }
+
 
 /* ---------- Hero ---------- */
 /* L'hero e' sempre chiaro-su-scuro: la fotografia impone la propria palette,
@@ -682,34 +792,101 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
 }
 
 /* ---------- Fascia statistiche (sotto l'hero) ---------- */
-.stats-band {
+.stagione {
   background: var(--bg);
   border-bottom: 1px solid var(--border);
+  padding: 4.5rem 0;
+  transition: background-color var(--transition), border-color var(--transition);
 }
-.stats-grid {
-  /* impilate sotto i 600px: tre colonne su schermo stretto
-     mandavano a capo le etichette */
-  display: grid; grid-template-columns: 1fr;
-  gap: 1.25rem;
-  padding: 2.25rem 0;
+
+/* Occhiello con il trattino davanti, come quello dell'hero. */
+.eyebrow-riga { display: flex; align-items: center; gap: 0.9rem; }
+.eyebrow-riga::before {
+  content: "";
+  width: 40px; height: 1px;
+  flex-shrink: 0;
+  background: var(--accent);
 }
-.stats-grid li + li {
-  border-top: 1px solid var(--border);
-  padding-top: 1.25rem;
+
+/* La cifra d'apertura e' l'elemento piu' grande della pagina dopo il titolo
+   dell'hero: e' il numero che il visitatore deve portarsi via. */
+.stagione-cifra {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 1.4rem + 8.4vw, 6.4rem);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: var(--tr-display);
+  color: var(--accent);
+  font-variant-numeric: lining-nums;
 }
-.stats-grid .num {
+
+.stagione-frase {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: var(--t-3xl);
+  font-weight: 400;
+  line-height: var(--lh-titolo);
+  letter-spacing: var(--tr-display);
+  color: var(--text);
+  max-width: 22ch;
+}
+
+/* I numeri di supporto. Il filetto sopra ciascuno li separa senza bisogno di
+   riquadri. Quante siano non e' deciso qui: le caselle senza dato non vengono
+   stampate, quindi la griglia si conta da sola con auto-fit invece di avere
+   un numero di colonne fisso che lascerebbe buchi in fondo alla riga. */
+.stagione-dati {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem 1.5rem;
+  margin: 3.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.stagione-dati li {
+  padding-top: 1rem;
+  border-top: 1px solid var(--accent);
+}
+.stagione-dati .num {
   display: block;
   font-family: var(--font-display);
   font-size: var(--t-2xl);
   font-weight: 500;
+  line-height: 1.05;
   letter-spacing: var(--tr-titolo);
-  line-height: 1;
   color: var(--accent);
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.5rem;
 }
-.stats-grid .label {
-  font-size: var(--t-2xs); font-weight: 600; letter-spacing: var(--tr-etichetta);
-  text-transform: uppercase; color: var(--text-muted);
+.stagione-dati .label {
+  display: block;
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.stagione-nota {
+  margin: 3rem 0 0;
+  max-width: 52ch;
+  font-size: var(--t-sm);
+  line-height: 1.75;
+  color: var(--text-muted);
+}
+
+/* Sul telefono le colonne sono due: se le caselle sono in numero dispari,
+   l'ultima resta sola con un filetto lungo meta' riga e sembra un pezzo
+   mancante. Le si fa occupare la riga intera. */
+@media (max-width: 699.98px) {
+  .stagione-dati li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+
+@media (min-width: 700px) {
+  .stagione-dati { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 2rem; }
+}
+
+@media (min-width: 900px) {
+  .stagione { padding: 6rem 0; }
+  .stagione-dati { margin-top: 4.5rem; }
 }
 
 /* ---------- Header trasparente sopra l'hero ---------- */
@@ -718,16 +895,23 @@ body.has-hero .site-header:not(.is-solid) {
   border-bottom-color: transparent;
   backdrop-filter: none;
 }
+/* Le voci si scelgono per classe e non per posizione nell'albero. La regola
+   diceva `li > a`, e appena il link di «Immobili» e' finito dentro `.nav-riga`
+   ha smesso di applicarsi: sopra l'hero la voce restava quasi nera su una
+   fotografia scura, cioe' invisibile. Una classe non si rompe se il markup si
+   annida. */
 body.has-hero .site-header:not(.is-solid) .brand,
-body.has-hero .site-header:not(.is-solid) .primary-nav > ul > li > a {
+body.has-hero .site-header:not(.is-solid) .primary-nav .nav-voce,
+body.has-hero .site-header:not(.is-solid) .nav-freccia {
   color: #f7f4ee;
 }
-body.has-hero .site-header:not(.is-solid) .primary-nav > ul > li > .nav-cta {
+body.has-hero .site-header:not(.is-solid) .primary-nav .nav-cta {
   color: #dcbb4e; border-color: #dcbb4e;
 }
 body.has-hero .site-header:not(.is-solid) .brand-logo-chiaro { display: none; }
 body.has-hero .site-header:not(.is-solid) .brand-logo-scuro  { display: block; }
-body.has-hero .site-header:not(.is-solid) .primary-nav > ul > li > a:hover { color: #dcbb4e; }
+body.has-hero .site-header:not(.is-solid) .primary-nav .nav-voce:hover,
+body.has-hero .site-header:not(.is-solid) .nav-freccia:hover { color: #dcbb4e; }
 body.has-hero .site-header:not(.is-solid) .theme-toggle {
   color: rgba(247, 244, 238, 0.85); border-color: rgba(247, 244, 238, 0.32);
 }
@@ -1168,6 +1352,248 @@ textarea { resize: vertical; min-height: 140px; }
 }
 
 /* ==========================================================================
+   Home: esperienza dell'ospite, recensioni, zone coperte
+   ========================================================================== */
+
+/* Sottoetichetta dentro una casella dei numeri. */
+.label-sotto {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.92em;
+  color: var(--placeholder);
+}
+
+/* La griglia dei passi e' diventata una lista ordinata: l'ordine e' contenuto,
+   non impaginazione. */
+.service-grid { list-style: none; padding: 0; margin: 0; }
+
+/* ---------- Esperienza dell'ospite ---------- */
+.ospite-layout { display: grid; gap: 3rem; }
+
+.ospite-punti {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ospite-punti li {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  column-gap: 1.25rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+}
+.ospite-punti li:last-child { border-bottom: 1px solid var(--border); }
+
+.ospite-num {
+  /* Occupa entrambe le righe: senza, il titolo prende la seconda colonna e il
+     paragrafo scivola nella prima — larga tre rem — andando a capo una parola
+     per riga. */
+  grid-row: span 2;
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1.4;
+}
+.ospite-punti h3 { margin-bottom: 0.3rem; }
+.ospite-punti p {
+  margin: 0;
+  font-size: var(--t-sm);
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+/* ---------- Recensioni ---------- */
+.recensioni {
+  display: grid;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recensione {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* Chi parla si dichiara subito: da un proprietario e da un ospite ci si
+   aspettano cose diverse, e saperlo prima di leggere cambia la lettura. */
+.recensione-voce {
+  align-self: flex-start;
+  font-family: var(--font-testo);
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 100px;
+  padding: 0.35rem 0.85rem;
+}
+
+.recensione blockquote {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: var(--tr-titolo);
+  color: var(--text);
+  flex: 1;
+}
+.recensione blockquote::before { content: "«"; color: var(--accent); }
+.recensione blockquote::after  { content: "»"; color: var(--accent); }
+
+.recensione-firma {
+  display: grid;
+  gap: 0.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.recensione-autore {
+  font-family: var(--font-testo);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+/* Canale e data non sono un dettaglio tipografico: sono cio' che rende
+   verificabile la citazione. Piccoli, ma sempre presenti. */
+.recensione-fonte {
+  font-size: var(--t-2xs);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.recensione-fonte a { color: var(--accent); }
+
+/* ---------- Zone coperte ---------- */
+.zone-layout { display: grid; gap: 2.5rem; align-items: start; }
+
+.zone-mappa svg {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin: 0 auto;
+  /* Niente `overflow: visible`: annullerebbe il ritaglio del viewBox e l'isola
+     verrebbe disegnata tutta, fuori scala e fuori riquadro. */
+  overflow: hidden;
+}
+.zone-costa {
+  /* `--surface` e non `--surface-alt`: su fondo tenue quest'ultimo dista tre
+     valori dallo sfondo e la terraferma non si distingue dal mare. */
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-opacity: 0.45;
+  transition: fill var(--transition), stroke var(--transition);
+}
+.zone-punto circle { fill: var(--accent); transition: fill var(--transition); }
+
+/* ---------- I punti che si accendono scorrendo ----------
+   Ogni punto vive un tratto del passaggio della sezione: compare, resta, si
+   spegne. Gli intervalli sono sfalsati da `--i`, che la vista assegna da nord
+   a sud, cioe' nell'ordine in cui la costa scorre sotto gli occhi: ne esce
+   un'onda che scende lungo il litorale invece di un lampeggio collettivo.
+
+   L'informazione non se ne va con i punti: l'elenco accanto elenca sempre
+   tutte e diciannove le localita'. La mappa e' il gemello decorativo di quel
+   testo, e un effetto non deve mai essere l'unico posto in cui un dato esiste.
+
+   Fuori da `.js-anim` — niente JavaScript, oppure "riduci movimento" — questo
+   blocco non esiste e i punti stanno fermi, tutti visibili. */
+@keyframes ev-zona {
+  0%   { opacity: 0; scale: 0.35; }
+  20%  { opacity: 1; scale: 1; }
+  72%  { opacity: 1; scale: 1; }
+  100% { opacity: 0; scale: 0.35; }
+}
+
+@supports (animation-timeline: view()) {
+  .js-anim .zone-mappa { view-timeline-name: --zone; }
+
+  .js-anim .zone-punto {
+    /* Senza `fill-box` la scala partirebbe dall'origine del disegno e i punti
+       schizzerebbero verso l'angolo invece di gonfiarsi sul posto. */
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ev-zona linear both;
+    animation-timeline: --zone;
+    /* Quanto vive ogni punto e quanto sono sfalsati fra loro decidono due
+       cose: quanti se ne vedono insieme al culmine (vita diviso sfalsamento,
+       qui circa diciotto su diciannove) e quando l'ultimo si spegne — che
+       deve cadere in fondo al `cover`, non prima, altrimenti la mappa resta
+       vuota mentre la sezione e' ancora sullo schermo. */
+    animation-range:
+      cover calc(1% + var(--i, 0) * 2.7%)
+      cover calc(49% + var(--i, 0) * 2.7%);
+  }
+}
+.zone-alone {
+  opacity: 0.16;
+  transition: opacity var(--transition), r var(--transition);
+}
+.zone-punto.e-accesa .zone-alone { opacity: 0.42; }
+
+.zone-fonte {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  font-size: var(--t-2xs);
+  letter-spacing: 0.04em;
+  color: var(--placeholder);
+}
+
+.zone-elenco {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.zone-elenco a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  transition: color var(--transition), border-color var(--transition);
+}
+.zone-elenco a:hover,
+.zone-elenco a:focus-visible { color: var(--accent); border-color: var(--accent); }
+.zone-nome { font-size: var(--t-sm); }
+.zone-conta {
+  font-family: var(--font-display);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 700px) {
+  .recensioni { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zone-elenco { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 900px) {
+  .ospite-layout { grid-template-columns: 0.9fr 1.1fr; gap: 4rem; }
+  .zone-layout { grid-template-columns: 0.8fr 1.2fr; gap: 4rem; align-items: center; }
+  /* Larghezza contenuta anche qui: l'isola e' alta e stretta, e a piena
+     colonna diventerebbe il doppio dell'elenco che le sta accanto. */
+  .zone-mappa svg { max-width: 300px; }
+  .recensioni { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.75rem; }
+}
+
+/* ==========================================================================
    Galleria
    ========================================================================== */
 
@@ -1248,6 +1674,7 @@ textarea { resize: vertical; min-height: 140px; }
   position: relative;
   display: block;
   overflow: hidden;
+  /* Contenitore, non piu' link: dentro ci stanno due destinazioni diverse. */
   background: var(--surface-alt);
   border-radius: var(--radius);
   grid-column: span 1;
@@ -1265,8 +1692,42 @@ html.visore-aperto { overflow: hidden; }
   object-fit: cover;
   transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+/* Il collegamento sulla fotografia riempie la tessera. */
+.tessera-foto { display: block; width: 100%; height: 100%; }
+
 .tessera:hover img,
-.tessera:focus-visible img { transform: scale(1.06); }
+.tessera-foto:focus-visible img { transform: scale(1.06); }
+
+/* ---------- Pulsante «Vedi l'annuncio» ----------
+   Compare al passaggio del mouse e quando il fuoco entra nella tessera. Sotto
+   i 700px non esiste affatto: su schermo tattile il passaggio del mouse non
+   c'e', e chi tocca la fotografia apre il visore, dove il collegamento
+   all'immobile c'e' gia'. Un pulsante sempre acceso su centoventisei tessere
+   sarebbe rumore. */
+.tessera-annuncio {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  font-family: var(--font-testo);
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: #0d0b06;
+  background: var(--hero-accent, #dcbb4e);
+  border-radius: var(--radius);
+  opacity: 0;
+  translate: 0 -6px;
+  transition: opacity var(--transition), translate var(--transition),
+              background-color var(--transition);
+}
+.tessera-annuncio svg { width: 13px; height: 13px; flex-shrink: 0; }
+.tessera-annuncio:hover { background: #ecd06a; color: #0d0b06; }
 
 /* Il velo col titolo compare al passaggio, ma il testo c'e' comunque nel
    markup: `aria-hidden` perche' il link ha gia' il proprio testo alternativo,
@@ -1421,7 +1882,14 @@ html.visore-aperto { overflow: hidden; }
   /* Da qui in su il puntatore c'e': il velo si scopre al passaggio. */
   .tessera-velo { opacity: 0; }
   .tessera:hover .tessera-velo,
-  .tessera:focus-visible .tessera-velo { opacity: 1; }
+  .tessera:focus-within .tessera-velo { opacity: 1; }
+
+  .tessera-annuncio { display: inline-flex; }
+  /* `focus-within` e non `focus-visible` sulla tessera: il pulsante deve
+     comparire anche quando a prendere il fuoco col tabulatore e' lui stesso,
+     non solo la fotografia. */
+  .tessera:hover .tessera-annuncio,
+  .tessera:focus-within .tessera-annuncio { opacity: 1; translate: 0 0; }
 }
 
 @media (min-width: 1000px) {
@@ -1651,13 +2119,13 @@ html.visore-aperto { overflow: hidden; }
    ========================================================================== */
 
 /* ---------- Sottolineatura che si disegna ---------- */
-.primary-nav > ul > li > a:not(.nav-cta),
+.primary-nav .nav-voce,
 .footer-col a,
 .prose p a,
 .breadcrumb a {
   position: relative;
 }
-.primary-nav > ul > li > a:not(.nav-cta)::after,
+.primary-nav .nav-voce::after,
 .footer-col a::after,
 .prose p a::after,
 .breadcrumb a::after {
@@ -1670,8 +2138,8 @@ html.visore-aperto { overflow: hidden; }
   transform-origin: right;
   transition: transform var(--transition);
 }
-.primary-nav > ul > li > a:not(.nav-cta):hover::after,
-.primary-nav > ul > li > a:not(.nav-cta):focus-visible::after,
+.primary-nav .nav-voce:hover::after,
+.primary-nav .nav-voce:focus-visible::after,
 .footer-col a:hover::after,
 .footer-col a:focus-visible::after,
 .prose p a:hover::after,
@@ -1777,12 +2245,6 @@ html.visore-aperto { overflow: hidden; }
    ========================================================================== */
 
 @media (min-width: 600px) {
-  .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; padding: 2.75rem 0; }
-  .stats-grid li + li {
-    border-top: 0; padding-top: 0;
-    border-left: 1px solid var(--border); padding-left: 1.5rem;
-  }
-
   .property-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .service-grid  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .filter-bar    { grid-template-columns: 1fr 1fr; align-items: end; }
@@ -1812,6 +2274,86 @@ html.visore-aperto { overflow: hidden; }
     border: 1px solid var(--accent); padding: 0.65rem 1.4rem;
   }
   .primary-nav .nav-cta:hover { background: var(--accent-dim); }
+
+  /* ---------- Tendina delle localita', da 900px in su ----------
+     Qui non e' piu' un sotto-elenco ma un pannello sospeso sotto la voce. */
+  .ha-tendina { position: relative; }
+  .nav-riga { gap: 0.3rem; }
+  .nav-freccia { width: 18px; height: 18px; }
+  .nav-freccia svg { width: 13px; height: 13px; }
+
+  .tendina {
+    position: absolute;
+    top: calc(100% + 1.1rem);
+    left: 50%;
+    z-index: 120;
+    width: max-content;
+    max-width: min(92vw, 30rem);
+    max-height: none;
+    overflow: visible;
+    padding: 1.35rem 1.6rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 48px rgba(10, 10, 10, 0.16);
+
+    /* Stato chiuso. `visibility` e non solo `opacity`: un pannello a opacita'
+       zero resterebbe cliccabile e catturerebbe il fuoco col tabulatore. */
+    opacity: 0;
+    visibility: hidden;
+    translate: -50% 8px;
+    transition: opacity var(--transition), translate var(--transition),
+                visibility var(--transition);
+  }
+
+  /* Il pannello sta 1.1rem piu' in basso della voce: senza un ponte invisibile
+     su quello stacco, scendendo col mouse si perderebbe il passaggio e la
+     tendina si richiuderebbe in faccia. */
+  .tendina::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: -1.2rem;
+    height: 1.2rem;
+  }
+
+  .ha-tendina:focus-within > .tendina,
+  .ha-tendina.e-aperta > .tendina {
+    opacity: 1;
+    visibility: visible;
+    translate: -50% 0;
+  }
+
+  /* Chiusura esplicita, e deve poter vincere su `:focus-within`. Premendo Esc
+     il fuoco torna sul pulsante, che sta dentro la voce: senza questa regola
+     la tendina resterebbe aperta e Esc sembrerebbe non fare niente.
+     Stessa specificita' della regola qui sopra, quindi conta che venga dopo.
+     main.js la toglie quando il puntatore o il fuoco escono dalla voce, cosi'
+     un passaggio successivo la riapre normalmente. */
+  .ha-tendina.e-chiusa > .tendina {
+    opacity: 0;
+    visibility: hidden;
+    translate: -50% 8px;
+  }
+
+  .tendina-titolo { margin: 0 0 0.9rem; }
+
+  /* In colonna e non per righe: l'elenco e' alfabetico, e riempiendolo per
+     righe la A finirebbe accanto alla L invece che sopra la B. */
+  .primary-nav .tendina-elenco {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(10, auto);
+    column-gap: 2.25rem;
+    row-gap: 0;
+  }
+  .primary-nav .tendina a { padding: 0.42rem 0 0.42rem 0.8rem; }
+
+  .primary-nav .tendina .tendina-tutte {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
 
   .header-actions { margin-left: 1.75rem; order: 3; }
 
@@ -1852,6 +2394,8 @@ html.visore-aperto { overflow: hidden; }
    ========================================================================== */
 
 .showcase {
+  /* Tenue e non chiaro: nell'ordine della home la vetrina sta fra la sezione
+     dell'ospite e quella delle recensioni, entrambe chiare. */
   --carta: 300px;
   --spazio: 1.5rem;
   --bordo: max(1.5rem, calc((100vw - var(--container)) / 2));
@@ -1876,7 +2420,7 @@ html.visore-aperto { overflow: hidden; }
   --ritmo: 2;
 
   padding: 4.5rem 0;
-  background: var(--bg);
+  background: var(--bg-soft);
 }
 
 .showcase-head { margin-bottom: 2.5rem; }
@@ -1914,12 +2458,25 @@ html.visore-aperto { overflow: hidden; }
 /* Altezza fissa per tutte le schede: il testo si taglia a due righe e le
    fotografie restano allineate invece di ballare di scheda in scheda. */
 .showcase-item .property-card { height: 100%; }
+/* La fotografia cede spazio prima del testo. Con `min-height: 120px` smetteva
+   di stringersi e la differenza la pagava il corpo della scheda, che pero' non
+   puo' rimpicciolirsi: sforava dal basso e `overflow: hidden` mangiava la riga
+   di ospiti, camere e bagni. Su una finestra da 700px la scheda era alta 250px
+   e il solo corpo ne voleva 292. */
 .showcase-item .property-card-media {
   aspect-ratio: auto;
   flex: 1 1 auto;
-  min-height: 120px;
+  /* Zero, non ottanta. Qualunque soglia diversa da zero e' una scommessa su
+     quanto sara' alta la finestra: superata quella, a cedere torna a essere il
+     testo. Cosi' invece la garanzia e' strutturale — il corpo della scheda non
+     puo' essere tagliato, al massimo si assottiglia la fotografia — e a tenere
+     la fotografia di una misura decente ci pensa la soglia di altezza sotto la
+     quale il carosello non si blocca affatto. */
+  min-height: 0;
 }
 .showcase-item .property-card-body { flex: 0 0 auto; }
+/* Senza l'estratto sopra, la riga dei numeri resterebbe a mezz'aria. */
+.showcase-item .property-specs { margin-top: 1rem; padding-top: 1rem; }
 .showcase-item .property-card-body h3 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1931,13 +2488,13 @@ html.visore-aperto { overflow: hidden; }
   line-height: 1.2;
   height: 2.4em;
 }
-.showcase-item .property-excerpt {
-  flex: 0 0 auto;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+/* Nel carosello l'estratto non c'e', a nessuna misura. E' due righe di
+   descrizione troncata in una vetrina dove titolo, localita' e numeri dicono
+   gia' tutto, e lo spazio che occupa la fotografia lo usa meglio. Toglierlo
+   solo sulle finestre basse produceva pure un'incoerenza: a 900px di altezza
+   la foto veniva piu' piccola che a 800. L'estratto resta dove serve — nella
+   fila trascinabile della pagina Immobili e nelle schede dell'elenco. */
+.showcase-item .property-excerpt { display: none; }
 
 /* Tessera finale: chiude la fila su una destinazione invece che nel vuoto. */
 .showcase-fine {
@@ -2054,6 +2611,17 @@ html.visore-aperto { overflow: hidden; }
   max-height: 520px;   /* oltre, la scheda si allunga senza guadagnarci */
 }
 
+/* Finestra bassa ma larga — il portatile tipico, 1366x768 o 1280x700. Qui il
+   blocco ha da spartire fra intestazione, schede e barra meno di settecento
+   pixel: senza togliere qualcosa, alla fotografia resta una striscia. Cadono
+   le due cose piu' sacrificabili — l'introduzione della sezione e l'estratto
+   della scheda — e la fotografia torna a respirare. */
+@media (min-width: 1000px) and (max-height: 880px) {
+  .showcase.e-bloccata .showcase-head { margin-bottom: 1.25rem; }
+  .showcase.e-bloccata .showcase-head .lead { display: none; }
+  .showcase.e-bloccata .showcase-avanzamento { margin-top: 1.25rem; }
+}
+
 /* Sotto i 760px l'altezza utile e' poca e l'intestazione se la mangia: il
    titolo va su due righe e il testo introduttivo su quattro. Si stringe
    quello che si puo' e si toglie l'introduzione, che qui e' un di piu': il
@@ -2070,12 +2638,7 @@ html.visore-aperto { overflow: hidden; }
   /* Su schermi bassi ogni riga di testo la paga la fotografia. L'estratto e'
      la parte piu' sacrificabile: titolo, localita' e numeri dicono gia' tutto
      quello che serve per decidere se aprire la scheda. */
-  .showcase.e-bloccata .showcase-item .property-excerpt { display: none; }
-  /* Senza l'estratto la riga dei numeri resterebbe a mezz'aria. */
-  .showcase.e-bloccata .showcase-item .property-specs {
-    margin-top: 0.9rem;
-    padding-top: 0.9rem;
-  }
+
 }
 
 .showcase.e-bloccata .showcase-track {
@@ -2519,5 +3082,16 @@ html.ev-intro .intro {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+
+@media (min-width: 900px) and (hover: hover) {
+  /* Su schermo tattile `:hover` resta appiccicato dopo il tocco: li' la
+     tendina la comanda solo il pulsante. */
+  .ha-tendina:hover > .tendina {
+    opacity: 1;
+    visibility: visible;
+    translate: -50% 0;
   }
 }

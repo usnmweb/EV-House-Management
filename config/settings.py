@@ -150,6 +150,61 @@ COMPANY_ADDRESS = os.environ.get("COMPANY_ADDRESS", "Sardegna, Italia")  # TODO:
 COMPANY_EMAIL = os.environ.get("COMPANY_EMAIL", "evhouse92@gmail.com")
 COMPANY_PHONE = os.environ.get("COMPANY_PHONE", "")  # TODO: telefono pubblico
 
+# Portale prenotazioni. Disponibilita' e tariffe restano gestite li' (fuori
+# perimetro, §7 del capitolato): il sito ci rimanda e basta.
+BOOKING_URL = os.environ.get("BOOKING_URL", "https://evhouse.kross.travel/")
+
+# ==========================================================================
+# Numeri dichiarati dall'azienda
+#
+# Sono affermazioni commerciali, non dati che questo sito puo' ricavare da se':
+# vengono dal portale prenotazioni e dalla contabilita' del gestore. Stanno
+# qui, in un punto solo, perche' si possano aggiornare senza toccare un
+# template — e perche' sia evidente quali numeri il sito afferma e quali
+# calcola.
+#
+# Nessuno di questi ha un valore di comodo: dove il dato manca la home mostra
+# un segnaposto o salta la voce. Un numero inventato su un sito commerciale e'
+# una pratica ingannevole (Codice del Consumo, art. 21-22), non un riempitivo.
+# ==========================================================================
+
+# --- Stagione (forniti dal gestore) ---
+SEASON_YEAR = os.environ.get("SEASON_YEAR", "2026")
+SEASON_OCCUPANCY = os.environ.get("SEASON_OCCUPANCY", "93,19")
+SEASON_WEEK = os.environ.get("SEASON_WEEK", "10–16 agosto 2026")
+SEASON_NIGHTS_SOLD = os.environ.get("SEASON_NIGHTS_SOLD", "424")
+SEASON_NIGHTS_AVAILABLE = os.environ.get("SEASON_NIGHTS_AVAILABLE", "455")
+SEASON_FIRST_YEAR = os.environ.get("SEASON_FIRST_YEAR", "2021")
+
+# --- Immobili gestiti ---
+# Diverso dal numero di immobili in vetrina, che il sito conta da se' (63
+# pubblicati). Questo e' il portafoglio dichiarato dal gestore: se i due
+# numeri divergono, il sito deve dirlo con parole diverse — "gestiti" contro
+# "in vetrina" — non far finta che siano la stessa cosa.
+# Il formato e' quello che il sito usa gia' per i conteggi indicativi — il piu'
+# davanti, come in "+60" — cosi' la home non alterna due grafie dello stesso
+# genere di numero.
+PROPERTIES_MANAGED = os.environ.get("PROPERTIES_MANAGED", "+100")
+
+# --- Ospiti accolti ---
+# GUESTS_TOTAL e' il totale alla data GUESTS_AS_OF (formato AAAA-MM-GG).
+# GUESTS_LAST_12M sono gli ospiti degli ultimi dodici mesi: da li' si ricava
+# il ritmo con cui il contatore continua a salire.
+#
+# Il ritmo e' quello vero e nient'altro. Con, per dire, 12.000 ospiti l'anno
+# si sale di uno ogni quarantatre minuti: in pagina non si vedra' quasi mai
+# scattare, ed e' giusto cosi'. Un contatore che corre piu' del reale e' un
+# numero falso che si aggiorna da solo.
+GUESTS_TOTAL = os.environ.get("GUESTS_TOTAL", "")
+GUESTS_LAST_12M = os.environ.get("GUESTS_LAST_12M", "")
+GUESTS_AS_OF = os.environ.get("GUESTS_AS_OF", "")
+
+# --- Proprietari che rinnovano ---
+# La percentuale non si scrive a mano: si calcola da serviti e rimasti, cosi'
+# i tre numeri non possono raccontare cose diverse.
+OWNERS_SERVED = os.environ.get("OWNERS_SERVED", "")
+OWNERS_RETAINED = os.environ.get("OWNERS_RETAINED", "")
+
 
 # Sicurezza aggiuntiva quando DEBUG=False
 if not DEBUG:
