@@ -147,10 +147,53 @@
 
       <nav class="primary-nav" id="primary-nav" aria-label="Navigazione principale">
         <ul>
-          <li><a href="{% url 'core:home' %}">Home</a></li>
-          <li><a href="{% url 'properties:list' %}">Immobili</a></li>
-          <li><a href="{% url 'core:services' %}">Servizi</a></li>
-          <li><a href="{% url 'core:gallery' %}">Galleria</a></li>
+          <li><a class="nav-voce" href="{% url 'core:home' %}">Home</a></li>
+          {% comment %}
+            «Immobili» resta un link alla pagina completa; il triangolino
+            accanto e' un pulsante a se'. Cosi' chi vuole l'elenco intero ci
+            arriva con un colpo solo, e chi cerca una localita' apre la tendina
+            senza perdere la destinazione principale.
+
+            La tendina si apre anche senza JavaScript: al passaggio del mouse
+            (solo dove un mouse c'e' davvero) e quando il fuoco entra nella
+            voce. Il pulsante serve a chi tocca lo schermo, e li' e' JavaScript
+            a comandarlo.
+          {% endcomment %}
+          <li class="ha-tendina" id="voce-immobili">
+            <span class="nav-riga">
+              <a class="nav-voce" href="{% url 'properties:list' %}">Immobili</a>
+              <button type="button" class="nav-freccia" id="tendina-toggle"
+                      aria-expanded="false" aria-controls="tendina-localita"
+                      aria-label="Mostra le località">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </button>
+            </span>
+
+            <div class="tendina" id="tendina-localita">
+              <p class="tendina-titolo">Località</p>
+              <ul class="tendina-elenco">
+                {% for l in LOCALITA_NAV %}
+                <li>
+                  <a href="{% url 'properties:list' %}?location={{ l.nome|urlencode }}"
+                     {% if request.GET.location == l.nome %}class="e-corrente" aria-current="true"{% endif %}>
+                    {{ l.nome }} <span class="tendina-conta">{{ l.quanti }}</span>
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+              <a class="tendina-tutte{% if not request.GET.location %} e-corrente{% endif %}"
+                 href="{% url 'properties:list' %}"
+                 {% if not request.GET.location %}aria-current="true"{% endif %}>
+                Tutti gli immobili
+              </a>
+            </div>
+          </li>
+          <li><a class="nav-voce" href="{% url 'core:services' %}">Servizi</a></li>
+          <li><a class="nav-voce" href="{% url 'core:gallery' %}">Galleria</a></li>
           <li><a class="nav-cta" href="{% url 'core:contact' %}">Contatti</a></li>
         </ul>
       </nav>

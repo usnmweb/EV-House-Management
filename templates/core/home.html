@@ -73,14 +73,34 @@
       <h1>La tua proprietà,<br><em>gestita nel dettaglio</em></h1>
 
       <p class="hero-lead">
-        Gestiamo {{ totale_immobili }} immobili in Sardegna: accoglienza degli ospiti,
+        {% comment %}
+          Il numero dichiarato dal gestore, lo stesso della barra qui sotto:
+          non quello che il sito conta da se'. Sono due cose diverse — gli
+          immobili gestiti e quelli pubblicati in vetrina — e la home parla dei
+          primi.
+        {% endcomment %}
+        Gestiamo {{ immobili_gestiti }} immobili in Sardegna: accoglienza degli ospiti,
         pulizie, manutenzione e adempimenti. Tu ricevi i risultati, noi ci occupiamo
         di tutto il resto.
       </p>
 
+      {% comment %}
+        I due inviti si rivolgono ai due visitatori del sito, e in quest'ordine:
+        prima il proprietario che cerca chi gli gestisca la casa — che e' il
+        cliente di EV House Management — poi l'ospite che vuole prenotare.
+        L'elenco degli immobili resta a un clic dalla barra di navigazione.
+      {% endcomment %}
       <div class="btn-group">
-        <a class="btn btn-primary" href="{% url 'properties:list' %}">Scopri gli immobili</a>
-        <a class="btn btn-ghost" href="{% url 'core:contact' %}">Parla con noi</a>
+        <a class="btn btn-primary" href="{% url 'core:contact' %}">Affida il tuo immobile</a>
+        <a class="btn btn-ghost btn-external" href="{{ BOOKING_URL }}"
+           target="_blank" rel="noopener noreferrer">
+          <span>Prenota ora</span>
+          {# Si esce dal sito: la freccia lo dice prima del clic, non dopo. #}
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17L17 7M9 7h8v8"/>
+          </svg>
+        </a>
       </div>
 
     </div>
@@ -88,22 +108,182 @@
 
 </section>
 
-<section class="stats-band">
+{% comment %}
+  Barra dei numeri. Sono affermazioni commerciali: vengono dalle impostazioni,
+  in un punto solo, aggiornabili senza toccare un template.
+
+  Il conteggio degli ospiti non e' un effetto: parte da zero, arriva al valore
+  vero e poi continua a salire al ritmo reale — ospiti degli ultimi dodici mesi
+  diviso i secondi di un anno. A quel ritmo scatta di rado, ed e' quello che
+  deve fare. Un contatore che corre piu' del reale e' un numero falso che si
+  aggiorna da solo.
+{% endcomment %}
+<section class="stagione" aria-labelledby="t-numeri">
   <div class="container">
-    <ul class="stats-grid" data-stagger>
-      <li data-reveal>
-        <span class="num">{{ totale_immobili }}</span>
-        <span class="label">Immobili in gestione</span>
+    <span class="eyebrow eyebrow-riga">
+      {% if stagione.occupazione and stagione.anno %}Stagione {{ stagione.anno }}{% else %}Il portfolio{% endif %}
+    </span>
+
+    {% if stagione.occupazione %}
+      <p class="stagione-cifra" data-reveal="fade">{{ stagione.occupazione }}%</p>
+      <h2 id="t-numeri" class="stagione-frase" data-reveal="fade">
+        di occupazione nella settimana di punta.
+      </h2>
+      {% if stagione.notti_vendute and stagione.notti_disponibili %}
+        <p class="stagione-dettaglio" data-reveal="fade">
+          {{ stagione.notti_vendute }} notti vendute su {{ stagione.notti_disponibili }} disponibili{% if stagione.settimana %}, {{ stagione.settimana }}{% endif %}.
+        </p>
+      {% endif %}
+    {% else %}
+      <p class="stagione-cifra" data-reveal="fade">{{ immobili_gestiti }}</p>
+      <h2 id="t-numeri" class="stagione-frase" data-reveal="fade">
+        immobili gestiti in Sardegna.
+      </h2>
+    {% endif %}
+
+    <ul class="stagione-dati" data-stagger>
+      <li data-reveal="fade">
+        <span class="num">{{ immobili_gestiti }}</span>
+        <span class="label">Immobili gestiti</span>
       </li>
-      <li data-reveal>
-        <span class="num">{{ totale_localita }}</span>
-        <span class="label">Località in Sardegna</span>
+
+      <li data-reveal="fade">
+        {% if ospiti %}
+          {% comment %}
+            Il valore vero e' gia' nel markup: se JavaScript non gira, o se
+            l'utente ha chiesto di ridurre le animazioni, il numero c'e'
+            comunque. L'animazione lo sostituisce, non lo crea.
+          {% endcomment %}
+          <span class="num contatore"
+                data-totale="{{ ospiti.totale }}"
+                data-al-secondo="{{ ospiti.al_secondo|stringformat:'.9f' }}"
+                data-da-quando="{{ ospiti.da_quando }}">{{ ospiti.totale }}</span>
+        {% else %}
+          <span class="num"><span class="placeholder">[da inserire]</span></span>
+        {% endif %}
+        <span class="label">Ospiti accolti</span>
       </li>
-      <li data-reveal>
-        <span class="num">24/7</span>
-        <span class="label">Assistenza ospiti</span>
+
+      <li data-reveal="fade">
+        {% if rinnovi %}
+          <span class="num">{{ rinnovi.percentuale }}%</span>
+          <span class="label">
+            Proprietari che rinnovano
+            <span class="label-sotto">{{ rinnovi.rimasti }} ancora con noi su {{ rinnovi.serviti }} serviti</span>
+          </span>
+        {% else %}
+          <span class="num"><span class="placeholder">[da inserire]</span></span>
+          <span class="label">Proprietari che rinnovano</span>
+        {% endif %}
+      </li>
+
+      <li data-reveal="fade">
+        <span class="num">{{ stagione.primo_anno|default:"—" }}</span>
+        <span class="label">
+          Dal {{ stagione.primo_anno|default:"—" }}
+          {% if stagione.stagioni %}<span class="label-sotto">{{ stagione.stagioni }} stagioni complete</span>{% endif %}
+        </span>
       </li>
     </ul>
+  </div>
+</section>
+
+
+{% comment %}
+  Come funziona per il proprietario. Tre passi, non tre servizi: qui la
+  domanda a cui si risponde e' «cosa succede se vi chiamo», e la risposta ha
+  un ordine. Il percorso completo in quattro passi sta nella pagina Servizi.
+{% endcomment %}
+<section class="section section-dark" aria-labelledby="t-proprietario">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Per il proprietario</span>
+      <h2 id="t-proprietario">Come funziona</h2>
+      <hr class="gold-rule">
+      <p class="lead">Dalla prima telefonata alla gestione a regime.</p>
+    </div>
+
+    <ol class="service-grid" data-scossa>
+      <li class="service-card">
+        <span class="idx">01</span>
+        <h3>Sopralluogo e proposta</h3>
+        <p>Visitiamo l'immobile e ne valutiamo posizione, stato e potenziale.
+           Ti presentiamo un piano di gestione con stime di occupazione e ricavo,
+           prima di qualunque impegno.</p>
+      </li>
+      <li class="service-card">
+        <span class="idx">02</span>
+        <h3>Attivazione</h3>
+        <p>Styling, servizio fotografico, annunci curati e pubblicazione sui
+           portali con calendario unico. Da qui in poi non devi coordinare
+           nessuno.</p>
+      </li>
+      <li class="service-card">
+        <span class="idx">03</span>
+        <h3>Gestione e rendiconto</h3>
+        <p>Accoglienza, pulizie, manutenzione e adempimenti. Ogni mese ricevi un
+           rendiconto chiaro su occupazione, ricavi e costi.</p>
+      </li>
+    </ol>
+
+    <div class="btn-group" style="margin-top:3rem;" data-reveal="fade">
+      <a class="btn btn-outline" href="{% url 'core:services' %}">Il percorso completo</a>
+    </div>
+  </div>
+</section>
+
+
+{% comment %}
+  L'esperienza dell'ospite. Sta in home perche' e' l'altra meta' della
+  proposta: al proprietario interessa sapere *come* vengono trattati i suoi
+  ospiti, perche' e' da li' che arrivano le recensioni e i ritorni.
+{% endcomment %}
+<section class="section" aria-labelledby="t-ospite">
+  <div class="container">
+    <div class="ospite-layout">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">Per l'ospite</span>
+        <h2 id="t-ospite">Chi arriva trova tutto pronto</h2>
+        <hr class="gold-rule">
+        <p class="lead">
+          Il soggiorno che riceve l'ospite è il lavoro che il proprietario
+          non deve fare.
+        </p>
+        <div class="btn-group" style="margin-top:2rem;">
+          <a class="btn btn-primary btn-external" href="{{ BOOKING_URL }}"
+             target="_blank" rel="noopener noreferrer">
+            <span>Prenota ora</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M7 17L17 7M9 7h8v8"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <ul class="ospite-punti" data-stagger>
+        <li data-reveal="fade">
+          <span class="ospite-num">01</span>
+          <h3>Arrivo senza attese</h3>
+          <p>Check-in concordato e istruzioni chiare prima della partenza.</p>
+        </li>
+        <li data-reveal="fade">
+          <span class="ospite-num">02</span>
+          <h3>Casa pulita, biancheria fresca</h3>
+          <p>Pulizie e riassetto fra un soggiorno e l'altro, con standard costanti.</p>
+        </li>
+        <li data-reveal="fade">
+          <span class="ospite-num">03</span>
+          <h3>Qualcuno che risponde</h3>
+          <p>Assistenza durante tutto il soggiorno, sette giorni su sette.</p>
+        </li>
+        <li data-reveal="fade">
+          <span class="ospite-num">04</span>
+          <h3>Un guasto non rovina la vacanza</h3>
+          <p>Manutenzione e fornitori coordinati da noi, non dal proprietario.</p>
+        </li>
+      </ul>
+    </div>
   </div>
 </section>
 
@@ -171,45 +351,91 @@
 </section>
 {% endif %}
 
-<section class="section section-dark">
+
+{% comment %}
+  Recensioni. Compaiono solo se ce ne sono davvero: nessuna testimonianza di
+  prova, nemmeno come segnaposto. Ogni voce porta nome, data e canale — e il
+  collegamento all'originale quando e' pubblico — perche' una recensione senza
+  attribuzione non e' verificabile, e il Codice del Consumo (art. 22, comma
+  4-bis) impone di dire se e come si verificano quelle che si pubblicano.
+  Si inseriscono dall'amministrazione, voce «Recensioni».
+{% endcomment %}
+{% if recensioni %}
+<section class="section" aria-labelledby="t-recensioni">
   <div class="container">
     <div class="section-head" data-reveal>
-      <span class="eyebrow">Cosa facciamo</span>
-      <h2>Un servizio completo</h2>
+      <span class="eyebrow">Chi ci ha già lavorato</span>
+      <h2 id="t-recensioni">Recensioni</h2>
       <hr class="gold-rule">
+      <p class="lead">Di proprietari e di ospiti, riportate dai canali su cui sono state pubblicate.</p>
     </div>
 
-    {% comment %}
-      `data-scossa` al posto di `data-reveal`: qui le schede entrano una per
-      volta con una scrollata, e per oscillare serve il tempo — la rivelazione
-      normale e' legata alla posizione nello scorrimento e si fermerebbe a
-      meta' movimento appena si smette di scorrere. Lo scaglionamento non
-      arriva da `data-stagger`: lo decide main.js scheda per scheda, perche'
-      dipende da quante ne entrano in campo insieme.
-    {% endcomment %}
-    <div class="service-grid" data-scossa>
-      <article class="service-card">
-        <span class="idx">01</span>
-        <h3>Gestione operativa</h3>
-        <p>Check-in, pulizie, biancheria, manutenzione ordinaria e straordinaria. Coordiniamo
-           tutti i fornitori e garantiamo standard costanti a ogni soggiorno.</p>
-      </article>
-      <article class="service-card">
-        <span class="idx">02</span>
-        <h3>Revenue management</h3>
-        <p>Analisi di mercato e prezzi dinamici per ottimizzare occupazione e ricavi,
-           adattandosi a stagionalita ed eventi locali.</p>
-      </article>
-      <article class="service-card">
-        <span class="idx">03</span>
-        <h3>Presenza online</h3>
-        <p>Fotografia professionale, annunci curati e distribuzione sui principali portali,
-           con calendario sincronizzato e nessun rischio di overbooking.</p>
-      </article>
+    <ul class="recensioni" data-stagger>
+      {% for r in recensioni %}
+      <li class="recensione" data-reveal="fade">
+        <span class="recensione-voce">{{ r.get_voce_display }}</span>
+        <blockquote>{{ r.testo }}</blockquote>
+        <footer class="recensione-firma">
+          <span class="recensione-autore">{{ r.autore }}</span>
+          <span class="recensione-fonte">
+            {% if r.luogo %}{{ r.luogo }} · {% endif %}{{ r.canale }} ·
+            <time datetime="{{ r.data|date:'Y-m-d' }}">{{ r.data|date:"F Y" }}</time>
+            {% if r.url %}· <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">originale</a>{% endif %}
+          </span>
+        </footer>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+
+{% comment %}
+  Zone coperte. Il contorno della Sardegna e' un tracciato SVG generato una
+  volta dai confini Istat e salvato in core/data/: niente tile da un servizio
+  esterno, quindi nessuna richiesta a terzi e nessun JavaScript per disegnarla.
+  I punti sono il centro degli immobili di ogni zona, calcolato sulle
+  coordinate vere: non sono messi a occhio.
+{% endcomment %}
+<section class="section section-dark" aria-labelledby="t-zone">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Dove siamo</span>
+      <h2 id="t-zone">Le zone che copriamo</h2>
+      <hr class="gold-rule">
+      <p class="lead">
+        {{ zone|length }} località fra Baronia e Gallura, sulla costa
+        nord-orientale della Sardegna.
+      </p>
     </div>
 
-    <div class="btn-group" style="margin-top:3rem;" data-reveal="fade">
-      <a class="btn btn-outline" href="{% url 'core:services' %}">Tutti i servizi</a>
+    <div class="zone-layout">
+      <div class="zone-mappa" data-reveal="fade">
+        <svg viewBox="{{ inquadratura }}" role="img"
+             aria-label="Mappa della costa nord-orientale della Sardegna con le {{ zone|length }} località coperte">
+          <path class="zone-costa" d="{{ mappa.contorno }}"/>
+          {% for z in zone %}
+            <g class="zone-punto" data-luogo="{{ z.slug }}" style="--i: {{ z.ordine_mappa }}">
+              <circle cx="{{ z.x }}" cy="{{ z.y }}" r="{{ z.quanti|add:14 }}" class="zone-alone"/>
+              <circle cx="{{ z.x }}" cy="{{ z.y }}" r="4.5"/>
+              <title>{{ z.nome }} — {{ z.quanti }} immobil{{ z.quanti|pluralize:"e,i" }}</title>
+            </g>
+          {% endfor %}
+        </svg>
+        <p class="zone-fonte">Contorno: confini amministrativi Istat</p>
+      </div>
+
+      <ul class="zone-elenco" data-stagger>
+        {% for z in zone %}
+        <li data-reveal="fade">
+          <a href="{% url 'properties:list' %}?location={{ z.nome|urlencode }}" data-luogo="{{ z.slug }}">
+            <span class="zone-nome">{{ z.nome }}</span>
+            <span class="zone-conta">{{ z.quanti }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
     </div>
   </div>
 </section>

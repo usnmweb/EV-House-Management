@@ -23,7 +23,13 @@ from django.db import transaction
 from django.utils.text import Truncator
 
 from properties.models import Amenity, Property, PropertyImage
-from properties.utils import testo_alternativo
+from properties.utils import (
+    SOGLIA_DOPPIONE,
+    impronta_visiva,
+    rinumera_foto,
+    scarto_visivo,
+    testo_alternativo,
+)
 
 SNAPSHOT = pathlib.Path(__file__).resolve().parents[2] / "data" / "portale_immobili.json"
 # Il portale antepone alla descrizione un blocco di dati: "Descrizione",
@@ -104,7 +110,7 @@ class Command(BaseCommand):
         mappa = {a.name: a for a in Amenity.objects.all()}
         self.stdout.write(f"Dotazioni disponibili: {len(mappa)}")
 
-        creati = aggiornati = foto_scaricate = foto_saltate = errori = 0
+        creati = aggiornati = foto_scaricate = foto_saltate = errori = doppie = 0
 
         for i, r in enumerate(dati, 1):
             with transaction.atomic():
@@ -113,10 +119,11 @@ class Command(BaseCommand):
             aggiornati += (not nuovo)
 
             if not options["no_images"]:
-                a, b, c = self._immagini(obj, r)
+                a, b, c, d = self._immagini(obj, r)
                 foto_scaricate += a
                 foto_saltate += b
                 errori += c
+                doppie += d
 
             stato = "nuovo" if nuovo else "agg."
             self.stdout.write(
@@ -129,7 +136,8 @@ class Command(BaseCommand):
             f"({Property.objects.published().count()} pubblicati, "
             f"{creati} creati, {aggiornati} aggiornati).\n"
             f"Foto: {PropertyImage.objects.count()} in archivio "
-            f"({foto_scaricate} scaricate ora, {foto_saltate} già presenti, {errori} errori)."
+            f"({foto_scaricate} scaricate ora, {foto_saltate} già presenti, "
+            f"{doppie} scartate perché ripetute, {errori} errori)."
         ))
 
     # ------------------------------------------------------------------ dati
@@ -170,24 +178,34 @@ class Command(BaseCommand):
     # ----------------------------------------------------------------- foto
 
     def _immagini(self, obj, r):
-        scaricate = saltate = errori = 0
-        totale = len(r["foto"])
-        # L'alt viene ricalcolato anche per le foto gia' presenti: cosi' una
-        # rilettura dello snapshot corregge i testi senza riscaricare nulla.
+        """Scarica le fotografie mancanti, saltando gli scatti ripetuti.
+
+        Il controllo su `source_ref` non basta: il portale a volte serve la
+        stessa fotografia sotto due indirizzi diversi, e i due file non sono
+        identici byte per byte perche' sono ricompressioni distinte. Il
+        confronto e' quindi su cosa si vede, con l'impronta percettiva.
+
+        Una foto ripetuta viene scaricata comunque — per riconoscerla bisogna
+        guardarla — ma non salvata.
+        """
+        scaricate = saltate = errori = doppie = 0
         esistenti = {i.source_ref: i for i in obj.images.all()}
 
-        for ordine, url in enumerate(r["foto"]):
-            ref = riferimento(url)
-            alt = testo_alternativo(obj.title, obj.category, obj.location, ordine, totale)
+        # Impronte di quel che c'e' gia': un doppione puo' arrivare adesso ma
+        # avere il gemello scaricato in una esecuzione precedente.
+        impronte = []
+        for foto in esistenti.values():
+            try:
+                impronte.append(impronta_visiva(foto.image.path))
+            except Exception:
+                pass
 
-            gia = esistenti.get(ref)
-            if gia is not None:
-                if gia.alt_text != alt or gia.order != ordine:
-                    gia.alt_text = alt
-                    gia.order = ordine
-                    gia.save(update_fields=["alt_text", "order"])
+        for url in r["foto"]:
+            ref = riferimento(url)
+            if ref in esistenti:
                 saltate += 1
                 continue
+
             try:
                 richiesta = urllib.request.Request(url, headers=HEADERS)
                 contenuto = urllib.request.urlopen(richiesta, timeout=45).read()
@@ -196,13 +214,38 @@ class Command(BaseCommand):
                 self.stderr.write(f"      foto non scaricata ({ref}): {exc}")
                 continue
 
+            try:
+                impronta = impronta_visiva(contenuto)
+            except Exception:
+                # Immagine illeggibile: si salva lo stesso, il controllo sui
+                # doppioni non e' un motivo per perdere una fotografia.
+                impronta = None
+
+            if impronta is not None:
+                if any(scarto_visivo(impronta, vista) <= SOGLIA_DOPPIONE for vista in impronte):
+                    doppie += 1
+                    time.sleep(0.15)
+                    continue
+                impronte.append(impronta)
+
+            # `order` provvisorio in coda: la numerazione definitiva la mette
+            # `_rinumera`, che deve girare comunque perche' gli scarti lasciano
+            # buchi e sfalsano i "foto 3 di 8" nei testi alternativi.
             immagine = PropertyImage(
-                property=obj, alt_text=alt, order=ordine, source_ref=ref
+                property=obj, alt_text="", order=obj.images.count(), source_ref=ref
             )
-            immagine.image.save(f"{obj.slug}-{ordine + 1}.jpg",
-                                ContentFile(contenuto), save=False)
+            immagine.image.save(
+                f"{obj.slug}-{obj.images.count() + 1}.jpg",
+                ContentFile(contenuto), save=False,
+            )
             immagine.save()
             scaricate += 1
             time.sleep(0.15)   # cortesia verso il CDN del portale
 
-        return scaricate, saltate, errori
+        self._rinumera(obj)
+        return scaricate, saltate, errori, doppie
+
+    def _rinumera(self, obj):
+        """Delega a properties.utils: la stessa logica serve al comando che
+        elimina i doppioni, e due copie divergerebbero."""
+        rinumera_foto(obj)

@@ -1,4 +1,7 @@
+import json
+import pathlib
 from collections import Counter
+from datetime import date, datetime, time, timezone
 
 from django.conf import settings
 from django.contrib import messages
@@ -9,9 +12,121 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_GET
 
 from properties.models import Property, PropertyImage
-from properties.utils import conteggio_indicativo
 
 from .forms import ContactForm
+from .models import Recensione
+
+
+SARDEGNA = json.loads(
+    (pathlib.Path(__file__).resolve().parent / "data" / "sardegna.json").read_text()
+)
+
+
+def _numero(valore):
+    """Legge un'impostazione numerica tollerando spazi, punti e vuoto."""
+    testo = (valore or "").replace(".", "").replace(" ", "").strip()
+    return int(testo) if testo.isdigit() else None
+
+
+def _ospiti_accolti():
+    """Totale ospiti e ritmo con cui sale, dai dati forniti dal gestore.
+
+    Il ritmo e' ospiti-degli-ultimi-dodici-mesi diviso i secondi di un anno, e
+    nient'altro. Con dodicimila ospiti l'anno fa un ospite ogni quarantatre
+    minuti: in pagina il contatore non si vedra' quasi mai scattare, ed e'
+    esattamente cio' che deve succedere. Un contatore che corre piu' del reale
+    e' un numero falso che si aggiorna da solo.
+    """
+    totale = _numero(settings.GUESTS_TOTAL)
+    ultimi = _numero(settings.GUESTS_LAST_12M)
+    if totale is None:
+        return None
+    try:
+        alla_data = date.fromisoformat(settings.GUESTS_AS_OF)
+    except ValueError:
+        return None
+    return {
+        "totale": totale,
+        "al_secondo": (ultimi / (365 * 24 * 3600)) if ultimi else 0,
+        # In millisecondi dall'epoca: il conto in pagina parte da qui, non da
+        # "adesso", altrimenti il numero mostrato dipenderebbe da quando la
+        # pagina viene aperta invece che da quanto tempo e' passato davvero.
+        "da_quando": int(
+            datetime.combine(alla_data, time.min, tzinfo=timezone.utc).timestamp() * 1000
+        ),
+        "ultimi_dodici_mesi": ultimi,
+    }
+
+
+def _rinnovi():
+    """Percentuale di proprietari che restano, calcolata — non dichiarata."""
+    serviti = _numero(settings.OWNERS_SERVED)
+    rimasti = _numero(settings.OWNERS_RETAINED)
+    if not serviti or rimasti is None or rimasti > serviti:
+        return None
+    return {
+        "serviti": serviti,
+        "rimasti": rimasti,
+        "percentuale": round(rimasti / serviti * 100),
+    }
+
+
+def _zone_coperte():
+    """Localita' con almeno un immobile pubblicato, proiettate sulla mappa.
+
+    Le coordinate sono quelle vere degli immobili: il punto di una zona e' il
+    centro dei suoi immobili, non una posizione messa a occhio.
+    """
+    r = SARDEGNA["riquadro"]
+    scala = SARDEGNA["altezza"] / (r["lat_max"] - r["lat_min"])
+
+    gruppi = {}
+    for immobile in (
+        Property.objects.published()
+        .exclude(latitude__isnull=True)
+        .exclude(longitude__isnull=True)
+        .only("location", "latitude", "longitude")
+    ):
+        gruppi.setdefault(immobile.location, []).append(
+            (float(immobile.latitude), float(immobile.longitude))
+        )
+
+    zone = []
+    for nome, punti in gruppi.items():
+        lat = sum(p[0] for p in punti) / len(punti)
+        lon = sum(p[1] for p in punti) / len(punti)
+        zone.append({
+            "nome": nome,
+            "slug": slugify(nome),
+            "quanti": len(punti),
+            # Stringhe, non numeri: con LANGUAGE_CODE="it-it" il template
+            # scriverebbe "505,8" al posto di "505.8", e l'SVG rifiuta la
+            # virgola — i punti finirebbero tutti a 0,0. E' la stessa trappola
+            # delle coordinate nei dati strutturati.
+            "x": "%g" % round((lon - r["lon_min"]) * r["k"] * scala, 1),
+            "y": "%g" % round((r["lat_max"] - lat) * scala, 1),
+        })
+    zone.sort(key=lambda z: (-z["quanti"], z["nome"]))
+
+    # Indice per la cascata sulla mappa: da nord a sud, cioe' nell'ordine in
+    # cui la costa scorre sotto gli occhi. L'elenco accanto resta ordinato per
+    # numero di immobili, che li' e' l'informazione utile.
+    for i, z in enumerate(sorted(zone, key=lambda z: float(z["y"]))):
+        z["ordine_mappa"] = i
+
+    # Ritaglio. Le zone coprono un quinto dell'isola, tutte sulla costa
+    # nord-orientale: disegnata intera, la mappa sarebbe per quattro quinti
+    # vuota. Si inquadra l'area coperta con un margine, e resta abbastanza
+    # costa attorno da capire dove si e'.
+    xs = [float(z["x"]) for z in zone]
+    ys = [float(z["y"]) for z in zone]
+    margine = max(max(xs) - min(xs), max(ys) - min(ys)) * 0.22
+    x0 = max(0, min(xs) - margine)
+    y0 = max(0, min(ys) - margine)
+    x1 = min(SARDEGNA["larghezza"], max(xs) + margine)
+    y1 = min(SARDEGNA["altezza"], max(ys) + margine)
+    inquadratura = "%g %g %g %g" % (round(x0, 1), round(y0, 1), round(x1 - x0, 1), round(y1 - y0, 1))
+    return zone, inquadratura
 
 
 def home(request):
@@ -22,12 +137,36 @@ def home(request):
     # `distinct()` serve perche' il join sulle immagini duplica le righe.
     con_foto = pubblicati.filter(images__isnull=False).distinct().prefetch_related("images")
     featured = con_foto.filter(featured=True)[:9] or con_foto[:9]
+    # Numeri della stagione. Quelli che questo database conosce si calcolano
+    # qui; quelli che vengono dal portale prenotazioni arrivano dalle
+    # impostazioni e restano vuoti finche' il gestore non li fornisce.
+    stagione = {
+        "anno": settings.SEASON_YEAR,
+        "occupazione": settings.SEASON_OCCUPANCY,
+        "settimana": settings.SEASON_WEEK,
+        "notti_vendute": settings.SEASON_NIGHTS_SOLD,
+        "notti_disponibili": settings.SEASON_NIGHTS_AVAILABLE,
+        "primo_anno": settings.SEASON_FIRST_YEAR,
+    }
+    if settings.SEASON_FIRST_YEAR.isdigit():
+        stagione["stagioni"] = date.today().year - int(settings.SEASON_FIRST_YEAR)
+
+    recensioni = list(Recensione.objects.filter(in_evidenza=True))
+    zone, inquadratura = _zone_coperte()
+
     return render(
         request,
         "core/home.html",
         {
             "featured_properties": featured,
-            "totale_immobili": conteggio_indicativo(pubblicati.count()),
+            "stagione": stagione,
+            "immobili_gestiti": settings.PROPERTIES_MANAGED,
+            "ospiti": _ospiti_accolti(),
+            "rinnovi": _rinnovi(),
+            "zone": zone,
+            "mappa": SARDEGNA,
+            "inquadratura": inquadratura,
+            "recensioni": recensioni,
             "totale_localita": pubblicati.values("location").distinct().count(),
             "page_title": "Gestione immobiliare di lusso",
             "meta_description": (

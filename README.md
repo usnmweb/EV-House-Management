@@ -201,6 +201,52 @@ python manage.py import_properties --reset       # svuota prima di importare
 Il comando è **ripetibile**: le foto già scaricate vengono riconosciute dal campo
 `source_ref` e saltate, quindi una seconda esecuzione non riscarica nulla.
 
+### Scatti ripetuti
+
+Il portale a volte serve **la stessa fotografia sotto due indirizzi diversi**, e
+nelle schede comparivano due volte. Il controllo su `source_ref` non li vedeva
+passare, e nemmeno un confronto byte per byte: sono ricompressioni distinte
+dello stesso scatto, quindi i file non coincidono.
+
+Il confronto è su **cosa si vede**. `impronta_visiva()` in `properties/utils.py`
+riduce l'immagine a una miniatura in scala di grigi e confronta ogni pixel con
+quello alla sua destra: il risultato dipende dalla struttura dell'immagine, non
+dalla risoluzione né dalla compressione.
+
+La soglia (`SOGLIA_DOPPIONE = 6`) non è un numero a caso. Sul materiale di
+questo sito le coppie si dividono nettamente:
+
+| scarto | coppie | cosa sono |
+|---|---|---|
+| 0-4 | 5 | stessa inquadratura → doppioni |
+| 12-14 | 2 | stessa stanza da altra angolazione → fotografie vere |
+
+Sei sta nel mezzo: largo abbastanza da coprire le ricompressioni, stretto
+abbastanza da non buttare via nulla. Verificato guardando le sette coppie una
+per una prima di cancellare.
+
+```bash
+python manage.py pulisci_foto_doppie              # elenca e basta
+python manage.py pulisci_foto_doppie --applica    # elimina
+python manage.py pulisci_foto_doppie --soglia 8   # più permissivo
+```
+
+Senza `--applica` non tocca niente: su una cancellazione di contenuti il modo
+predefinito dev'essere quello che non fa danni.
+
+**L'importatore fa lo stesso controllo** sulle foto nuove, così una nuova
+importazione non li rimette. Una foto ripetuta viene scaricata comunque — per
+riconoscerla bisogna guardarla — ma non salvata.
+
+**Dopo ogni cambiamento si rinumera.** Non basta sistemare `order`: il totale
+compare dentro il testo alternativo («foto 3 di 8»), quindi togliendo uno scatto
+senza rifare i testi restano in pagina numerazioni che saltano e totali che non
+tornano — è successo, ed è per questo che `rinumera_foto()` sta in `utils` e la
+chiamano entrambi i comandi invece di averne una copia per uno.
+
+Risultato: da 533 a **528 fotografie**, 5 doppioni in 5 immobili, nessun
+immobile sceso sotto le 5 foto, nessun file orfano rimasto su disco.
+
 ### Pulizia delle descrizioni
 
 Il portale antepone al testo un blocco di dati — `Descrizione`, ospiti, camere,
@@ -613,6 +659,30 @@ numero di passi. Sull'ultimo `content: none`. In più ogni tratto si disegna
 quando si arriva al proprio passo, quindi la sequenza si costruisce sotto gli
 occhi invece di essere già lì.
 
+### Le schede del carosello non possono tagliare il testo
+
+La riga di ospiti, camere e bagni spariva su qualunque finestra più bassa di
+circa 850px — il portatile tipico. La scheda si stringeva (450 → 250px) ma il
+corpo restava fisso a 292px, e `overflow: hidden` mangiava quello che avanzava.
+
+La causa era `min-height: 120px` sulla fotografia: sotto quella soglia smetteva
+di cedere, e la differenza la pagava il testo, che però non può rimpicciolirsi.
+
+Ora la fotografia cede **fino a zero**. Qualunque soglia diversa da zero è una
+scommessa su quanto sarà alta la finestra: superata quella, a cedere torna a
+essere il testo. Così invece la garanzia è strutturale — il corpo della scheda
+non può essere tagliato — e a tenere la fotografia di una misura decente
+pensano due scelte separate:
+
+- **niente estratto nel carosello**, a nessuna misura: due righe di descrizione
+  troncata in una vetrina dove titolo, località e numeri dicono già tutto;
+- **il carosello non si blocca sotto i 700px di altezza**. Lì la fila
+  trascinabile fa la fotografia più grande, non più piccola: 170px contro 85.
+
+Verificato su dieci combinazioni di finestra, da 1280×600 a 1920×1080: riga dei
+numeri sempre dentro la scheda, occhiello mai tagliato, e altezza della
+fotografia che cresce insieme alla finestra invece di ballare.
+
 ### Perché griglia e percorso usano `data-reveal="fade"`
 
 La rivelazione normale sposta in verticale di 22px, scaglionata. Dove gli
@@ -625,6 +695,233 @@ si vedrebbe una fila storta.
 La variante `fade` scaglionata solo nell'opacità dà la stessa sequenza senza
 mai spostare niente. Verificato a metà rivelazione: tutti i bordi superiori
 allo stesso pixel, tutte le trasformazioni all'identità.
+
+
+## Home
+
+Otto sezioni, in quest'ordine:
+
+| # | sezione | sfondo |
+|---|---|---|
+| 1 | Hero | video |
+| 2 | Barra dei numeri | chiaro |
+| 3 | Come funziona per il proprietario (3 passi) | tenue |
+| 4 | L'esperienza dell'ospite | chiaro |
+| 5 | Immobili in evidenza (carosello bloccato) | tenue |
+| 6 | Recensioni | chiaro |
+| 7 | Le zone che copriamo | tenue |
+| 8 | Invito ai proprietari | fascia |
+
+Gli sfondi si alternano: due sezioni consecutive con lo stesso fondo si
+fonderebbero in una sola.
+
+### Barra dei numeri
+
+Cifra grande d'apertura, quattro dati sotto un filetto. I numeri sono
+**affermazioni commerciali**, non dati che il sito ricava da sé: stanno tutti
+in `settings.py`, in un punto solo, aggiornabili senza toccare un template.
+
+| dato | da dove |
+|---|---|
+| Immobili gestiti | `PROPERTIES_MANAGED` (`+100`) |
+| Ospiti accolti | `GUESTS_TOTAL`, `GUESTS_LAST_12M`, `GUESTS_AS_OF` |
+| Proprietari che rinnovano | `OWNERS_SERVED`, `OWNERS_RETAINED` |
+| Dal … | `SEASON_FIRST_YEAR` |
+
+**Nessuno ha un valore di comodo.** Dove il dato manca compare `[da inserire]`,
+composto piccolo e in secondo piano. Un numero inventato su un sito commerciale
+è una pratica ingannevole (Codice del Consumo, art. 21-22), non un riempitivo.
+
+La percentuale di rinnovo **non si scrive a mano**: si calcola da serviti e
+rimasti, così i tre numeri non possono raccontare cose diverse.
+
+### Due numeri diversi, due parole diverse
+
+La home dichiara **+100 immobili gestiti**; la pagina Immobili conta **+60
+immobili in vetrina**, che il sito ricava da sé dai 63 pubblicati.
+
+Non sono in contraddizione, ma lo sembrerebbero se li chiamasse allo stesso
+modo. Per questo il portafoglio dichiarato si dice sempre «gestiti» e viene da
+`PROPERTIES_MANAGED`, mentre quello calcolato si dice sempre «in vetrina» e
+viene da `conteggio_indicativo()`. Vale anche nelle descrizioni per i motori di
+ricerca, dove la confusione sarebbe invisibile a chi la scrive e ben visibile a
+chi cerca.
+
+Il formato è lo stesso in entrambi i casi — il più davanti, `+100` e `+60` —
+così non convivono due grafie dello stesso genere di numero.
+
+### Il contatore degli ospiti
+
+Parte da zero, sale al valore vero, poi continua a salire al ritmo reale.
+
+```
+mostrato = totale + (ospiti ultimi 12 mesi / secondi in un anno) × (adesso − data del totale)
+```
+
+**Il ritmo è quello e nient'altro.** Con dodicimila ospiti l'anno fa un ospite
+ogni quarantatré minuti: in pagina non si vedrà quasi mai scattare, ed è
+esattamente ciò che deve succedere. Un contatore che corre più del reale è un
+numero falso che si aggiorna da solo.
+
+Tre conseguenze pratiche:
+
+- il valore giusto è **già nel markup**: senza JavaScript, o con «riduci
+  movimento», il numero c'è comunque — l'animazione lo sostituisce, non lo crea;
+- il conto parte dalla **data del totale**, non da «adesso»: altrimenti il
+  numero mostrato dipenderebbe da quando la pagina viene aperta invece che da
+  quanto tempo è passato davvero;
+- il timer si programma sull'istante in cui il valore cambierà, invece di
+  ridipingere lo stesso numero sessanta volte al secondo.
+
+### Recensioni
+
+A database (`core.Recensione`), gestibili dall'amministrazione. Nome, canale e
+data sono **obbligatori per costruzione**: la direttiva Omnibus, recepita nel
+Codice del Consumo (art. 22, comma 4-bis), impone di dichiarare se e come le
+recensioni pubblicate sono verificate, e senza canale e data non c'è niente da
+verificare. Il campo `url` porta all'originale quando è pubblico.
+
+La sezione **compare solo se ce n'è almeno una**. Nessuna testimonianza di
+prova, nemmeno come segnaposto: una vetrina di recensioni inventate è
+pubblicità ingannevole.
+
+### La mappa delle zone
+
+Contorno della Sardegna da confini amministrativi Istat, semplificato con
+Douglas-Peucker da 4237 a 316 punti e salvato come tracciato SVG in
+`core/data/sardegna.json`. **Nessun servizio di mappe esterno**: niente
+richieste a terzi, niente JavaScript per disegnarla, coerente con la scelta di
+ospitare anche i caratteri.
+
+I punti sono il centro degli immobili di ogni zona, calcolato sulle coordinate
+vere: non sono messi a occhio. L'alone è proporzionale al numero di immobili.
+
+L'inquadratura è ritagliata sull'area coperta: le 19 località stanno tutte
+sulla costa nord-orientale e coprono un quinto dell'isola, quindi disegnata
+intera la mappa sarebbe per quattro quinti vuota.
+
+**Le coordinate si emettono come stringhe dalla vista.** Con
+`LANGUAGE_CODE = "it-it"` il template scriverebbe `cx="505,8"` invece di
+`cx="505.8"`, e l'SVG rifiuta la virgola: i punti finivano tutti a 0,0. È la
+stessa trappola delle coordinate nei dati strutturati.
+
+E niente `overflow: visible` sull'SVG: annulla il ritaglio del `viewBox` e
+l'isola viene disegnata tutta, fuori scala e fuori riquadro.
+
+#### L'onda dei punti
+
+Scorrendo, i punti compaiono e si spengono a uno a uno. Ogni punto vive un
+tratto del passaggio della sezione, e gli intervalli sono sfalsati da `--i`,
+che la vista assegna **da nord a sud** — cioè nell'ordine in cui la costa
+scorre sotto gli occhi. Ne esce un'onda che scende lungo il litorale invece di
+un lampeggio collettivo.
+
+```css
+animation-range:
+  cover calc(1%  + var(--i) * 2.7%)
+  cover calc(49% + var(--i) * 2.7%);
+```
+
+I due numeri decidono due cose: **vita diviso sfalsamento** dà quanti punti si
+vedono insieme al culmine (48 / 2,7 ≈ 18 su 19), e l'ultimo intervallo deve
+finire in fondo al `cover` — 97,6% — altrimenti la mappa resta vuota mentre la
+sezione è ancora sullo schermo.
+
+Due dettagli che sembrano pignoleria:
+
+- `transform-box: fill-box` con `transform-origin: center`. Senza, la scala
+  parte dall'origine del disegno e i punti schizzano verso l'angolo invece di
+  gonfiarsi sul posto.
+- La timeline è **nominata** (`view-timeline-name: --zone` su `.zone-mappa`) e
+  richiamata dai gruppi dentro l'SVG. Una `view()` anonima sui gruppi userebbe
+  il riquadro del singolo punto, non quello della mappa.
+
+**L'informazione non se ne va con i punti**: l'elenco accanto elenca sempre
+tutte e diciannove le località. Un effetto non deve mai essere l'unico posto in
+cui un dato esiste. Con «riduci movimento» il blocco non si applica e i punti
+stanno fermi, tutti e diciannove visibili — verificato.
+
+## Menu «Immobili» con le località
+
+La voce **Immobili** della barra apre una tendina con tutte le località che
+hanno almeno un immobile pubblicato. Scegliendone una si arriva su
+`/properties/?location=<nome>` con l'elenco già filtrato — e il filtro della
+pagina si trova in sincrono, perché è lo stesso parametro che usa il modulo lì
+dentro.
+
+### Due bersagli, non uno
+
+«Immobili» resta un **link** alla pagina completa; il triangolino accanto è un
+**pulsante** a sé. Accorpare i due gesti in un elemento solo costringerebbe a
+rinunciare a uno dei due: o si perde l'accesso in un colpo all'elenco intero, o
+non c'è modo di aprire la scelta per località.
+
+### Si apre anche senza JavaScript
+
+Il CSS la apre al passaggio del mouse — solo dove `hover: hover`, perché su
+schermo tattile `:hover` resta appiccicato dopo il tocco — e quando il fuoco
+entra nella voce con il tabulatore. JavaScript aggiunge quello che il CSS non
+può fare: il comando esplicito per chi tocca lo schermo, lo stato annunciato
+con `aria-expanded`, la chiusura con Esc e col click fuori.
+
+**La chiusura con Esc ha richiesto una regola in più.** Premendo Esc il fuoco
+torna sul pulsante, che sta *dentro* la voce: `:focus-within` teneva la tendina
+aperta e Esc sembrava non fare niente. Serve una classe `e-chiusa` che vinca su
+`:focus-within` — stessa specificità, quindi conta che venga dopo nel foglio —
+e che `main.js` toglie quando il puntatore o il fuoco escono dalla voce, così un
+passaggio successivo la riapre normalmente.
+
+### Le voci si scelgono per classe, non per posizione
+
+Le quattro voci principali portano `.nav-voce`. Prima le regole le prendevano
+per posizione — `.primary-nav > ul > li > a` — e appena il link di «Immobili» è
+finito dentro `.nav-riga` hanno smesso di applicarsi: sopra l'hero la voce
+restava quasi nera su una fotografia scura, cioè **invisibile**, e perdeva
+anche la sottolineatura animata. Una classe non si rompe se il markup si
+annida.
+
+### La tendina si tagliava aprendola col click
+
+Le regole del sotto-elenco mobile stavano fra quelle di base:
+`.ha-tendina.e-aperta > .tendina { max-height: 60vh }` ha specificità 0,3,0 e
+batteva `.tendina { max-height: none }` del blocco desktop (0,1,0). Sul desktop
+la tendina aperta **col click** si ritrovava quindi alta al massimo 60vh con uno
+scorrimento interno: su una finestra da 760px veniva tagliata a 456px contro 478
+di contenuto, e le ultime località sparivano. Aprendola col passaggio del mouse
+no, perché lì la classe `e-aperta` non c'è.
+
+Le regole mobile ora stanno chiuse in `@media (max-width: 899.98px)`, quindi le
+due varianti non possono più scavalcarsi.
+
+### Le regole vanno qualificate con `.primary-nav`
+
+`.tendina-elenco` è un `<ul>` dentro `.primary-nav`, quindi `.primary-nav ul`
+(specificità 0,1,1) batte `.tendina-elenco` (0,1,0). Senza il prefisso l'elenco
+ereditava `display: flex; flex-direction: row` e i diciannove link finivano in
+**una fila larga 2465px** che usciva dallo schermo. Vale anche per
+`.primary-nav a`.
+
+### Dove sta l'elenco
+
+In `core/context_processors.py`, esposto come `LOCALITA_NAV`. È avvolto in
+`SimpleLazyObject`: la barra sta in `base.html` e comparirebbe su ogni pagina,
+ma così la query parte solo se un template la usa davvero — l'amministrazione,
+che ha i propri template, non la paga.
+
+Costa **una query per pagina** (un `GROUP BY` su 63 righe). Nessuna cache: a
+questa scala non serve, e un elenco in cache significherebbe che un immobile
+appena pubblicato non compare nel menu finché la cache non scade.
+
+### Ordine e disposizione
+
+Alfabetico, con il numero di immobili accanto. Da 900px in su su **due colonne
+riempite per colonna**, non per riga: l'elenco è alfabetico, e riempiendolo per
+righe la A finirebbe accanto alla L invece che sopra la B. Sotto, è un
+sotto-elenco che si apre dentro al menu, scorribile.
+
+Il pannello sta 1,1rem più in basso della voce, con un **ponte invisibile** su
+quello stacco: senza, scendendo col mouse si perderebbe il passaggio e la
+tendina si richiuderebbe in faccia.
 
 
 ## Galleria
@@ -686,9 +983,31 @@ si precaricano, quindi il passaggio è istantaneo. Il contatore usa
 si disabilitano invece di girare in tondo. Alla chiusura la sorgente si svuota:
 una foto a piena risoluzione tenuta in memoria dopo non serve.
 
-Senza JavaScript, o su un browser senza `<dialog>`, ogni tessera resta il link
-alla scheda dell'immobile che è già nel markup: la galleria funziona,
+Senza JavaScript, o su un browser senza `<dialog>`, la fotografia resta il
+link alla scheda dell'immobile che è già nel markup: la galleria funziona,
 semplicemente non si sfoglia.
+
+### Due destinazioni, due elementi
+
+Al passaggio del mouse la tessera mostra anche il pulsante **«Vedi
+l'annuncio»**, che porta alla scheda dell'immobile — mentre la fotografia apre
+il visore.
+
+Non potevano stare uno dentro l'altro: **un link dentro un link è markup non
+valido** e col tabulatore diventa una trappola. Sono fratelli dentro un
+contenitore, e puntano entrambi alla scheda: senza JavaScript la fotografia ci
+porta come prima, con JavaScript il suo click viene intercettato e il pulsante
+no.
+
+- Il pulsante porta un titolo nascosto ai soli lettori di schermo: «Vedi
+  l'annuncio» ripetuto 126 volte non dice *quale* annuncio.
+- Compare su `:hover` e su `:focus-within` della tessera — non su
+  `:focus-visible` della fotografia, altrimenti sparirebbe proprio quando il
+  tabulatore arriva sul pulsante stesso.
+- **Sotto i 700px non esiste**: su schermo tattile il passaggio del mouse non
+  c'è, chi tocca la fotografia apre il visore e lì il collegamento
+  all'immobile c'è già. Verificato che non sia nemmeno raggiungibile col
+  tabulatore, così non lascia una fermata fantasma.
 
 ### Due dettagli che sembrano pignoleria
 
@@ -1008,6 +1327,11 @@ export DJANGO_ALLOWED_HOSTS="www.evhousemanagement.ch,evhousemanagement.ch"
 ```
 
 ---
+
+`BOOKING_URL` (predefinito `https://evhouse.kross.travel/`) è l'indirizzo del
+portale prenotazioni, usato dall'invito «Prenota ora» nell'hero. Sta in
+`settings.py` e non nel template perché è un dato aziendale, non una scelta di
+impaginazione.
 
 ## Da completare prima della pubblicazione
 

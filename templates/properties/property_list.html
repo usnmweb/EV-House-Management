@@ -37,8 +37,15 @@
       <h2>Immobili in gestione</h2>
       <hr class="gold-rule">
       <p class="lead">
-        {{ total_count }} soluzioni in {{ locations|length }} località della Sardegna.
-        Disponibilità e tariffe si verificano sul portale prenotazioni.
+        {% comment %}
+          «In vetrina», non «in gestione»: questo numero il sito lo conta da
+          se' sugli immobili pubblicati, mentre la home dichiara il portafoglio
+          del gestore, che e' piu' ampio. Due numeri diversi vanno detti con
+          parole diverse, altrimenti il sito sembra contraddirsi.
+        {% endcomment %}
+        {{ total_count }} immobili in vetrina, in {{ locations|length }} località
+        della Sardegna. Disponibilità e tariffe si verificano sul portale
+        prenotazioni.
       </p>
     </div>
 
@@ -73,7 +80,7 @@
 
     {% if properties %}
       <div class="list-meta">
-        {% if filtri_attivi %}<span>{{ paginator.count }} immobil{{ paginator.count|pluralize:"e,i" }} trovat{{ paginator.count|pluralize:"o,i" }}</span>{% else %}<span>{{ total_count }} immobili</span>{% endif %}
+        {% if filtri_attivi %}<span>{{ paginator.count }} immobil{{ paginator.count|pluralize:"e,i" }} trovat{{ paginator.count|pluralize:"o,i" }}</span>{% else %}<span>{{ total_count }} immobili in vetrina</span>{% endif %}
         {% if is_paginated %}<span>Pagina {{ page_obj.number }} di {{ paginator.num_pages }}</span>{% endif %}
       </div>
 

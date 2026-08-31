@@ -60,26 +60,55 @@
         regolare anche quando parte delle tessere sono nascoste. Senza JS
         pensano a tutto le regole `:nth-child` di ripiego.
 
-        Ogni tessera e' un link alla scheda dell'immobile: e' il
-        comportamento senza JavaScript. Con JavaScript il click apre invece il
-        visore, e il link alla scheda si trova li' dentro.
+        La fotografia porta alla scheda dell'immobile: e' il comportamento
+        senza JavaScript. Con JavaScript il click apre invece il visore, e alla
+        scheda si arriva dal pulsante che compare al passaggio del mouse —
+        oppure dal collegamento dentro al visore.
       {% endcomment %}
       <div class="mosaico" id="mosaico" data-stagger>
         {% for scatto in scatti %}
-        <a class="tessera" data-reveal="fade"
-           href="{{ scatto.property.get_absolute_url }}"
-           data-luogo="{{ scatto.slug_luogo }}"
-           data-titolo="{{ scatto.property.title }}"
-           data-localita="{{ scatto.property.location }}"
-           data-alt="{{ scatto.display_alt }}">
-          <img src="{{ scatto.image.url }}" alt="{{ scatto.display_alt }}"
-               loading="lazy" decoding="async" width="1200" height="800"
-               sizes="(min-width: 1200px) 25vw, (min-width: 700px) 33vw, 50vw">
-          <span class="tessera-velo" aria-hidden="true">
-            <span class="tessera-titolo">{{ scatto.property.title }}</span>
-            <span class="tessera-luogo">{{ scatto.property.location }}</span>
-          </span>
-        </a>
+        {% comment %}
+          Due destinazioni distinte, quindi due elementi distinti: la
+          fotografia apre il visore, il pulsante porta all'annuncio. Non
+          potevano stare uno dentro l'altro — un link dentro un link e' markup
+          non valido e col tabulatore diventa una trappola — quindi sono
+          fratelli dentro la tessera.
+
+          Entrambi puntano alla scheda dell'immobile: senza JavaScript la
+          fotografia ci porta come prima, con JavaScript il click viene
+          intercettato e apre il visore. Il pulsante non viene mai
+          intercettato.
+        {% endcomment %}
+        <div class="tessera" data-reveal="fade"
+             data-luogo="{{ scatto.slug_luogo }}"
+             data-titolo="{{ scatto.property.title }}"
+             data-localita="{{ scatto.property.location }}"
+             data-alt="{{ scatto.display_alt }}"
+             data-scheda="{{ scatto.property.get_absolute_url }}">
+          <a class="tessera-foto" href="{{ scatto.property.get_absolute_url }}">
+            <img src="{{ scatto.image.url }}" alt="{{ scatto.display_alt }}"
+                 loading="lazy" decoding="async" width="1200" height="800"
+                 sizes="(min-width: 1200px) 25vw, (min-width: 700px) 33vw, 50vw">
+            <span class="tessera-velo" aria-hidden="true">
+              <span class="tessera-titolo">{{ scatto.property.title }}</span>
+              <span class="tessera-luogo">{{ scatto.property.location }}</span>
+            </span>
+          </a>
+
+          {% comment %}
+            Il titolo nascosto rende il collegamento riconoscibile fuori
+            contesto: in una pagina con centoventisei tessere, «Vedi
+            l'annuncio» ripetuto centoventisei volte non dice a chi legge con
+            uno screen reader quale annuncio.
+          {% endcomment %}
+          <a class="tessera-annuncio" href="{{ scatto.property.get_absolute_url }}">
+            Vedi l'annuncio<span class="solo-lettori"> — {{ scatto.property.title }}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </a>
+        </div>
         {% endfor %}
       </div>
     {% else %}

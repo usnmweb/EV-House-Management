@@ -372,6 +372,63 @@
     syncHeader();
   }
 
+  /* ------------------------------------------------------------------
+     Tendina delle localita' nella barra di navigazione
+     Il CSS la apre gia' da solo al passaggio del mouse e quando il fuoco
+     entra nella voce: quello che manca, e che il CSS non puo' fare, e' il
+     comando esplicito per chi tocca lo schermo e lo stato annunciato alle
+     tecnologie assistive.
+     ------------------------------------------------------------------ */
+  var voceTendina = document.getElementById("voce-immobili");
+  var tastoTendina = document.getElementById("tendina-toggle");
+
+  if (voceTendina && tastoTendina) {
+    function apriTendina(apri) {
+      voceTendina.classList.toggle("e-aperta", apri);
+      // `e-chiusa` serve a battere `:focus-within`, che dopo un Esc terrebbe
+      // aperta la tendina perche' il fuoco resta sul pulsante.
+      voceTendina.classList.toggle("e-chiusa", !apri);
+      tastoTendina.setAttribute("aria-expanded", apri ? "true" : "false");
+      tastoTendina.setAttribute(
+        "aria-label", apri ? "Nascondi le località" : "Mostra le località"
+      );
+    }
+
+    tastoTendina.addEventListener("click", function (e) {
+      e.stopPropagation();
+      apriTendina(!voceTendina.classList.contains("e-aperta"));
+    });
+
+    // Un click fuori chiude. Dentro no: si sta scegliendo una localita'.
+    document.addEventListener("click", function (e) {
+      if (!voceTendina.contains(e.target)) apriTendina(false);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" || !voceTendina.classList.contains("e-aperta")) return;
+      apriTendina(false);
+      tastoTendina.focus();   // il fuoco torna dove si era, non in cima alla pagina
+    });
+
+    // Uscendo dalla voce col tabulatore la tendina si chiude da se'.
+    // Solo se il fuoco va da qualche altra parte: quando `relatedTarget` e'
+    // nullo il fuoco non e' andato su nulla — succede cliccando il bordo del
+    // pannello — e chiudere li' sarebbe una porta in faccia. A quel caso ci
+    // pensa gia' il click fuori.
+    voceTendina.addEventListener("focusout", function (e) {
+      if (e.relatedTarget && !voceTendina.contains(e.relatedTarget)) {
+        apriTendina(false);
+        // Uscendo del tutto dalla voce la chiusura esplicita non serve piu':
+        // altrimenti al prossimo passaggio del mouse resterebbe muta.
+        voceTendina.classList.remove("e-chiusa");
+      }
+    });
+
+    voceTendina.addEventListener("mouseleave", function () {
+      voceTendina.classList.remove("e-chiusa");
+    });
+  }
+
   if (navToggle && nav) {
     navToggle.addEventListener("click", function () {
       var open = nav.classList.toggle("is-open");
@@ -410,10 +467,12 @@
        preferenza vuole evitare, e su un telefono il gesto naturale e' gia'
        quello laterale. */
     /* Vale anche sul telefono: il pollice scorre in verticale come sempre e la
-       fila avanza. Il vincolo non e' la larghezza ma l'altezza — sotto i 520px
-       (telefono coricato) non resterebbe spazio per una scheda leggibile, e li'
-       si torna alla fila trascinabile. */
-    var alto = window.matchMedia("(min-height: 520px)");
+       fila avanza. Il vincolo non e' la larghezza ma l'altezza: sotto i 700px
+       il blocco non ha piu' da spartire abbastanza fra intestazione, scheda e
+       barra, e alla fotografia resta una striscia da ottanta pixel. Li' torna
+       la fila trascinabile, che un'altezza da rispettare non ce l'ha e infatti
+       a quelle misure la fotografia la fa piu' grande, non piu' piccola. */
+    var alto = window.matchMedia("(min-height: 700px)");
     var fermo = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     /* Le timeline di scorrimento del CSS non ci sono ovunque: oggi mancano a
@@ -491,6 +550,107 @@
       // spostarla di `delta` bisogna scorrere di `delta / ritmo`.
       var ritmo = parseFloat(getComputedStyle(vetrina).getPropertyValue("--ritmo")) || 1;
       if (delta) window.scrollBy({ top: delta / ritmo, behavior: "smooth" });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Contatore degli ospiti accolti
+
+     Il numero mostrato e' `totale + ritmo x (adesso - data del totale)`, cioe'
+     l'estrapolazione onesta del dato fornito. Non e' un effetto: il valore
+     giusto e' gia' nel markup, e se questo codice non gira resta li'.
+
+     Il ritmo e' quello vero — ospiti degli ultimi dodici mesi diviso i secondi
+     di un anno — e a quel ritmo il numero scatta di rado: con dodicimila
+     ospiti l'anno, una volta ogni quarantatre minuti. Il timer si programma
+     sull'istante in cui il valore cambiera' davvero, invece di ridipingere lo
+     stesso numero sessanta volte al secondo.
+     ------------------------------------------------------------------ */
+  var contatore = document.querySelector(".contatore");
+
+  if (contatore) {
+    var totale = parseFloat(contatore.getAttribute("data-totale"));
+    var alSecondo = parseFloat(contatore.getAttribute("data-al-secondo"));
+    var daQuando = parseFloat(contatore.getAttribute("data-da-quando"));
+    var formato = new Intl.NumberFormat("it-IT");
+
+    function valoreOra() {
+      var trascorsi = (Date.now() - daQuando) / 1000;
+      return Math.floor(totale + alSecondo * Math.max(0, trascorsi));
+    }
+
+    function scrivi(n) { contatore.textContent = formato.format(n); }
+
+    // Il numero corretto va scritto subito: la salita da zero e' un ornamento
+    // e arriva dopo, solo se e' il caso di farla.
+    scrivi(valoreOra());
+
+    function programmaProssimo() {
+      if (!alSecondo) return;
+      var atteso = valoreOra() + 1;
+      var quando = daQuando + ((atteso - totale) / alSecondo) * 1000 - Date.now();
+      // Oltre le ventiquattro ore non vale la pena tenere un timer acceso.
+      if (quando > 0 && quando < 24 * 3600 * 1000) {
+        setTimeout(function () { scrivi(valoreOra()); programmaProssimo(); }, quando + 50);
+      }
+    }
+    programmaProssimo();
+
+    /* La salita da zero parte quando il numero entra in campo, e solo se le
+       animazioni sono ammesse: con "riduci movimento" il numero sta fermo sul
+       valore giusto. */
+    var animabile =
+      document.documentElement.classList.contains("js-anim") &&
+      "IntersectionObserver" in window;
+
+    if (animabile) {
+      var salito = false;
+      var osservaContatore = new IntersectionObserver(function (voci) {
+        voci.forEach(function (v) {
+          if (!v.isIntersecting || salito) return;
+          salito = true;
+          osservaContatore.disconnect();
+
+          var arrivo = valoreOra();
+          var durata = 1600;
+          var inizio = null;
+          function passo(ora) {
+            if (inizio === null) inizio = ora;
+            var t = Math.min(1, (ora - inizio) / durata);
+            // Rallenta verso la fine: il numero si posa invece di fermarsi.
+            scrivi(Math.floor(arrivo * (1 - Math.pow(1 - t, 3))));
+            if (t < 1) requestAnimationFrame(passo);
+            else scrivi(valoreOra());
+          }
+          requestAnimationFrame(passo);
+        });
+      }, { threshold: 0.5 });
+      osservaContatore.observe(contatore);
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Zone coperte: elenco e mappa si illuminano insieme
+     ------------------------------------------------------------------ */
+  var zoneElenco = document.querySelector(".zone-elenco");
+  var zoneMappa = document.querySelector(".zone-mappa");
+
+  if (zoneElenco && zoneMappa) {
+    function accendi(slug, acceso) {
+      var punto = zoneMappa.querySelector('[data-luogo="' + slug + '"]');
+      if (punto) punto.classList.toggle("e-accesa", acceso);
+    }
+    ["mouseover", "focusin"].forEach(function (evento) {
+      zoneElenco.addEventListener(evento, function (e) {
+        var a = e.target.closest ? e.target.closest("[data-luogo]") : null;
+        if (a) accendi(a.getAttribute("data-luogo"), true);
+      });
+    });
+    ["mouseout", "focusout"].forEach(function (evento) {
+      zoneElenco.addEventListener(evento, function (e) {
+        var a = e.target.closest ? e.target.closest("[data-luogo]") : null;
+        if (a) accendi(a.getAttribute("data-luogo"), false);
+      });
     });
   }
 
@@ -593,7 +753,7 @@
       conta.textContent = due(i + 1) + " / " + due(visibili.length);
       titolo.textContent = t.getAttribute("data-titolo") || "";
       luogoVis.textContent = t.getAttribute("data-localita") || "";
-      scheda.setAttribute("href", t.getAttribute("href"));
+      scheda.setAttribute("href", t.getAttribute("data-scheda"));
       prec.disabled = i === 0;
       succ.disabled = i === visibili.length - 1;
       // Le vicine arrivano prima che servano: sfogliare deve essere istantaneo.
@@ -608,11 +768,13 @@
     }
 
     mosaico.addEventListener("click", function (e) {
-      var t = e.target.closest ? e.target.closest(".tessera") : null;
-      if (!t) return;
-      var i = visibili.indexOf(t);
+      // Solo il collegamento sulla fotografia viene intercettato: quello del
+      // pulsante «Vedi l'annuncio» deve navigare, ed e' tutto il suo scopo.
+      var foto = e.target.closest ? e.target.closest(".tessera-foto") : null;
+      if (!foto) return;
+      var i = visibili.indexOf(foto.closest(".tessera"));
       if (i === -1) return;
-      e.preventDefault();          // il link alla scheda vive dentro al visore
+      e.preventDefault();
       apri(i);
     });
 
