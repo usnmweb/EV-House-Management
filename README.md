@@ -1183,34 +1183,112 @@ Per animare un nuovo elemento basta aggiungere `data-reveal` nel template
 (`data-reveal="fade"` per la sola dissolvenza, senza spostamento) e
 `data-stagger` sul contenitore se si vuole la cascata sui figli.
 
-### Entrata a scossa (sezione «Un servizio completo»)
+### «Come funziona» si blocca
 
-Le tre schede compaiono **una alla volta** e si assestano con un'oscillazione
-smorzata: entrano dal basso storte di 4°, sbandano di 13px, rientrano. Perno a
-`50% 90%`, vicino alla base, così sembrano appoggiate e spinte invece che
-appese e fatte girare.
+Arrivata a schermo pieno la sezione **resta ferma**: si vede solo la prima
+tessera, e le altre si scoprono una per volta man mano che si continua a
+scorrere. Finite le quattro, il blocco si stacca e la pagina riprende.
 
-Si attiva con `data-scossa` sul contenitore. È l'unica animazione del sito
-legata al **tempo** e non alla posizione nello scorrimento, e deve esserlo:
-un'oscillazione su timeline di scorrimento si fermerebbe a metà non appena si
-smette di scorrere, lasciando una scheda storta sullo schermo.
+Nessuno intercetta la rotella. La pagina scorre come su qualunque altra sezione
+— rotella, trackpad, frecce, barra laterale, ricerca nel testo funzionano tutti
+— ed è la sezione a restare incollata in cima con `position: sticky` mentre le
+si scorre attraverso. Quanto si è scorso dentro quel tratto è `--avanzamento`,
+da 0 a 1, ed è l'unica cosa che il JavaScript calcola.
 
-**Lo scaglionamento non viene da `data-stagger`.** `main.js` osserva le singole
-schede e scrive il ritardo su ognuna in base alla sua posizione dentro il
-*lotto* che entra in campo nello stesso momento:
+È la stessa meccanica della vetrina degli immobili, e dopo questa modifica è
+letteralmente lo stesso codice: `agganciaBlocco()` in `main.js` prende una
+sezione marcata `data-blocco` con dentro un `[data-blocco-pin]`, le mette
+`e-bloccata` quando le condizioni ci sono e le scrive `--avanzamento`. Cambia
+solo cosa il CSS fa con quel numero: qui scopre le tessere, là sposta la fila.
 
-| | cosa succede | ritardi |
+#### Quanto dura
+
+| variabile | valore | cosa governa |
 |---|---|---|
-| Schermo largo, tre in riga | varcano la soglia nello stesso fotogramma, arrivano in un'unica chiamata | 0, 200, 400ms |
-| Telefono, una colonna | si incontrano una per volta scorrendo, ogni chiamata ne porta una sola | 0, 0, 0 |
+| `--passo` | `50svh` | scorrimento per tessera |
+| `--corsa` | `3 × --passo` | la prima è già lì quando il blocco si attacca: la corsa la spartiscono le altre tre |
+| `--fetta` | `0.26` | quanto dura una comparsa, in frazione della corsa |
 
-In colonna la sequenza la fa già lo scorrimento: un'attesa in più sarebbe solo
-una scheda che tarda a comparire. Osservare il *contenitore* invece delle
-schede sarebbe stato più corto ma sbagliato in colonna — la seconda e la terza
-si sarebbero animate fuori campo, e arrivandoci si sarebbero trovate già ferme.
+Le tre fette occupano il 78%: il resto è la coda in cui tutte e quattro restano
+in campo prima che il blocco si stacchi. Senza, l'ultima comparirebbe
+nell'istante stesso in cui la sezione riparte e non la si vedrebbe mai ferma.
 
-Per estenderla ad altre sezioni basta `data-scossa` sul contenitore e togliere
-`data-reveal` dai figli.
+`--passo` è l'unico numero da toccare per rendere la sezione più svelta o più
+lenta.
+
+#### L'intervallo di ogni tessera
+
+```css
+animation-range:
+  contain calc((var(--i, 0) - 1) * var(--fetta) * 100%)
+  contain calc( var(--i, 0)      * var(--fetta) * 100%);
+```
+
+`contain 0%` è l'istante in cui il blocco si attacca, `contain 100%` quello in
+cui si stacca. L'intervallo della **prima** tessera finisce a `0%` e comincia
+quindi *prima* dell'aggancio: la prima compare mentre la sezione sale, ed è già
+lì — sola — nel momento in cui la pagina si ferma. Misurato a 1440×900: a
+`sezTop 104px`, cioè nell'istante esatto dell'aggancio, le opacità sono
+`[100, 0, 0, 0]`.
+
+Le percentuali fuori dallo 0–100 sono legittime: la timeline si estrapola.
+
+#### Quando *non* si blocca
+
+Solo sopra **1200px di larghezza e 720px di altezza**, e mai con
+`prefers-reduced-motion`. Le due soglie sono misurate, non scelte a occhio:
+bloccata, la sezione ha un'altezza fissa e quello che sfora viene tagliato — e
+a essere tagliata sarebbe l'ultima tessera, cioè proprio quella che il blocco
+esiste per scoprire. Sotto i 1200px la griglia si stringe e le tessere crescono
+in altezza; sotto i 720px di finestra il blocco non ha più i pixel per
+contenerle.
+
+Fuori da quelle soglie resta la griglia normale, dove le tessere compaiono già
+una per volta mentre si scorre e non c'è niente da tagliare. Sotto gli 860px di
+altezza cade anche la frase introduttiva: il titolo dice già di cosa si tratta,
+le tessere no.
+
+#### Una tessera invisibile è ancora raggiungibile col tabulatore
+
+È il problema vero di una comparsa graduale: il collegamento della quarta
+tessera prenderebbe il fuoco mentre è a opacità 0. `main.js` intercetta il
+`focusin` dentro la griglia e, se la tessera non è ancora scoperta, porta la
+pagina a fine corsa — dove sono tutte in campo. Il fuoco resta dov'è, si muove
+la pagina. Verificato: da `y=1421` con opacità `[100, 11, 0, 0]` si arriva a
+`y=2731` con `[100, 100, 100, 100]` e la tessera interamente nello schermo.
+
+*(Se lo si prova in un browser headless: senza
+`Emulation.setFocusEmulationEnabled` gli eventi di fuoco non vengono
+consegnati, e la protezione sembra non funzionare quando invece funziona.)*
+
+#### La barra di avanzamento
+
+In una sezione che si blocca serve: senza, lo scorrimento che non muove la
+pagina si legge come un guasto. Si riempie sulla stessa timeline che scopre le
+tessere, quindi non può andare fuori passo con loro.
+
+### La quarta tessera
+
+Non è un passo: è il collegamento alla pagina Servizi, e ha preso il posto del
+pulsante che stava sotto la griglia. Perciò l'elenco è `<ul>` e non `<ol>` —
+dentro un `<ol>` uno screen reader la annuncerebbe come «4 di 4», cioè come
+l'ultima cosa che succede al proprietario. I numeri dei passi sono scritti nel
+testo e bastano. A essere cliccabile è tutta la tessera: il collegamento la
+riempie, così il bersaglio è grande quanto la casella.
+
+### La cascata senza blocco
+
+Dove la sezione non si blocca, le tessere compaiono comunque una alla volta
+mentre si scorre, con lo stesso principio applicato alla loro `view()`: sopra i
+900px sono sulla stessa riga, quindi senza sfasamento comparirebbero nello
+stesso fotogramma, e lo sfasamento è `--i` (da `data-stagger`) applicato a
+`animation-range` con un passo largo — 21% contro il 2,5% della rivelazione
+generale. Sotto i 900px la griglia è a una o due colonne e le tessere si
+incontrano già una per volta scorrendo: lì lo sfasamento le farebbe solo
+tardare, quindi la regola sta dentro `@media (min-width: 900px)`.
+
+Dove le timeline di scorrimento mancano resta il ripiego a tempo dell'observer,
+con un ritardo di 170ms per tessera invece dei 90 generali.
 
 ### Perché non si rompe mai
 

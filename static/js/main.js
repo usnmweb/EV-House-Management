@@ -188,52 +188,6 @@
       });
     }
 
-    /* --- Entrata a scossa ---
-       Si osservano le singole schede, e il ritardo lo detta la posizione
-       dentro il *lotto* che entra in campo nello stesso momento.
-
-       E' quello che fa funzionare la sequenza sia in riga che in colonna:
-       su schermo largo le tre schede varcano la soglia nello stesso
-       fotogramma, arrivano in un'unica chiamata e prendono ritardi 0, 200,
-       400ms — una alla volta. Sul telefono la griglia e' a una colonna, si
-       incontrano una per volta scorrendo, ogni chiamata ne porta una sola e il
-       ritardo e' sempre zero: la sequenza la fa gia' lo scorrimento, un attesa
-       in piu' sarebbe solo una scheda che tarda a comparire.
-
-       Osservare il gruppo invece delle schede sarebbe stato piu' corto ma
-       sbagliato in colonna: la seconda e la terza si sarebbero animate fuori
-       campo, e arrivandoci si sarebbero trovate gia' ferme.
-
-       Vale sempre, anche dove il browser ha le timeline di scorrimento: qui
-       serve il tempo. Un'oscillazione legata alla posizione si fermerebbe a
-       meta' fermando il dito, lasciando una scheda storta. */
-    var schede = document.querySelectorAll("[data-scossa] > *");
-    if (schede.length && "IntersectionObserver" in window) {
-      var PASSO_SCOSSA = 200;   // ms fra una scheda e la successiva
-      var scossaViva = false;
-
-      var osservaScossa = new IntersectionObserver(
-        function (voci) {
-          scossaViva = true;
-          var entranti = voci.filter(function (v) { return v.isIntersecting; });
-          entranti.forEach(function (v, i) {
-            v.target.style.setProperty("--ritardo-scossa", i * PASSO_SCOSSA + "ms");
-            v.target.classList.add("e-in-scena");
-            osservaScossa.unobserve(v.target);   // una volta sola
-          });
-        },
-        { rootMargin: "0px 0px -10% 0px", threshold: 0.2 }
-      );
-      schede.forEach(function (c) { osservaScossa.observe(c); });
-
-      // Stessa rete di sicurezza della rivelazione: se l'observer non da'
-      // segni di vita si mostra tutto. Meglio senza effetto che vuoto.
-      setTimeout(function () {
-        if (scossaViva) return;
-        schede.forEach(function (c) { c.classList.add("e-in-scena"); });
-      }, 2000);
-    }
-
     // Rivelazione allo scroll.
     // Se il browser sa animare sulla timeline dello scroll, il CSS fa tutto da
     // solo (vedi il blocco @supports in style.css) e qui non si crea nulla:
@@ -447,56 +401,53 @@
   }
 
   /* ------------------------------------------------------------------
-     Vetrina bloccata: schede raggiunte col tabulatore
-     Quando la sezione e' incollata, la fila non e' un contenitore di
-     scorrimento: il browser non sa come portare in vista una scheda fuori
-     campo. Ci pensiamo noi scorrendo la pagina, che e' quello che muove la
-     fila. Il rapporto e' 1 a 1 — l'altezza della sezione e' calcolata apposta
-     in style.css — quindi lo spostamento richiesto e' anche i pixel da
-     scorrere, senza conversioni.
+     Sezioni che si bloccano
+
+     Due, sulla home. In «Come funziona» la sezione si ferma a schermo pieno e
+     le tessere si scoprono una alla volta; nella vetrina degli immobili si
+     ferma e la fila di schede scorre di lato. Cambia cosa succede dentro, non
+     la meccanica: sono la stessa cosa e stanno nella stessa funzione.
+
+     Quella meccanica non intercetta niente. La pagina scorre come su qualunque
+     altra sezione — rotella, trackpad, frecce, barra laterale, ricerca nel
+     testo — ed e' la sezione a restare incollata mentre le si scorre
+     attraverso, con `position: sticky`. Quanto si e' scorso dentro quel tratto
+     e' `--avanzamento`, da 0 a 1, ed e' l'unica cosa che questo codice calcola.
      ------------------------------------------------------------------ */
-  var pista = document.getElementById("showcase-track");
-  var vetrina = pista && pista.closest(".showcase");
-  var blocco = pista && pista.closest(".showcase-pin");
 
-  if (pista && vetrina && blocco) {
-    /* --- quando bloccare ---
-       Schermo largo e nessuna richiesta di ridurre le animazioni. Sotto quella
-       soglia, o con la preferenza attiva, resta la fila trascinabile: cambiare
-       il senso dello scorrimento e' esattamente la sorpresa che quella
-       preferenza vuole evitare, e su un telefono il gesto naturale e' gia'
-       quello laterale. */
-    /* Vale anche sul telefono: il pollice scorre in verticale come sempre e la
-       fila avanza. Il vincolo non e' la larghezza ma l'altezza: sotto i 700px
-       il blocco non ha piu' da spartire abbastanza fra intestazione, scheda e
-       barra, e alla fotografia resta una striscia da ottanta pixel. Li' torna
-       la fila trascinabile, che un'altezza da rispettare non ce l'ha e infatti
-       a quelle misure la fotografia la fa piu' grande, non piu' piccola. */
-    var alto = window.matchMedia("(min-height: 700px)");
-    var fermo = window.matchMedia("(prefers-reduced-motion: reduce)");
+  /* Le timeline di scorrimento del CSS non ci sono ovunque. Dove ci sono fa
+     tutto il CSS sul compositor; dove mancano l'avanzamento lo calcoliamo qui
+     e lo passiamo come `--avanzamento`. Il layout e' lo stesso nei due casi,
+     cambia solo chi muove le cose. */
+  var timelineCSS =
+    window.CSS && CSS.supports && CSS.supports("animation-timeline", "view()");
+  var fermo = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    /* Le timeline di scorrimento del CSS non ci sono ovunque: oggi mancano a
-       Firefox e alle versioni di Safari precedenti alla 26. Dove ci sono fa
-       tutto il CSS sul compositor; dove mancano l'avanzamento lo calcoliamo
-       qui e lo passiamo come `--avanzamento`. Il layout e' lo stesso nei due
-       casi, cambia solo chi muove la fila. */
-    var timelineCSS =
-      window.CSS && CSS.supports && CSS.supports("animation-timeline", "view()");
+  function agganciaBlocco(sezione, quando) {
+    var pin = sezione.querySelector("[data-blocco-pin]");
+    if (!pin) return null;
 
+    var sta = window.matchMedia(quando);
     var inCoda = false;
+
+    /* Le due misure si prendono dal layout vero, non da `innerHeight` e
+       `--header-h`: su iOS `innerHeight` cambia mentre la barra dell'indirizzo
+       si ritira, mentre il blocco e' alto in `svh` e sta fermo. Leggendo
+       l'elemento non c'e' modo che i due numeri divergano. */
+    function tratti() {
+      var q = sezione.getBoundingClientRect();
+      var attacco = parseFloat(getComputedStyle(pin).top) || 0;
+      var tratto = q.height - pin.getBoundingClientRect().height;
+      return tratto > 0 ? { q: q, attacco: attacco, tratto: tratto } : null;
+    }
+
     function aggiornaAvanzamento() {
       inCoda = false;
-      /* Le due misure si prendono dal layout vero, non da `innerHeight` e
-         `--header-h`: su iOS `innerHeight` cambia mentre la barra
-         dell'indirizzo si ritira, mentre il blocco e' alto in `svh` e sta
-         fermo. Leggendo l'elemento non c'e' modo che i due numeri divergano. */
-      var q = vetrina.getBoundingClientRect();
-      var attacco = parseFloat(getComputedStyle(blocco).top) || 0;
-      var tratto = q.height - blocco.getBoundingClientRect().height;
-      if (tratto <= 0) return;
+      var t = tratti();
+      if (!t) return;
       // Quando `q.top` vale `attacco` il blocco si incolla: li' siamo a 0.
-      var p = (attacco - q.top) / tratto;
-      vetrina.style.setProperty("--avanzamento", Math.min(1, Math.max(0, p)));
+      var p = (t.attacco - t.q.top) / t.tratto;
+      sezione.style.setProperty("--avanzamento", Math.min(1, Math.max(0, p)));
     }
 
     function alloScroll() {
@@ -507,8 +458,8 @@
 
     var ascolta = false;
     function sincronizza() {
-      var deve = alto.matches && !fermo.matches;
-      vetrina.classList.toggle("e-bloccata", deve);
+      var deve = sta.matches && !fermo.matches;
+      sezione.classList.toggle("e-bloccata", deve);
 
       // L'ascoltatore serve solo dove il CSS non sa fare da solo.
       var serve = deve && !timelineCSS;
@@ -519,21 +470,87 @@
       } else if (!serve && ascolta) {
         window.removeEventListener("scroll", alloScroll);
         ascolta = false;
-        vetrina.style.removeProperty("--avanzamento");
+        sezione.style.removeProperty("--avanzamento");
       }
     }
 
     sincronizza();
     window.addEventListener("resize", sincronizza, { passive: true });
     // Su Safari vecchio `addEventListener` sulle media query non c'e'.
-    [alto, fermo].forEach(function (mq) {
+    [sta, fermo].forEach(function (mq) {
       if (mq.addEventListener) mq.addEventListener("change", sincronizza);
       else if (mq.addListener) mq.addListener(sincronizza);
     });
 
+    return {
+      sezione: sezione,
+      pin: pin,
+      bloccata: function () { return getComputedStyle(pin).position === "sticky"; },
+      // Dove va portata la pagina perche' il blocco sia a fine corsa.
+      fineCorsa: function () {
+        var t = tratti();
+        return t ? window.scrollY + t.q.top - t.attacco + t.tratto : null;
+      },
+    };
+  }
+
+
+  /* --- «Come funziona» ---
+     Si blocca solo dove le quattro tessere ci stanno davvero. Bloccata, la
+     sezione ha un'altezza fissa e quello che sfora viene tagliato: a essere
+     tagliata sarebbe l'ultima tessera, cioe' proprio quella che il blocco
+     esiste per scoprire. Le due soglie sono misurate, non scelte a occhio —
+     sotto i 1200px la griglia si stringe e le tessere crescono in altezza,
+     sotto i 720px di finestra il blocco non ha piu' i pixel per contenerle.
+     Fuori da li' resta la griglia normale, dove la cascata la fa gia' lo
+     scorrimento e non c'e' niente da tagliare. */
+  var passi = document.querySelector(".passi[data-blocco]");
+  var bloccoPassi = passi &&
+    agganciaBlocco(passi, "(min-width: 1200px) and (min-height: 720px)");
+
+  if (bloccoPassi) {
+    /* Una tessera non ancora scoperta e' trasparente ma resta raggiungibile
+       col tabulatore: senza questo, il collegamento della quarta prenderebbe
+       il fuoco mentre e' invisibile. Ci si porta a fine corsa, dove sono tutte
+       in campo — la pagina si muove, il fuoco resta dov'e'. */
+    document.addEventListener("focusin", function (e) {
+      if (!bloccoPassi.bloccata()) return;
+      if (!e.target.closest || !e.target.closest(".passi-griglia > li")) return;
+      if (!passi.contains(e.target)) return;
+
+      var avanzamento = parseFloat(
+        getComputedStyle(passi).getPropertyValue("--avanzamento")
+      );
+      // Col CSS che guida la timeline `--avanzamento` non e' scritto: si
+      // guarda allora se la tessera e' davvero visibile.
+      var opaca = parseFloat(getComputedStyle(e.target.closest("li")).opacity);
+      if (opaca > 0.95 || avanzamento >= 0.99) return;
+
+      var meta = bloccoPassi.fineCorsa();
+      if (meta !== null) window.scrollTo({ top: meta, behavior: "smooth" });
+    });
+  }
+
+
+  /* --- Vetrina degli immobili ---
+     Vale anche sul telefono: il pollice scorre in verticale come sempre e la
+     fila avanza. Il vincolo non e' la larghezza ma l'altezza: sotto i 700px il
+     blocco non ha piu' da spartire abbastanza fra intestazione, scheda e
+     barra, e alla fotografia resta una striscia da ottanta pixel. Li' torna la
+     fila trascinabile, che un'altezza da rispettare non ce l'ha e infatti a
+     quelle misure la fotografia la fa piu' grande, non piu' piccola. */
+  var pista = document.getElementById("showcase-track");
+  var vetrina = pista && pista.closest(".showcase");
+  var bloccoVetrina = vetrina && agganciaBlocco(vetrina, "(min-height: 700px)");
+
+  if (bloccoVetrina) {
+    /* Quando la sezione e' incollata la fila non e' un contenitore di
+       scorrimento: il browser non sa come portare in vista una scheda fuori
+       campo. Ci pensiamo noi scorrendo la pagina, che e' quello che muove la
+       fila. */
     document.addEventListener("focusin", function (e) {
       // Nella variante trascinabile il contenitore scorre da solo: non tocchiamo.
-      if (getComputedStyle(blocco).position !== "sticky") return;
+      if (!bloccoVetrina.bloccata()) return;
 
       var tessera = e.target.closest ? e.target.closest(".showcase-item") : null;
       if (!tessera || !pista.contains(tessera)) return;

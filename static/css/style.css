@@ -1111,7 +1111,7 @@ textarea { resize: vertical; min-height: 140px; }
 .booking-box .price-note { font-size: var(--t-xs); color: var(--text-muted); margin-bottom: 1.5rem; }
 
 /* ---------- Servizi ---------- */
-.service-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+.passi-griglia { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
 .service-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1126,6 +1126,188 @@ textarea { resize: vertical; min-height: 140px; }
   letter-spacing: var(--tr-titolo);
 }
 .service-card p { color: var(--text-muted); font-size: var(--t-sm); margin: 0; }
+
+/* La quarta tessera: il rimando alla pagina Servizi. Si distingue dalle tre
+   che la precedono — fondo d'accento invece che chiaro — perche' non e' un
+   passo da leggere ma una cosa da premere, e deve dirlo prima di essere
+   letta. */
+.service-card-invito { background: var(--accent-dim); border-color: var(--accent); padding: 0; }
+.service-card-invito > a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 2rem;
+  color: inherit;
+}
+.service-card-invito .idx { line-height: 0; }
+.service-card-invito .idx svg {
+  width: 28px; height: 28px;
+  transition: translate var(--transition);
+}
+.service-card-invito:hover { background: var(--surface); }
+.service-card-invito:hover .idx svg { translate: 6px 0; }
+/* Il contorno del fuoco non serve scriverlo: il collegamento riempie la
+   tessera, quindi la regola generale `:focus-visible` gli disegna gia' attorno
+   un anello che coincide con il bordo della casella. */
+
+
+/* ---------- «Come funziona» che si blocca ----------
+   La sezione arriva a schermo pieno e resta ferma: si vede solo la prima
+   tessera, e le altre si scoprono una per volta continuando a scorrere. Finite
+   le tessere il blocco si stacca e la pagina riprende da sola.
+
+   Nessuno intercetta la rotella. La pagina scorre come su qualunque altra
+   sezione — rotella, trackpad, frecce, barra laterale, ricerca nel testo
+   funzionano tutti — e' solo che per un tratto la sezione sta incollata in
+   cima mentre le si scorre attraverso, e quanto si e' scorso decide quante
+   tessere sono comparse.
+
+   La classe `e-bloccata` la mette main.js: senza JavaScript, su schermi che
+   non ci stanno o con `prefers-reduced-motion`, questo blocco non esiste e
+   resta la griglia normale con la rivelazione a cascata. */
+
+.passi {
+  /* Quanto si scorre in piu' perche' le tessere si scoprano tutte. La prima
+     e' gia' li' quando il blocco si attacca, quindi la corsa la spartiscono le
+     altre tre: cinquanta centesimi di schermo a testa. E' l'unico numero da
+     toccare per rendere la sezione piu' svelta o piu' lenta. */
+  --passo: 50svh;
+  --corsa: calc(3 * var(--passo));
+
+  /* Quanto dura la comparsa di una tessera, in frazione della corsa. Le tre
+     fette occupano il 78%: il rimanente e' la coda in cui tutte e quattro
+     restano in campo prima che il blocco si stacchi — senza, l'ultima
+     comparirebbe nell'istante stesso in cui la sezione riparte e non la si
+     vedrebbe mai ferma. */
+  --fetta: 0.26;
+}
+
+.passi.e-bloccata {
+  /* Altezza = quanto resta incollata + il tratto da scorrere. Il primo addendo
+     e' l'altezza del blocco, non lo schermo intero: solo cosi' l'intervallo
+     `contain` torna esattamente pari alla corsa.
+     `svh` e non `vh` ne' `dvh`: su iOS `vh` e' l'altezza a barra ritirata e la
+     sezione sborderebbe, mentre `dvh` cambia *mentre* la barra si ritira e
+     cambierebbe il rapporto fra scorrimento e comparse a meta' corsa. */
+  height: calc(100vh - var(--header-h) + var(--corsa));
+  height: calc(100svh - var(--header-h) + var(--corsa));
+  padding: 0;
+
+  view-timeline-name: --passi;
+  /* L'intestazione del sito e' appiccicata in alto: la timeline deve partire
+     da sotto, altrimenti va fuori passo di quei pixel. */
+  view-timeline-inset: var(--header-h) 0px;
+}
+
+.passi.e-bloccata .passi-pin {
+  position: sticky;
+  top: var(--header-h);
+  height: calc(100vh - var(--header-h));
+  height: calc(100svh - var(--header-h));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1rem 0;
+  /* `clip` e non `hidden`: `hidden` creerebbe un contenitore di scorrimento, e
+     portando a fuoco una tessera il browser lo farebbe scorrere di nascosto,
+     sfasando il blocco rispetto alla pagina. */
+  overflow: clip;
+}
+
+/* Bloccata, l'altezza non e' piu' una conseguenza del contenuto: e' un tetto.
+   Quello che sfora viene tagliato, e a essere tagliata sarebbe l'ultima
+   tessera — proprio quella che il blocco esiste per scoprire. Percio' qui si
+   spende meno in spaziature, e sotto gli 860px di finestra cade anche la frase
+   introduttiva: il titolo dice gia' di cosa si tratta, le tessere no. */
+@media (max-height: 860px) {
+  .passi.e-bloccata .section-head .lead { display: none; }
+}
+
+/* Bloccata, la griglia non puo' crescere: quello che sfora viene tagliato.
+   Le tessere prendono quindi l'altezza che avanza invece di quella del proprio
+   testo, e i quattro riquadri restano alti uguali qualunque cosa ci sia
+   dentro. */
+.passi.e-bloccata .passi-griglia {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin-top: 2rem;
+}
+.passi.e-bloccata .section-head { margin-bottom: 0; }
+
+/* --- La comparsa, versione senza timeline di scorrimento ---
+   `--avanzamento` (da 0 a 1) lo scrive main.js dove il browser non sa animare
+   sulla posizione dello scorrimento. `--q` e' la quota di comparsa della
+   singola tessera: la prima e' gia' a 1 quando l'avanzamento e' 0, le altre
+   partono ognuna dove finisce la precedente.
+
+   Chi ha le timeline ignora tutto questo: il blocco @supports piu' sotto mette
+   un'animazione sulle stesse proprieta', e un'animazione in corso ha la
+   precedenza sulle dichiarazioni normali. Cosi' i browser capaci lo fanno sul
+   compositor e gli altri con un ascoltatore di scroll, senza duplicare una
+   riga di layout. */
+.passi.e-bloccata .passi-griglia > [data-reveal] {
+  --q: clamp(0, calc((var(--avanzamento, 0) - (var(--i, 0) - 1) * var(--fetta)) / var(--fetta)), 1);
+  transition: none;
+  opacity: var(--q);
+  transform: none;
+  translate: 0 calc((1 - var(--q)) * 40px);
+}
+
+.passi-avanzamento { display: none; }
+.passi.e-bloccata .passi-avanzamento {
+  display: block;
+  position: relative;
+  flex: 0 0 auto;
+  height: 2px;
+  margin: 2rem auto 0;
+  width: min(100% - 2.5rem, var(--container));
+  background: var(--border);
+}
+.passi.e-bloccata .passi-avanzamento span {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(var(--avanzamento, 0));
+}
+
+@keyframes ev-passo-appare {
+  from { opacity: 0; translate: 0 40px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+@keyframes ev-passi-avanza {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Dove il browser sa animare sulla posizione dello scorrimento se ne occupa
+   lui: gira sul compositor, non tocca il main thread e non perde un fotogramma
+   nemmeno scorrendo di scatto. */
+@supports (animation-timeline: view()) {
+  .passi.e-bloccata .passi-griglia > [data-reveal] {
+    animation: ev-passo-appare linear both;
+    animation-timeline: --passi;
+    /* `contain` e' esattamente il tratto in cui la sezione copre lo schermo,
+       cioe' quello in cui resta incollata: 0% quando si attacca, 100% quando
+       si stacca.
+
+       L'intervallo della prima tessera finisce a 0%, quindi comincia *prima*
+       che il blocco si attacchi: la prima compare mentre la sezione sale, ed
+       e' gia' li' — sola — nell'istante in cui la pagina si ferma. Le altre
+       tre si spartiscono il tratto bloccato, una fetta a testa. Le percentuali
+       fuori dallo 0-100 sono legittime: la timeline si estrapola. */
+    animation-range:
+      contain calc((var(--i, 0) - 1) * var(--fetta) * 100%)
+      contain calc(var(--i, 0) * var(--fetta) * 100%);
+  }
+
+  .passi.e-bloccata .passi-avanzamento span {
+    animation: ev-passi-avanza linear both;
+    animation-timeline: --passi;
+    animation-range: contain 0% contain 100%;
+  }
+}
 
 /* ==========================================================================
    Pagina Servizi
@@ -1363,9 +1545,7 @@ textarea { resize: vertical; min-height: 140px; }
   color: var(--placeholder);
 }
 
-/* La griglia dei passi e' diventata una lista ordinata: l'ordine e' contenuto,
-   non impaginazione. */
-.service-grid { list-style: none; padding: 0; margin: 0; }
+.passi-griglia { list-style: none; padding: 0; margin: 0; }
 
 /* ---------- Esperienza dell'ospite ---------- */
 .ospite-layout { display: grid; gap: 3rem; }
@@ -2246,7 +2426,7 @@ html.visore-aperto { overflow: hidden; }
 
 @media (min-width: 600px) {
   .property-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .service-grid  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .passi-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .filter-bar    { grid-template-columns: 1fr 1fr; align-items: end; }
   .footer-grid   { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .footer-bottom { flex-direction: row; justify-content: space-between; align-items: center; }
@@ -2368,7 +2548,7 @@ html.visore-aperto { overflow: hidden; }
   .hero { --hero-fade: 190px; }
 
   .property-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .service-grid  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .passi-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; }
   .footer-grid   { grid-template-columns: 1.5fr 1fr 1fr 1fr; }
 
   .detail-layout { grid-template-columns: 1.7fr 1fr; align-items: start; }
@@ -2713,6 +2893,16 @@ html.visore-aperto { overflow: hidden; }
 .js-anim [data-reveal="fade"] { transform: none; }
 .js-anim [data-reveal].is-visible { opacity: 1; transform: none; }
 
+/* I passi del proprietario compaiono uno alla volta, non quasi insieme: il
+   passo della cascata qui e' quasi il doppio di quello generale, perche' e'
+   proprio la sequenza a raccontare che sono passi consecutivi. Vale dove il
+   browser non ha le timeline di scorrimento; dove le ha, l'intervallo qui
+   sotto ha la precedenza (un'animazione in corso batte una dichiarazione
+   normale) e la cascata segue il dito invece del cronometro. */
+.js-anim .passi-griglia > [data-reveal] {
+  --reveal-delay: calc(var(--i, 0) * 170ms);
+}
+
 /* I tratti che uniscono i passi del percorso non compaiono: si tracciano.
    Ripiego senza timeline di scorrimento — il tratto segue la rivelazione del
    proprio passo. */
@@ -2814,6 +3004,33 @@ html.visore-aperto { overflow: hidden; }
     animation-name: ev-reveal-fade;
   }
 
+  /* --- I passi del proprietario, uno alla volta ---
+     Sopra i 900px le quattro tessere stanno sulla stessa riga: hanno quindi la
+     stessa geometria e la stessa timeline, e senza sfasamento comparirebbero
+     tutte nello stesso fotogramma. Lo sfasamento e' `--i` — l'intervallo di
+     ciascuna comincia dove finisce quello della precedente — e il passo e'
+     ampio, 21%, non i 2,5% della rivelazione generale: li' serve appena a
+     smussare un'entrata di gruppo, qui la sequenza *e'* il contenuto.
+
+     La finestra di ognuna e' stretta (26%) perche' le quattro insieme stanno
+     dentro il 100% dell'intervallo `entry`: l'ultima si apre al 63% e si chiude
+     all'89%, quindi e' finita prima che la griglia abbia finito di entrare.
+     Chi torna indietro con la rotella le vede sparire nell'ordine inverso, che
+     e' il modo in cui si capisce che stanno seguendo lo scorrimento e non un
+     cronometro partito una volta sola.
+
+     Sotto i 900px la griglia e' a una o due colonne e le tessere si incontrano
+     gia' una per volta scorrendo: lo sfasamento le farebbe soltanto tardare, e
+     l'ultima comparirebbe quando e' quasi tutta passata. Li' resta buono
+     l'intervallo generale. */
+  @media (min-width: 900px) {
+    .js-anim .passi-griglia > [data-reveal] {
+      animation-range:
+        entry calc(11% + var(--i, 0) * 21%)
+        entry calc(37% + var(--i, 0) * 21%);
+    }
+  }
+
   /* Ogni tratto si disegna quando si arriva al proprio passo: la sequenza si
      costruisce sotto gli occhi invece di essere gia' li'. Lo scaglionamento
      con `--i` serve sopra i 900px, dove i quattro passi sono alla stessa
@@ -2844,45 +3061,6 @@ html.visore-aperto { overflow: hidden; }
     opacity: 1;
     transform: none;
   }
-}
-
-/* ---------- Entrata a scossa ----------
-   Le schede compaiono una alla volta e si assestano con un'oscillazione
-   smorzata: entra, sbanda, rientra.
-
-   A differenza della rivelazione qui l'animazione e' legata al *tempo*, non
-   alla posizione nello scorrimento: un'oscillazione su timeline di scorrimento
-   si fermerebbe a meta' non appena si smette di scorrere, e fermando il dito
-   si vedrebbe una scheda storta. Quindi parte una volta — quando il gruppo
-   entra in campo — e poi va per conto suo.
-
-   Il ritardo lo detta `--i`, che arriva da `data-stagger`. Con `both` la
-   scheda resta invisibile per tutta l'attesa, ed e' quello che fa leggere la
-   sequenza come "una alla volta" invece che "tutte insieme sfalsate". */
-
-.js-anim [data-scossa] > * {
-  opacity: 0;
-  /* Perno vicino alla base: la scheda sembra appoggiata e spinta, non
-     appesa e fatta girare. */
-  transform-origin: 50% 90%;
-}
-
-/* Il ritardo lo scrive main.js sulla singola scheda, in base a quante ne
-   sono entrate in campo insieme a lei. */
-.js-anim [data-scossa] > .e-in-scena {
-  animation: ev-scossa 820ms ease-out both;
-  animation-delay: var(--ritardo-scossa, 0ms);
-}
-
-@keyframes ev-scossa {
-  0%   { opacity: 0; transform: translate3d(0, 26px, 0)    rotate(-4deg); }
-  20%  { opacity: 1; transform: translate3d(0, 0, 0)       rotate(3deg); }
-  38%  {             transform: translate3d(-13px, 0, 0)   rotate(-2.1deg); }
-  54%  {             transform: translate3d(9px, 0, 0)     rotate(1.4deg); }
-  68%  {             transform: translate3d(-5.5px, 0, 0)  rotate(-0.8deg); }
-  82%  {             transform: translate3d(2.5px, 0, 0)   rotate(0.4deg); }
-  92%  {             transform: translate3d(-1px, 0, 0)    rotate(-0.15deg); }
-  100% { opacity: 1; transform: none; }
 }
 
 @keyframes ev-linea-verticale {

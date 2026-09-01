@@ -203,42 +203,91 @@
   Come funziona per il proprietario. Tre passi, non tre servizi: qui la
   domanda a cui si risponde e' «cosa succede se vi chiamo», e la risposta ha
   un ordine. Il percorso completo in quattro passi sta nella pagina Servizi.
+
+  La sezione si blocca: arrivata a schermo pieno resta ferma, si vede solo la
+  prima tessera, e le altre si scoprono una per volta man mano che si scorre.
+  Finite le tessere il blocco si stacca e la pagina riprende.
+
+  `data-blocco` e `data-blocco-pin` sono i due appigli per main.js, che e' lo
+  stesso codice che blocca la vetrina degli immobili. La pagina scorre sempre
+  come sempre — nessuno intercetta la rotella — e' solo la sezione che resta
+  incollata mentre le si scorre attraverso.
 {% endcomment %}
-<section class="section section-dark" aria-labelledby="t-proprietario">
-  <div class="container">
-    <div class="section-head" data-reveal>
-      <span class="eyebrow">Per il proprietario</span>
-      <h2 id="t-proprietario">Come funziona</h2>
-      <hr class="gold-rule">
-      <p class="lead">Dalla prima telefonata alla gestione a regime.</p>
+<section class="section section-dark passi" id="come-funziona"
+         aria-labelledby="t-proprietario" data-blocco>
+  <div class="passi-pin" data-blocco-pin>
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">Per il proprietario</span>
+        <h2 id="t-proprietario">Come funziona</h2>
+        <hr class="gold-rule">
+        <p class="lead">Dalla prima telefonata alla gestione a regime.</p>
+      </div>
+
+      {% comment %}
+        Elenco puntato e non numerato, benche' i passi abbiano un ordine: la
+        quarta tessera non e' un passo, e' il rimando alla pagina Servizi. Dentro
+        un `<ol>` uno screen reader la annuncerebbe come «4 di 4», cioe' come
+        l'ultima cosa che succede al proprietario. I numeri dei passi sono
+        scritti, e bastano a dire che vanno letti in quell'ordine.
+
+        `data-stagger` da' a ogni tessera il proprio `--i`, e da li' viene la
+        cascata: vedi `.passi-griglia` in style.css.
+      {% endcomment %}
+      <ul class="passi-griglia" data-stagger>
+        <li class="service-card" data-reveal>
+          <span class="idx">01</span>
+          <h3>Sopralluogo e proposta</h3>
+          <p>Visitiamo l'immobile e ne valutiamo posizione, stato e potenziale.
+             Ti presentiamo un piano di gestione con stime di occupazione e ricavo,
+             prima di qualunque impegno.</p>
+        </li>
+        <li class="service-card" data-reveal>
+          <span class="idx">02</span>
+          <h3>Attivazione</h3>
+          <p>Styling, servizio fotografico, annunci curati e pubblicazione sui
+             portali con calendario unico. Da qui in poi non devi coordinare
+             nessuno.</p>
+        </li>
+        <li class="service-card" data-reveal>
+          <span class="idx">03</span>
+          <h3>Gestione e rendiconto</h3>
+          <p>Accoglienza, pulizie, manutenzione e adempimenti. Ogni mese ricevi un
+             rendiconto chiaro su occupazione, ricavi e costi.</p>
+        </li>
+
+        {% comment %}
+          La quarta tessera prende il posto del pulsante che stava sotto la
+          griglia. A essere cliccabile e' tutta la tessera — il collegamento la
+          riempie — e non un pulsantino dentro: il bersaglio diventa grande
+          quanto la casella, che sul telefono e' la differenza fra centrare e
+          sbagliare. La freccia e' decorativa, il testo del collegamento e' il
+          titolo, quindi si annuncia da se'.
+        {% endcomment %}
+        <li class="service-card service-card-invito" data-reveal>
+          <a href="{% url 'core:services' %}">
+            <span class="idx" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </span>
+            <h3>Il percorso completo</h3>
+            <p>I quattro passi in dettaglio, che cosa comprende il servizio e chi
+               fa cosa fra te e noi.</p>
+          </a>
+        </li>
+      </ul>
     </div>
 
-    <ol class="service-grid" data-scossa>
-      <li class="service-card">
-        <span class="idx">01</span>
-        <h3>Sopralluogo e proposta</h3>
-        <p>Visitiamo l'immobile e ne valutiamo posizione, stato e potenziale.
-           Ti presentiamo un piano di gestione con stime di occupazione e ricavo,
-           prima di qualunque impegno.</p>
-      </li>
-      <li class="service-card">
-        <span class="idx">02</span>
-        <h3>Attivazione</h3>
-        <p>Styling, servizio fotografico, annunci curati e pubblicazione sui
-           portali con calendario unico. Da qui in poi non devi coordinare
-           nessuno.</p>
-      </li>
-      <li class="service-card">
-        <span class="idx">03</span>
-        <h3>Gestione e rendiconto</h3>
-        <p>Accoglienza, pulizie, manutenzione e adempimenti. Ogni mese ricevi un
-           rendiconto chiaro su occupazione, ricavi e costi.</p>
-      </li>
-    </ol>
-
-    <div class="btn-group" style="margin-top:3rem;" data-reveal="fade">
-      <a class="btn btn-outline" href="{% url 'core:services' %}">Il percorso completo</a>
-    </div>
+    {% comment %}
+      Barra di avanzamento, la stessa della vetrina. In una sezione che si
+      blocca serve a dire «non si e' inchiodato niente, manca questo»: senza,
+      lo scorrimento che non muove la pagina si legge come un guasto. Si
+      riempie sulla stessa timeline che scopre le tessere, quindi non puo'
+      andare fuori passo con loro.
+    {% endcomment %}
+    <div class="passi-avanzamento" aria-hidden="true"><span></span></div>
   </div>
 </section>
 
@@ -317,8 +366,8 @@
   L'ultima tessera e' l'invito a vedere tutti gli immobili, cosi' la corsa
   orizzontale finisce su una destinazione e non nel vuoto.
 {% endcomment %}
-<section class="showcase" id="immobili-evidenza" aria-labelledby="titolo-evidenza">
-  <div class="showcase-pin">
+<section class="showcase" id="immobili-evidenza" aria-labelledby="titolo-evidenza" data-blocco>
+  <div class="showcase-pin" data-blocco-pin>
     <div class="container section-head showcase-head">
       <span class="eyebrow">Selezione</span>
       <h2 id="titolo-evidenza">Immobili in evidenza</h2>
