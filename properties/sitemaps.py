@@ -29,6 +29,7 @@ class StaticViewSitemap(Sitemap):
             "properties:list",
             "core:services",
             "core:gallery",
+            "blog:list",
             "core:contact",
         ]
 

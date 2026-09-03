@@ -1,0 +1,40 @@
+{% comment %}
+  Scheda di un articolo. Stessa struttura della scheda immobile — media in
+  alto, corpo, piede sopra un filetto — perche' e' lo stesso gesto: si scorre
+  una griglia e si sceglie dove entrare. Cambiare impaginazione fra le due
+  pagine avrebbe reso il sito due siti.
+{% endcomment %}
+<article class="art-card" data-reveal>
+  <div class="art-card-media">
+    {% if articolo.copertina %}
+      <a href="{{ articolo.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+        <img src="{{ articolo.copertina.url }}" alt="{{ articolo.copertina_alt }}"
+             loading="lazy" decoding="async" width="800" height="600">
+      </a>
+    {% else %}
+      <div class="media-placeholder" aria-hidden="true">EV</div>
+    {% endif %}
+  </div>
+
+  <div class="art-card-body">
+    <p class="art-meta">
+      <span class="art-categoria">{{ articolo.get_categoria_display }}</span>
+      <time datetime="{{ articolo.pubblicato_il|date:'Y-m-d' }}">{{ articolo.pubblicato_il|date:"j F Y"|lower }}</time>
+    </p>
+
+    {% comment %}
+      Il collegamento sta sul titolo e si allarga a tutta la scheda con
+      `::after`: un bersaglio grande quanto la casella, ma nell'ordine di
+      lettura resta un link solo, col titolo per nome. La fotografia sopra e'
+      esclusa dal tabulatore proprio per questo — porterebbe allo stesso posto
+      due volte.
+    {% endcomment %}
+    <h3><a href="{{ articolo.get_absolute_url }}">{{ articolo.titolo }}</a></h3>
+    <p class="art-estratto">{{ articolo.estratto }}</p>
+
+    <p class="art-piede">
+      <span>{{ articolo.autore }}</span>
+      <span class="art-minuti">{{ articolo.tempo_lettura }} min di lettura</span>
+    </p>
+  </div>
+</article>

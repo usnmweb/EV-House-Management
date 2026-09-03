@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     # App locali
     "core",
     "properties",
+    "blog",
 ]
 
 MIDDLEWARE = [

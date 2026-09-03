@@ -850,4 +850,268 @@
       });
     });
   }
+
+  /* ------------------------------------------------------------------
+     Il Giornale: barra di avanzamento della lettura
+
+     Quanto del corpo dell'articolo e' passato sopra il bordo inferiore della
+     finestra. Non «quanto si e' scorso della pagina»: la testata, la fascia dei
+     numeri correlati e il piede non sono lettura, e contarli farebbe arrivare
+     la barra a meta' quando l'articolo e' finito.
+
+     Dove il browser sa animare sulla posizione dello scorrimento se ne occupa
+     il CSS (piu' sotto): qui si entra solo come ripiego.
+     ------------------------------------------------------------------ */
+  var barraLettura = document.getElementById("lettura-barra");
+  var corpoArticolo = document.querySelector(".articolo-corpo");
+
+  if (barraLettura && corpoArticolo) {
+    /* Qui non si passa dalle timeline di scorrimento del CSS, e non e' una
+       dimenticanza. Una timeline nominata si vede solo dai discendenti di chi
+       la dichiara: la barra e' fissata in cima alla pagina, fuori dal corpo
+       dell'articolo, quindi non potrebbe leggerla. Portarla dentro con
+       `timeline-scope` sarebbe un supporto in meno e una riga in piu' per un
+       ascoltatore che costa un `requestAnimationFrame` per fotogramma scorso.
+
+       (Provato: agganciando la timeline da JavaScript la barra restava piena
+       fin dal primo pixel — l'animazione partiva su quella del documento, con
+       durata zero, e `both` la portava subito a fondo corsa.) */
+    var inCodaLettura = false;
+
+    function misuraLettura() {
+      inCodaLettura = false;
+      var q = corpoArticolo.getBoundingClientRect();
+      var percorso = q.height - window.innerHeight;
+      var letto;
+      if (percorso > 0) {
+        // Zero quando il corpo tocca il bordo alto, uno quando la sua fine
+        // arriva al bordo basso.
+        letto = -q.top / percorso;
+      } else {
+        // Articolo piu' corto della finestra: o e' passato, o non ancora.
+        letto = q.bottom <= window.innerHeight ? 1 : 0;
+      }
+      barraLettura.style.setProperty("--letto", Math.min(1, Math.max(0, letto)));
+    }
+
+    function alloScrollLettura() {
+      if (inCodaLettura) return;
+      inCodaLettura = true;
+      requestAnimationFrame(misuraLettura);
+    }
+
+    window.addEventListener("scroll", alloScrollLettura, { passive: true });
+    window.addEventListener("resize", alloScrollLettura, { passive: true });
+    misuraLettura();
+  }
+
+  /* ------------------------------------------------------------------
+     Il Giornale: l'indice segue la lettura
+
+     Si accende la voce della sezione in cui ci si trova. Non si usa
+     IntersectionObserver ma la posizione dei titoli, e per una ragione: un
+     observer dice «questo titolo e' in campo», mentre la domanda qui e'
+     «in quale sezione sono», che ha una risposta anche quando nessun titolo
+     e' visibile — cioe' per quasi tutta la lettura.
+
+     Il confine e' appena sotto l'intestazione appiccicata, non a meta'
+     schermo: con sezioni corte — due paragrafi — una linea piu' bassa ne
+     lascia due sopra di se' contemporaneamente, e si accende la seconda
+     mentre si sta ancora leggendo la prima. Misurato: a un terzo di schermo
+     l'indice era avanti di una voce per tutta la lettura.
+     ------------------------------------------------------------------ */
+  var indice = document.querySelector(".articolo-indice");
+
+  if (indice) {
+    var voci = Array.prototype.slice.call(indice.querySelectorAll("a[href^='#']"));
+    var titoli = voci
+      .map(function (a) { return document.getElementById(a.getAttribute("href").slice(1)); })
+      .filter(Boolean);
+
+    if (titoli.length === voci.length && titoli.length) {
+      var inCodaIndice = false;
+      var correnteIndice = -1;
+
+      function aggiornaIndice() {
+        inCodaIndice = false;
+        var intestazione = document.querySelector(".site-header");
+        var confine = (intestazione ? intestazione.getBoundingClientRect().height : 0) + 24;
+        var quale = 0;
+        for (var i = 0; i < titoli.length; i++) {
+          if (titoli[i].getBoundingClientRect().top <= confine) quale = i;
+        }
+        // Prima del primo titolo nessuna voce e' accesa: accenderne una
+        // direbbe una cosa falsa, cioe' che si e' gia' in quella sezione.
+        if (titoli[0].getBoundingClientRect().top > confine) quale = -1;
+
+        if (quale === correnteIndice) return;
+        correnteIndice = quale;
+        voci.forEach(function (a, i) {
+          var acceso = i === quale;
+          a.classList.toggle("e-corrente", acceso);
+          if (acceso) a.setAttribute("aria-current", "true");
+          else a.removeAttribute("aria-current");
+        });
+      }
+
+      window.addEventListener("scroll", function () {
+        if (inCodaIndice) return;
+        inCodaIndice = true;
+        requestAnimationFrame(aggiornaIndice);
+      }, { passive: true });
+      window.addEventListener("resize", function () {
+        correnteIndice = -1;
+        aggiornaIndice();
+      }, { passive: true });
+      aggiornaIndice();
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Il Giornale: copia il collegamento
+
+     Il pulsante e' nel markup con `hidden` e lo si scopre qui: senza
+     JavaScript non farebbe nulla, e un comando che non fa nulla e' peggio di
+     un comando in meno. Vale per quello nella firma e per le ancore dei
+     titoli, che copiano il link alla singola sezione.
+     ------------------------------------------------------------------ */
+  var puoCopiare = !!(navigator.clipboard && navigator.clipboard.writeText);
+
+  function confermaCopia(bottone, etichetta) {
+    var testo = bottone.querySelector(".copia-testo");
+    var prima = testo ? testo.textContent : null;
+    bottone.classList.add("e-fatto");
+    if (testo) testo.textContent = etichetta;
+    clearTimeout(bottone._orologio);
+    bottone._orologio = setTimeout(function () {
+      bottone.classList.remove("e-fatto");
+      if (testo) testo.textContent = prima;
+    }, 2000);
+  }
+
+  var bottoneCopia = document.querySelector(".copia-link");
+  if (bottoneCopia && puoCopiare) {
+    bottoneCopia.hidden = false;
+    bottoneCopia.addEventListener("click", function () {
+      navigator.clipboard.writeText(bottoneCopia.getAttribute("data-copia")).then(
+        function () { confermaCopia(bottoneCopia, "Copiato"); },
+        function () { confermaCopia(bottoneCopia, "Non riuscito"); }
+      );
+    });
+  }
+
+  /* L'ancora resta un collegamento vero — funziona senza JavaScript e si puo'
+     aprire in una scheda nuova. Qui si aggiunge solo la copia negli appunti,
+     senza togliere il salto alla sezione. */
+  if (puoCopiare) {
+    document.querySelectorAll(".articolo-corpo .ancora").forEach(function (a) {
+      a.addEventListener("click", function () {
+        navigator.clipboard.writeText(a.href).then(function () {
+          a.classList.add("e-copiata");
+          clearTimeout(a._orologio);
+          a._orologio = setTimeout(function () { a.classList.remove("e-copiata"); }, 1400);
+        }, function () { /* appunti negati: resta il salto alla sezione */ });
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Il Giornale: pulsante «torna su»
+
+     Compare dopo cinquecento pixel. E' nel markup con `hidden`, quindi finche'
+     non serve non e' nemmeno nell'ordine del tabulatore: un bersaglio
+     invisibile ma raggiungibile e' peggio di nessun bersaglio.
+     ------------------------------------------------------------------ */
+  var tornaSu = document.getElementById("torna-su");
+
+  if (tornaSu) {
+    var SOGLIA_TORNA = 500;
+    var inCodaTorna = false;
+    function sincronizzaTornaSu() {
+      inCodaTorna = false;
+      tornaSu.hidden = window.scrollY < SOGLIA_TORNA;
+    }
+    window.addEventListener("scroll", function () {
+      if (inCodaTorna) return;
+      inCodaTorna = true;
+      requestAnimationFrame(sincronizzaTornaSu);
+    }, { passive: true });
+    sincronizzaTornaSu();
+
+    tornaSu.addEventListener("click", function (e) {
+      e.preventDefault();
+      var dolce = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: dolce ? "smooth" : "auto" });
+      /* Riportare il fuoco in cima e' la meta' che si dimentica: senza, chi
+         naviga da tastiera preme «torna su», la pagina sale e il fuoco resta
+         in fondo. `main` non e' focalizzabile di suo, quindi glielo si concede
+         per il tempo di questo salto. */
+      var main = document.getElementById("main");
+      if (main) {
+        main.setAttribute("tabindex", "-1");
+        main.focus({ preventScroll: true });
+        main.addEventListener("blur", function ripulisci() {
+          main.removeAttribute("tabindex");
+          main.removeEventListener("blur", ripulisci);
+        });
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Il Giornale: i numeri della stagione salgono da zero
+
+     Il valore giusto e' gia' nel markup — se questo codice non gira resta li'.
+     La salita parte quando la fascia entra in campo, una volta sola, e solo
+     dove le animazioni sono ammesse. Le voci senza `data-conta` non si
+     animano: «424 / 455» non e' un numero che possa salire.
+     ------------------------------------------------------------------ */
+  var numeriStagione = document.querySelectorAll(".articolo-numeri .num[data-conta]");
+
+  if (numeriStagione.length &&
+      document.documentElement.classList.contains("js-anim") &&
+      "IntersectionObserver" in window) {
+
+    var osservaNumeri = new IntersectionObserver(function (voci) {
+      voci.forEach(function (v) {
+        if (!v.isIntersecting) return;
+        var el = v.target;
+        osservaNumeri.unobserve(el);
+
+        var arrivo = parseFloat(el.getAttribute("data-conta"));
+        var finale = el.getAttribute("data-testo") || el.textContent;
+        if (!isFinite(arrivo)) return;
+
+        // I decimali del valore d'arrivo, per non far ballare la larghezza
+        // mentre sale: «9,3» e «93,19» occupano spazi diversi.
+        var pezzi = String(arrivo).split(".");
+        var decimali = pezzi.length > 1 ? pezzi[1].length : 0;
+        var formato = new Intl.NumberFormat("it-IT", {
+          minimumFractionDigits: decimali,
+          maximumFractionDigits: decimali,
+        });
+        // Il contorno del numero finale — «%», «+», « / » — si conserva
+        // sostituendo solo la parte numerica.
+        var grezzo = String(arrivo).replace(".", ",");
+        var prima = finale.indexOf(grezzo);
+        var testa = prima >= 0 ? finale.slice(0, prima) : "";
+        var coda = prima >= 0 ? finale.slice(prima + grezzo.length) : "";
+
+        var durata = 1400;
+        var inizio = null;
+        function passoNumero(ora) {
+          if (inizio === null) inizio = ora;
+          var t = Math.min(1, (ora - inizio) / durata);
+          // Rallenta verso la fine: il numero si posa invece di fermarsi.
+          var v = arrivo * (1 - Math.pow(1 - t, 3));
+          el.textContent = t < 1 ? testa + formato.format(v) + coda : finale;
+          if (t < 1) requestAnimationFrame(passoNumero);
+        }
+        requestAnimationFrame(passoNumero);
+      });
+    }, { threshold: 0.6 });
+
+    numeriStagione.forEach(function (n) { osservaNumeri.observe(n); });
+  }
+
 })();

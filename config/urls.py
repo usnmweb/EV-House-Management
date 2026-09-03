@@ -4,17 +4,20 @@ from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
+from blog.sitemaps import ArticleSitemap
 from core.views import robots_txt
 from properties.sitemaps import PropertySitemap, StaticViewSitemap
 
 sitemaps = {
     "static": StaticViewSitemap,
     "properties": PropertySitemap,
+    "articoli": ArticleSitemap,
 }
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("properties/", include("properties.urls")),
+    path("giornale/", include("blog.urls")),
     path(
         "sitemap.xml",
         sitemap,

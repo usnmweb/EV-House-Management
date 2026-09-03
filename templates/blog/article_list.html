@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Il Giornale"}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+
+<section class="page-head">
+  <div class="container" data-reveal>
+    <span class="eyebrow eyebrow-riga">Il Giornale · EV House</span>
+    <h1>Note dalla costa, <em>scritte da chi la gestisce</em></h1>
+    <hr class="gold-rule">
+    <p class="lead">
+      Adempimenti, località, numeri di stagione e consigli pratici per chi
+      arriva. Niente di generico: solo cose che passano dalle nostre mani.
+    </p>
+  </div>
+</section>
+
+
+<section class="section" aria-labelledby="t-articoli">
+  <div class="container">
+    <h2 id="t-articoli" class="solo-lettori">Tutti gli articoli</h2>
+
+    {% comment %}
+      Barra dei filtri. E' un <form> vero, con i bottoni di categoria come
+      pulsanti di invio: senza JavaScript filtra lo stesso, e il campo di
+      ricerca viaggia insieme alla categoria invece di azzerarla.
+    {% endcomment %}
+    <form class="giornale-filtri" method="get" action="{% url 'blog:list' %}"
+          role="search" aria-label="Filtra gli articoli" data-reveal="fade">
+      <div class="giornale-categorie">
+        <button type="submit" name="categoria" value=""
+                class="filtro-voce{% if not categoria_attiva %} e-attiva{% endif %}"
+                {% if not categoria_attiva %}aria-current="true"{% endif %}>
+          Tutti <span class="filtro-conta">{{ totale }}</span>
+        </button>
+        {% for c in categorie %}
+        <button type="submit" name="categoria" value="{{ c.chiave }}"
+                class="filtro-voce{% if categoria_attiva == c.chiave %} e-attiva{% endif %}"
+                {% if categoria_attiva == c.chiave %}aria-current="true"{% endif %}>
+          {{ c.nome }} <span class="filtro-conta">{{ c.quanti }}</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="giornale-cerca">
+        <label for="q" class="solo-lettori">Cerca fra gli articoli</label>
+        <input type="search" id="q" name="q" value="{{ ricerca }}"
+               placeholder="Cerca fra gli articoli">
+        <button type="submit" class="giornale-cerca-invio" aria-label="Cerca">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>
+          </svg>
+        </button>
+      </div>
+    </form>
+
+    {% if filtri_attivi %}
+      <p class="list-meta" role="status">
+        <span>
+          {{ paginator.count }} articol{{ paginator.count|pluralize:"o,i" }}
+          {% if ricerca %}per «{{ ricerca }}»{% endif %}
+          {% if categoria_attiva_nome %}in «{{ categoria_attiva_nome }}»{% endif %}
+        </span>
+        <a href="{% url 'blog:list' %}">Azzera i filtri</a>
+      </p>
+    {% endif %}
+
+    {% comment %}
+      L'articolo di apertura, solo senza filtri: con un filtro attivo la pagina
+      risponde a una domanda precisa, e una vetrina in cima sarebbe fuori posto.
+    {% endcomment %}
+    {% if evidenza %}
+    <article class="art-evidenza" data-reveal>
+      <div class="art-evidenza-testo">
+        <p class="art-meta">
+          <span class="art-categoria">{{ evidenza.get_categoria_display }}</span>
+          <time datetime="{{ evidenza.pubblicato_il|date:'Y-m-d' }}">{{ evidenza.pubblicato_il|date:"j F Y"|lower }}</time>
+          <span class="art-minuti">{{ evidenza.tempo_lettura }} min</span>
+        </p>
+        <h3><a href="{{ evidenza.get_absolute_url }}">{{ evidenza.titolo }}</a></h3>
+        <p class="art-estratto">{{ evidenza.estratto }}</p>
+        <p class="art-vai">
+          <a href="{{ evidenza.get_absolute_url }}">
+            Leggi l'articolo
+            <span class="art-freccia" aria-hidden="true">→</span>
+          </a>
+        </p>
+      </div>
+
+      {% if evidenza.copertina %}
+      <div class="art-evidenza-media">
+        <img src="{{ evidenza.copertina.url }}" alt="{{ evidenza.copertina_alt }}"
+             width="1200" height="800" decoding="async"
+             sizes="(min-width: 900px) 55vw, 100vw">
+      </div>
+      {% endif %}
+    </article>
+    {% endif %}
+
+    {% if articoli %}
+      <div class="art-griglia" data-stagger>
+        {% for articolo in articoli %}
+          {% include "blog/_article_card.html" with articolo=articolo %}
+        {% endfor %}
+      </div>
+
+      {% if is_paginated %}
+      <nav class="pagination" aria-label="Pagine del Giornale">
+        {% if page_obj.has_previous %}
+          <a href="?{% if categoria_attiva %}categoria={{ categoria_attiva }}&amp;{% endif %}{% if ricerca %}q={{ ricerca|urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Precedente</a>
+        {% endif %}
+        <span>Pagina {{ page_obj.number }} di {{ paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+          <a href="?{% if categoria_attiva %}categoria={{ categoria_attiva }}&amp;{% endif %}{% if ricerca %}q={{ ricerca|urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Successiva</a>
+        {% endif %}
+      </nav>
+      {% endif %}
+
+    {% elif not evidenza %}
+      <p class="lead" data-reveal="fade">
+        Nessun articolo per questa ricerca.
+        <a href="{% url 'blog:list' %}">Torna a tutti gli articoli</a>.
+      </p>
+    {% endif %}
+  </div>
+</section>
+
+
+{% comment %}
+  Chiusura della pagina: due inviti affiancati, uno per chi legge e uno per chi
+  ha una casa. Sono i due pubblici del Giornale, e tenerli separati evita di
+  scrivere un invito solo che non parla a nessuno dei due.
+{% endcomment %}
+<section class="section section-dark" aria-labelledby="t-chiusura">
+  <h2 id="t-chiusura" class="solo-lettori">Resta in contatto</h2>
+  <div class="container giornale-chiusura">
+    <div class="riquadro-lettera" data-reveal>
+      <span class="eyebrow">Ogni tanto, non ogni giorno</span>
+      <h3>Le novità della costa, via email</h3>
+      <p>
+        Un messaggio quando esce qualcosa che vale: adempimenti che cambiano,
+        numeri di fine stagione, case nuove in gestione.
+      </p>
+      {% comment %}
+        Il modulo non ha ancora una destinazione: finche' non c'e' un servizio
+        di invio collegato, mandarlo da qualche parte significherebbe raccogliere
+        indirizzi che nessuno riceve. Resta disattivato e lo dice, invece di
+        fingere di funzionare.
+      {% endcomment %}
+      <form class="lettera-modulo" onsubmit="return false;">
+        <label for="lettera-email" class="solo-lettori">Il tuo indirizzo email</label>
+        <input type="email" id="lettera-email" name="email" placeholder="nome@esempio.it"
+               autocomplete="email" disabled>
+        <button class="btn btn-primary" type="submit" disabled>Iscriviti</button>
+      </form>
+      <p class="lettera-nota">
+        Iscrizione non ancora attiva. Nel frattempo, scrivici a
+        <a href="mailto:{{ COMPANY_EMAIL }}">{{ COMPANY_EMAIL }}</a>.
+      </p>
+    </div>
+
+    <aside class="riquadro-invito" data-reveal>
+      <span class="eyebrow">Per i proprietari</span>
+      <h3>Hai una casa fra Baronia e Gallura?</h3>
+      <p>
+        Sopralluogo e stima del potenziale, gratuiti e senza impegno. Se il
+        numero non convince, è un'informazione utile lo stesso.
+      </p>
+      <a class="btn btn-outline" href="{% url 'core:contact' %}">Richiedi una valutazione</a>
+    </aside>
+  </div>
+</section>
+{% endblock %}

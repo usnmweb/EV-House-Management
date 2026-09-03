@@ -170,10 +170,18 @@ EV-House-Management/
 │   ├── sitemaps.py
 │   ├── urls.py
 │   └── views.py
+├── blog/                # Il Giornale
+│   ├── migrations/      # 0002 porta gli otto articoli di partenza
+│   ├── admin.py
+│   ├── models.py        # Article
+│   ├── sitemaps.py
+│   ├── urls.py
+│   └── views.py
 ├── templates/
 │   ├── base.html        # header, footer, blocchi title/meta/content
 │   ├── core/            # home, services, gallery, contact
 │   ├── properties/      # property_list, property_detail, _property_card
+│   ├── blog/            # article_list, article_detail, _article_card
 │   └── legal/           # privacy, cookies
 ├── static/              # css, js, img (sorgenti)
 ├── media/               # upload immagini immobili (non versionato)
@@ -308,6 +316,8 @@ Dalla Cookie Policy si riaprono le preferenze per cambiare idea.
 | `/properties/<slug>/` | Dettaglio immobile: galleria, specifiche, CTA di prenotazione |
 | `/services/` | Servizi offerti |
 | `/gallery/` | Galleria di tutte le immagini |
+| `/giornale/` | Il Giornale: elenco articoli, filtri per categoria e ricerca |
+| `/giornale/<slug>/` | Articolo |
 | `/contact/` | Modulo contatti |
 | `/privacy/` | Privacy Policy |
 | `/cookies/` | Cookie Policy |
@@ -1035,6 +1045,162 @@ no.
   fotografia non ha una base su cui risolversi e viene ignorato: la foto
   sfondava sotto la didascalia di 149px.
 
+
+## Il Giornale
+
+Sezione editoriale a `/giornale/`. Nessun colore e nessun carattere nuovo:
+Fraunces per i titoli, Archivo per il testo, `--accent` per l'oro, `--radius`
+di 2px, `var(--transition)` ovunque. La scheda articolo è la scheda immobile
+con altri contenuti dentro — stesso fondo, stesso bordo, stesso sollevamento —
+perché scorrere una griglia di articoli e scorrere una griglia di case è lo
+stesso gesto.
+
+### Il modello
+
+`blog.Article`. I campi che meritano una nota:
+
+| campo | nota |
+|---|---|
+| `corpo` | **Testo semplice, non HTML.** Paragrafi separati da una riga vuota; una riga che comincia per `## ` diventa un sottotitolo. |
+| `tempo_lettura` | Se lasciato a zero si calcola alla prima salvata: 200 parole al minuto, arrotondate per eccesso. Resta correggibile a mano. |
+| `slug` | Si genera dal titolo e si de-duplica da sé (`-2`, `-3`…). |
+| `tag` | Stringa separata da virgole, non una tabella: qui i tag sono etichette da leggere, non una dimensione di filtro. A filtrare ci pensa `categoria`. |
+| `mostra_stagione` | Aggiunge la fascia coi numeri di stagione. **I valori non stanno nell'articolo**: vengono da `settings.py`, gli stessi della home. |
+| `in_evidenza` | Il più recente fra questi apre l'elenco. |
+| `pubblicato` | Le bozze non compaiono in elenco, danno 404 sul dettaglio e restano fuori dalla sitemap. |
+
+#### Perché il corpo non è HTML
+
+Perché così non serve `|safe` da nessuna parte, e quindi non c'è modo di
+iniettare markup dall'amministrazione. Il modello espone `blocchi`, che
+restituisce `{"tipo": "titolo"|"paragrafo", "testo": ...}`, e il template
+stampa con l'escaping normale di Django. C'è un test che lo verifica:
+`<script>alert(1)</script>` nel corpo esce come testo visibile.
+
+Il costo è che chi scrive non può grassettare una parola. Il guadagno è che chi
+scrive non deve sapere cos'è un tag.
+
+### Elenco
+
+- **Barra dei filtri**: è un `<form>` vero, e i bottoni di categoria sono
+  bottoni di invio. Senza JavaScript filtra lo stesso, e il campo di ricerca
+  viaggia insieme alla categoria invece di azzerarla.
+- **Conteggi accanto alle categorie**: descrivono l'archivio, non il risultato
+  corrente. Servono a non offrire un filtro che porta a zero.
+- **Articolo in apertura**: solo senza filtri attivi, ed **escluso dalla
+  griglia** così non compare due volte. Con un filtro attivo la pagina risponde
+  a una domanda precisa, e una vetrina in cima sarebbe fuori posto.
+- **Ricerca**: `icontains` su titolo, estratto, corpo e tag. È una ricerca per
+  sottostringa, quindi `cin` trova anche «vicino»: con otto articoli va bene,
+  con ottanta servirà un indice vero.
+
+### Scheda: un bersaglio grande, un collegamento solo
+
+Il link sta sul titolo e si allarga a tutta la casella con `::after`. La
+fotografia sopra ha `tabindex="-1"` e `aria-hidden` proprio per questo:
+porterebbe allo stesso posto una seconda volta, e col tabulatore sarebbero due
+fermate per una destinazione. Verificato in browser: **una fermata per scheda**,
+col titolo dell'articolo come nome, e il contorno del fuoco disegnato attorno
+alla scheda intera.
+
+### Articolo: la colonna di lettura
+
+Sopra i **1100px** la pagina è a due colonne: il testo a 680px e, nel margine
+destro, l'**indice delle sezioni** appiccicato. Prima quel margine restava vuoto
+per tutta la lunghezza dell'articolo.
+
+- L'indice compare **solo con almeno tre sezioni**: con due è più lungo di
+  quello che indicizza.
+- Gli `id` dei titoli si ricavano dal **testo**, non dalla posizione: un link
+  condiviso resta valido anche se più avanti si aggiunge un paragrafo, mentre
+  `#sezione-3` cambierebbe significato a ogni modifica. I duplicati diventano
+  `-2`, `-3`.
+- Nel markup l'indice sta **dopo** il testo — è l'ordine giusto per uno screen
+  reader, prima il contenuto e poi lo strumento per saltarci dentro. Impilato
+  finirebbe però in fondo all'articolo, dove non serve a nessuno: `order: -1` lo
+  riporta in cima senza toccare l'ordine del documento.
+- La voce della sezione corrente si accende mentre si scorre. Non con
+  `IntersectionObserver`: quello risponde a «questo titolo è in campo», mentre
+  la domanda è «in quale sezione sono», che ha una risposta anche quando nessun
+  titolo è visibile — cioè per quasi tutta la lettura.
+- Il confine è **appena sotto l'intestazione**, non a metà schermo. Misurato: a
+  un terzo di schermo l'indice restava avanti di una voce per tutta la lettura,
+  perché con sezioni di due paragrafi due titoli stanno sopra quella linea
+  insieme.
+
+### Articolo: gli altri effetti
+
+- **Incipit**: il primo paragrafo è composto un filo più grande. Dà un attacco
+  al testo senza capolettera, che con Fraunces a questi corpi sarebbe un
+  ornamento e basta.
+- **Ancora accanto ai titoli**: compare al passaggio del mouse, salta alla
+  sezione e ne copia il link. Su schermi a tocco resta sempre visibile in
+  secondo piano (`@media (hover: none)`), altrimenti sarebbe irraggiungibile.
+- **Copia link** nella riga della firma: è un pulsante, non un collegamento, e
+  sta nel markup con `hidden` — senza JavaScript non farebbe nulla, e un
+  comando che non fa nulla è peggio di un comando in meno. A cosa fatta lo dice
+  («Copiato»), altrimenti si preme una seconda volta.
+- **Copertina in parallasse**: scorre più lenta della pagina, su timeline CSS.
+  Il contenitore usa `overflow: clip` e **non** `hidden`, e non è un dettaglio:
+  `hidden` ne farebbe un contenitore di scorrimento, e `view()` misura sempre
+  rispetto al contenitore di scorrimento più vicino — la fotografia avrebbe
+  agganciato la timeline di un riquadro che non scorre mai, restando ferma sul
+  primo fotogramma. È la stessa trappola già documentata per il blocco della
+  vetrina.
+- **Da leggere dopo**: i tre correlati hanno la miniatura, con lo stesso zoom al
+  passaggio del mouse delle altre schede del sito.
+
+### Articolo: la barra di lettura
+
+- **Barra di avanzamento** in cima, 2px oro. Misura il **corpo**, non la
+  pagina: testata, fascia dei numeri e piè non sono lettura, e contarli farebbe
+  arrivare la barra a metà quando l'articolo è finito. Misurato: 0% all'inizio
+  del corpo, 50% a metà, 100% alla fine, sia a 1440×900 sia a 390×844.
+- **Non** usa le timeline di scorrimento del CSS, e non è una dimenticanza: una
+  timeline nominata si vede solo dai discendenti di chi la dichiara, e la barra
+  è fissata fuori dal corpo dell'articolo. Agganciandola da JavaScript restava
+  piena dal primo pixel — l'animazione partiva sulla timeline del documento,
+  con durata zero, e `both` la portava subito a fondo corsa.
+- **Fascia dei numeri**: stessa impaginazione della barra in home. I numeri
+  salgono da zero al primo scroll-in, una volta sola, e solo dove le animazioni
+  sono ammesse. Le voci senza `data-conta` non si animano: «424 / 455» non è un
+  numero che possa salire. Il valore giusto è già nel markup, quindi senza
+  JavaScript resta lì.
+- **«Torna su»**: compare dopo 500px. Sta nel markup con `hidden`, quindi
+  finché non serve non è nemmeno nell'ordine del tabulatore. Al click riporta
+  anche il **fuoco** in cima, non solo la pagina.
+
+### Gli otto articoli di partenza
+
+Stanno in `blog/migrations/0002_articoli_iniziali.py` e non in una fixture,
+perché così arrivano da soli su ogni ambiente — compreso Render, dove il deploy
+lancia le migration e nessuno lancia `loaddata`.
+
+Due cose da sapere:
+
+1. **Le copertine sono fotografie degli immobili**, non immagini editoriali.
+   Sono scatti veri e dell'azienda, ma nate per un altro scopo: quando ci
+   saranno foto fatte per gli articoli si sostituiscono dall'amministrazione,
+   senza toccare la migration.
+2. **Nessun articolo contiene numeri commerciali scritti a mano.** Quelli della
+   stagione arrivano da `settings.py`. Dove un numero servirebbe ma non ce
+   l'abbiamo — le rese di un immobile — il testo spiega *come si ottiene*
+   invece di inventarlo.
+
+L'articolo sugli adempimenti (CIN, CIR, alloggiati, tassa di soggiorno,
+sicurezza) è una mappa, non una consulenza, e lo dice: le norme cambiano e i
+regolamenti comunali sono diversi l'uno dall'altro. **Va fatto rileggere al
+cliente prima della pubblicazione.**
+
+### Iscrizione alla newsletter
+
+Il modulo in fondo all'elenco è **disattivato e lo dichiara**. Finché non c'è un
+servizio di invio collegato, un modulo che accetta indirizzi raccoglierebbe dati
+personali che nessuno riceve — che è insieme un problema di GDPR (base
+giuridica e informativa per un trattamento che non esiste) e una promessa non
+mantenuta. Al suo posto c'è l'indirizzo email dell'azienda.
+
+---
 
 ## Tipografia
 

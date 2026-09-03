@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if articolo.copertina %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ articolo.copertina.url }}">
+  <meta property="og:image:alt" content="{{ articolo.copertina_alt }}">{% else %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block extra_head %}
+<meta property="article:published_time" content="{{ articolo.pubblicato_il|date:'Y-m-d' }}">
+<meta property="article:section" content="{{ articolo.get_categoria_display }}">
+{% for t in articolo.elenco_tag %}<meta property="article:tag" content="{{ t }}">
+{% endfor %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "{{ articolo.titolo|escapejs }}",
+  "description": "{{ articolo.seo_description|escapejs }}",
+  "datePublished": "{{ articolo.pubblicato_il|date:'Y-m-d' }}",
+  "dateModified": "{{ articolo.aggiornato_il|date:'Y-m-d' }}",
+  "articleSection": "{{ articolo.get_categoria_display|escapejs }}",{% if articolo.copertina %}
+  "image": "{{ request.scheme }}://{{ request.get_host }}{{ articolo.copertina.url }}",{% endif %}
+  "author": {"@type": "Organization", "name": "{{ articolo.autore|escapejs }}"},
+  "publisher": {"@id": "{{ request.scheme }}://{{ request.get_host }}/#organizzazione"},
+  "mainEntityOfPage": "{{ request.scheme }}://{{ request.get_host }}{{ articolo.get_absolute_url }}"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Il Giornale",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'blog:list' %}"},
+    {"@type": "ListItem", "position": 3, "name": "{{ articolo.titolo|escapejs }}"}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+
+{% comment %}
+  Barra di avanzamento della lettura. `aria-hidden` perche' non aggiunge nulla
+  a chi non la vede: la posizione nel documento uno screen reader la conosce
+  gia'. Senza JavaScript resta a zero e non da' fastidio.
+{% endcomment %}
+<div class="lettura-barra" id="lettura-barra" aria-hidden="true"><span></span></div>
+
+<article class="articolo">
+
+  <header class="articolo-testa">
+    <div class="container">
+      <p class="articolo-briciole" data-reveal="fade">
+        <a href="{% url 'blog:list' %}"><span aria-hidden="true">←</span> Giornale</a>
+      </p>
+
+      <p class="art-meta articolo-meta" data-reveal="fade">
+        <a class="art-categoria" href="{% url 'blog:list' %}?categoria={{ articolo.categoria }}">{{ articolo.get_categoria_display }}</a>
+        <time datetime="{{ articolo.pubblicato_il|date:'Y-m-d' }}">{{ articolo.pubblicato_il|date:"j F Y"|lower }}</time>
+        <span class="art-minuti">{{ articolo.tempo_lettura }} min di lettura</span>
+      </p>
+
+      <h1 data-reveal>{{ articolo.titolo }}</h1>
+      {% if articolo.sottotitolo %}
+        <p class="lead" data-reveal="fade">{{ articolo.sottotitolo }}</p>
+      {% endif %}
+
+      <div class="articolo-firma" data-reveal="fade">
+        <p class="firma-chi">
+          <span class="firma-bollo" aria-hidden="true">EV</span>
+          <span>{{ articolo.autore }}</span>
+        </p>
+
+        {% comment %}
+          «Copia link» e' un pulsante e non un link: non porta da nessuna
+          parte, mette una stringa negli appunti. Compare solo con JavaScript
+          attivo — senza, non farebbe nulla, e un comando che non fa nulla e'
+          peggio di un comando in meno.
+        {% endcomment %}
+        <button type="button" class="copia-link" data-copia="{{ request.build_absolute_uri }}" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 13.5a3.6 3.6 0 0 0 5.3.4l2.9-2.9a3.6 3.6 0 0 0-5.1-5.1l-1.7 1.6"/>
+            <path d="M14 10.5a3.6 3.6 0 0 0-5.3-.4l-2.9 2.9a3.6 3.6 0 0 0 5.1 5.1l1.7-1.6"/>
+          </svg>
+          <span class="copia-testo">Copia link</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  {% if articolo.copertina %}
+  <div class="container">
+    {% comment %}
+      La copertina scorre piu' lenta della pagina. Il movimento sta sul
+      contenitore interno e non sulla figura, che ha gia' la propria
+      rivelazione: due animazioni sulla stessa proprieta' dello stesso elemento
+      si escluderebbero a vicenda.
+    {% endcomment %}
+    <figure class="articolo-copertina" data-reveal="fade">
+      <span class="copertina-scena">
+        <img src="{{ articolo.copertina.url }}" alt="{{ articolo.copertina_alt }}"
+             width="1600" height="686" decoding="async">
+      </span>
+    </figure>
+  </div>
+  {% endif %}
+
+  <div class="container">
+    <div class="articolo-lettura">
+
+      <div class="articolo-corpo">
+        {% comment %}
+          Il corpo arriva dal modello gia' spezzato in blocchi tipizzati, e qui
+          si stampa con l'escaping normale: nel database non c'e' HTML, quindi
+          non c'e' niente da marcare come sicuro.
+
+          Ogni titolo porta il suo `id` e un'ancora che compare al passaggio del
+          mouse: serve a mandare a qualcuno il punto esatto, non l'articolo
+          intero. Il simbolo e' decorativo, il nome del collegamento e' il
+          titolo della sezione.
+        {% endcomment %}
+        {% for b in articolo.blocchi %}
+          {% if b.tipo == "titolo" %}
+            <h2 id="{{ b.id }}" data-reveal="fade">
+              {{ b.testo }}<a class="ancora" href="#{{ b.id }}"
+                 aria-label="Collegamento a «{{ b.testo }}»"><span aria-hidden="true">#</span></a>
+            </h2>
+          {% else %}
+            <p{% if b.primo %} class="incipit"{% endif %} data-reveal="fade">{{ b.testo }}</p>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      {% if articolo.sommario|length > 2 %}
+      {% comment %}
+        Indice delle sezioni. Sopra i 1100px sta appiccicato nel margine
+        destro, che altrimenti resterebbe vuoto per tutta la lunghezza
+        dell'articolo; sotto, diventa un riquadro in cima al testo.
+
+        Compare solo con almeno tre sezioni: con due, un indice e' piu' lungo
+        di quello che indicizza.
+      {% endcomment %}
+      <nav class="articolo-indice" aria-labelledby="t-indice">
+        <p class="indice-titolo" id="t-indice">In questo articolo</p>
+        <ol>
+          {% for t in articolo.sommario %}
+          <li><a href="#{{ t.id }}">{{ t.testo }}</a></li>
+          {% endfor %}
+        </ol>
+      </nav>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {% if stagione %}
+  {% comment %}
+    Fascia dei numeri di stagione, sullo stesso schema della barra in home.
+    I valori vengono da settings.py — non sono riscritti nell'articolo — cosi'
+    il giorno che cambiano cambiano in un posto solo.
+  {% endcomment %}
+  <section class="articolo-numeri" aria-labelledby="t-numeri-art">
+    <div class="container">
+      <h2 id="t-numeri-art" class="solo-lettori">I numeri della stagione</h2>
+      <ul class="stagione-dati" data-stagger>
+        {% for v in stagione %}
+        <li data-reveal="fade">
+          <span class="num"{% if v.conta %} data-conta="{{ v.conta }}" data-testo="{{ v.numero }}"{% endif %}>{{ v.numero }}</span>
+          <span class="label">
+            {{ v.etichetta }}
+            {% if v.sotto %}<span class="label-sotto">{{ v.sotto }}</span>{% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="articolo-numeri-nota">
+        Dati dichiarati dalla gestione, gli stessi pubblicati in home.
+      </p>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if articolo.citazione %}
+  <div class="container">
+    <figure class="articolo-citazione" data-reveal>
+      <hr class="gold-rule">
+      <blockquote>{{ articolo.citazione }}</blockquote>
+      {% if articolo.citazione_fonte %}
+        <figcaption>{{ articolo.citazione_fonte }}</figcaption>
+      {% endif %}
+    </figure>
+  </div>
+  {% endif %}
+
+  {% if articolo.elenco_tag %}
+  <div class="container">
+    <ul class="articolo-tag" data-reveal="fade" aria-label="Argomenti">
+      {% for t in articolo.elenco_tag %}<li>{{ t }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</article>
+
+
+<section class="cta-band">
+  <div class="container" data-reveal>
+    <span class="eyebrow">Per i proprietari</span>
+    <h2>Hai una casa fra Baronia e Gallura?</h2>
+    <p class="lead">Sopralluogo e stima del potenziale, gratuiti e senza impegno.</p>
+    <div class="btn-group">
+      <a class="btn btn-primary" href="{% url 'core:contact' %}">Richiedi una valutazione</a>
+    </div>
+  </div>
+</section>
+
+
+{% if correlati %}
+<section class="section" aria-labelledby="t-dopo">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Da leggere dopo</span>
+      <h2 id="t-dopo">Continua</h2>
+      <hr class="gold-rule">
+    </div>
+
+    <ul class="art-dopo" data-stagger>
+      {% for a in correlati %}
+      <li data-reveal="fade">
+        {% if a.copertina %}
+        <div class="dopo-media">
+          <img src="{{ a.copertina.url }}" alt="{{ a.copertina_alt }}"
+               loading="lazy" decoding="async" width="600" height="400">
+        </div>
+        {% endif %}
+        <p class="art-meta">
+          <span class="art-categoria">{{ a.get_categoria_display }}</span>
+          <span class="art-minuti">{{ a.tempo_lettura }} min</span>
+        </p>
+        <h3><a href="{{ a.get_absolute_url }}">{{ a.titolo }}</a></h3>
+        <p class="art-estratto">{{ a.estratto|truncatewords:20 }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{% comment %}
+  «Torna su»: compare dopo cinquecento pixel, e solo con JavaScript attivo.
+  E' un link a un'ancora vera, quindi senza JS non sarebbe rotto — semplicemente
+  non c'e', perche' senza JS non ha modo di comparire al momento giusto.
+{% endcomment %}
+<a class="torna-su" id="torna-su" href="#main" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V6M6 12l6-6 6 6"/>
+  </svg>
+  <span class="solo-lettori">Torna all'inizio della pagina</span>
+</a>
+{% endblock %}

@@ -2421,6 +2421,690 @@ html.visore-aperto { overflow: hidden; }
 .gallery-thumb:hover img { transform: scale(1.08); }
 
 /* ==========================================================================
+   Il Giornale
+   Nessun colore e nessun carattere nuovo: tutto viene dai token gia' in uso.
+   La scheda articolo e' la scheda immobile con altri contenuti dentro — stesso
+   fondo, stesso bordo, stesso sollevamento — perche' scorrere una griglia di
+   articoli e scorrere una griglia di case e' lo stesso gesto, e cambiare
+   impaginazione fra le due pagine avrebbe reso il sito due siti.
+   ========================================================================== */
+
+/* ---------- Barra dei filtri ---------- */
+.giornale-filtri {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.giornale-categorie { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* Bottoni di invio, non finti bottoni: la barra e' un <form> e senza
+   JavaScript filtra lo stesso. */
+.filtro-voce {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--font-testo);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem 1.05rem;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition),
+              background-color var(--transition);
+}
+.filtro-voce:hover { color: var(--text); border-color: var(--accent); }
+.filtro-voce.e-attiva {
+  color: var(--on-accent);
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+}
+.filtro-conta { font-size: 0.85em; opacity: 0.65; font-variant-numeric: tabular-nums; }
+.filtro-voce.e-attiva .filtro-conta { opacity: 0.8; }
+
+.giornale-cerca { position: relative; flex: 0 1 20rem; min-width: 14rem; }
+.giornale-cerca input {
+  width: 100%;
+  padding: 0.78rem 2.6rem 0.78rem 1rem;
+  font-family: var(--font-testo);
+  font-size: var(--t-sm);
+  color: var(--text);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--transition), background-color var(--transition);
+}
+.giornale-cerca input:focus { border-color: var(--accent); outline: none; }
+.giornale-cerca input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.giornale-cerca-invio {
+  position: absolute;
+  right: 0.35rem; top: 50%;
+  translate: 0 -50%;
+  display: flex; align-items: center; justify-content: center;
+  width: 2rem; height: 2rem;
+  background: none; border: 0; cursor: pointer;
+  color: var(--text-muted);
+  transition: color var(--transition);
+}
+.giornale-cerca-invio:hover { color: var(--accent); }
+.giornale-cerca-invio svg { width: 17px; height: 17px; }
+
+/* ---------- Righe di servizio dell'articolo ---------- */
+.art-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.9rem;
+  margin: 0 0 0.7rem;
+  font-size: var(--t-2xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.art-categoria {
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+a.art-categoria:hover { color: var(--accent-hover); }
+.art-minuti { color: var(--placeholder); }
+
+/* ---------- Articolo in evidenza ---------- */
+.art-evidenza {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+  margin-bottom: 4rem;
+  padding-bottom: 4rem;
+  border-bottom: 1px solid var(--border);
+}
+.art-evidenza-testo h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 1.3rem + 2.2vw, 2.9rem);
+  font-weight: 400;
+  line-height: var(--lh-titolo);
+  letter-spacing: var(--tr-display);
+  margin: 0 0 1rem;
+  max-width: 18ch;
+}
+.art-evidenza-testo h3 a { color: var(--text); }
+.art-evidenza-testo h3 a:hover { color: var(--accent); }
+.art-evidenza .art-estratto { max-width: 52ch; margin-bottom: 1.75rem; }
+
+.art-vai { margin: 0; }
+.art-vai a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.art-freccia { transition: translate var(--transition); }
+.art-vai a:hover .art-freccia { translate: 6px 0; }
+
+.art-evidenza-media {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-alt);
+}
+.art-evidenza-media img {
+  display: block;
+  width: 100%; height: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+/* ---------- Griglia e scheda ---------- */
+.art-griglia { display: grid; grid-template-columns: 1fr; gap: 1.75rem; }
+
+.art-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  /* Come la scheda immobile: il sollevamento usa `translate` e non
+     `transform`, che e' gia' occupato dall'animazione di rivelazione. */
+  transition: border-color var(--transition), translate var(--transition),
+              background-color var(--transition);
+}
+.art-card:hover { border-color: var(--accent); translate: 0 -4px; }
+
+.art-card-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--surface-alt);
+}
+.art-card-media img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.art-card:hover .art-card-media img { transform: scale(1.05); }
+
+.art-card-body { display: flex; flex-direction: column; flex: 1; padding: 1.5rem; }
+.art-card-body h3 {
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+  font-weight: 500;
+  line-height: var(--lh-titolo);
+  letter-spacing: var(--tr-titolo);
+  margin: 0 0 0.6rem;
+}
+.art-card-body h3 a { color: var(--text); }
+.art-card:hover h3 a { color: var(--accent); }
+
+/* Il bersaglio si allarga a tutta la scheda, ma nell'ordine di lettura resta
+   un collegamento solo, col titolo per nome. */
+.art-card-body h3 a::after { content: ""; position: absolute; inset: 0; }
+.art-card:has(a:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+.art-card-body h3 a:focus-visible { outline: none; }
+
+.art-estratto {
+  flex: 1;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--t-sm);
+  line-height: 1.7;
+}
+
+.art-piede {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+/* ---------- Chiusura dell'elenco ---------- */
+.giornale-chiusura { display: grid; gap: 1.75rem; }
+
+.riquadro-lettera, .riquadro-invito {
+  padding: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.riquadro-invito { background: var(--accent-dim); border-color: var(--accent); }
+.riquadro-lettera h3, .riquadro-invito h3 {
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 400;
+  line-height: var(--lh-titolo);
+  letter-spacing: var(--tr-titolo);
+  margin: 0 0 0.9rem;
+  max-width: 20ch;
+}
+.riquadro-lettera p, .riquadro-invito p {
+  color: var(--text-muted);
+  font-size: var(--t-sm);
+  line-height: 1.7;
+  max-width: 46ch;
+  margin: 0 0 1.75rem;
+}
+
+.lettera-modulo { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.lettera-modulo input {
+  flex: 1 1 12rem;
+  padding: 0.9rem 1rem;
+  font-family: var(--font-testo);
+  font-size: var(--t-sm);
+  color: var(--text);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+/* Disattivato finche' non c'e' un servizio d'invio collegato: si vede che non
+   funziona, invece di raccogliere indirizzi che nessuno riceve. */
+.lettera-modulo input:disabled, .lettera-modulo button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.lettera-nota {
+  margin: 1rem 0 0 !important;
+  font-size: var(--t-xs);
+  color: var(--placeholder);
+}
+
+/* ---------- Barra di avanzamento della lettura ---------- */
+.lettura-barra {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  z-index: 200;
+  pointer-events: none;
+  background: transparent;
+}
+.lettura-barra span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(var(--letto, 0));
+}
+
+
+/* ---------- Testata dell'articolo ---------- */
+.articolo-testa {
+  padding: 3.5rem 0 2.5rem;
+  background:
+    linear-gradient(var(--band-veil), var(--band-veil)),
+    radial-gradient(ellipse at 82% 40%, var(--band-glow), transparent 62%),
+    var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--transition), border-color var(--transition);
+}
+.articolo-briciole { margin: 0 0 1.75rem; font-size: var(--t-xs); }
+.articolo-briciole a {
+  color: var(--text-muted);
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.articolo-briciole a:hover { color: var(--accent); }
+
+.articolo-testa h1 { max-width: 20ch; margin: 0 0 1.25rem; }
+.articolo-testa .lead { max-width: 54ch; margin-bottom: 2rem; }
+.articolo-meta { margin-bottom: 1.1rem; }
+
+.articolo-firma {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+.firma-chi { display: flex; align-items: center; gap: 0.8rem; margin: 0; }
+
+.copia-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-testo);
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition),
+              background-color var(--transition);
+}
+.copia-link:hover { color: var(--accent); border-color: var(--accent); }
+.copia-link svg { width: 15px; height: 15px; }
+.copia-link[hidden] { display: none; }
+/* A cosa fatta il pulsante lo dice da se': senza conferma non si sa se il
+   click e' andato a segno, e si preme una seconda volta. */
+.copia-link.e-fatto { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.firma-bollo {
+  display: grid;
+  place-items: center;
+  width: 2.4rem; height: 2.4rem;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+/* ---------- Corpo ---------- */
+.articolo-copertina {
+  margin: 3rem 0 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* `clip` e non `hidden`, e non e' un dettaglio: `hidden` fa di questo
+     elemento un contenitore di scorrimento, e `view()` misura sempre rispetto
+     al contenitore di scorrimento piu' vicino. La fotografia dentro avrebbe
+     quindi agganciato la timeline di un riquadro che non scorre mai, restando
+     ferma sul primo fotogramma. E' la stessa trappola gia' documentata per il
+     blocco della vetrina. */
+  overflow: clip;
+  background: var(--surface-alt);
+}
+.copertina-scena { display: block; overflow: clip; }
+.articolo-copertina img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  object-fit: cover;
+}
+
+/* La fotografia scorre piu' lenta della pagina. Vive dentro `.js-anim`, quindi
+   con «riduci movimento» non esiste: e' esattamente il genere di movimento che
+   quella preferenza vuole evitare. Il fotogramma sorgente e' piu' alto del
+   riquadro, altrimenti a fondo corsa si scoprirebbe una striscia vuota. */
+@supports (animation-timeline: view()) {
+  .js-anim .copertina-scena img {
+    height: 118%;
+    animation: ev-copertina linear both;
+    animation-timeline: view();
+    /* `cover` e non `entry`: il movimento deve durare quanto la fotografia
+       resta in campo, non solo mentre entra. */
+    animation-range: cover 0% cover 100%;
+  }
+}
+@keyframes ev-copertina {
+  from { transform: translateY(-13%); }
+  to   { transform: translateY(0); }
+}
+
+/* Colonna di lettura e indice. Sotto i 1100px sono impilati; sopra, l'indice
+   va nel margine destro — che altrimenti resterebbe vuoto per tutta la
+   lunghezza dell'articolo — e ci resta appiccicato mentre si scorre.
+
+   Nel markup l'indice viene dopo il testo, perche' e' li' che serve nell'ordine
+   di lettura di uno screen reader — prima il contenuto, poi lo strumento per
+   saltarci dentro. Impilato pero' finirebbe in fondo all'articolo, dove non
+   serve a nessuno: `order` lo riporta in cima senza toccare l'ordine del
+   documento. */
+.articolo-lettura { display: grid; margin: 3.25rem 0 0; }
+
+.articolo-corpo { max-width: 680px; }
+
+/* L'incipit e' composto un filo piu' grande del resto: da' un attacco al
+   testo senza bisogno di un capolettera, che con Fraunces a questi corpi
+   diventerebbe un ornamento e basta. */
+.articolo-corpo .incipit {
+  font-size: 1.16rem;
+  line-height: 1.66;
+  color: var(--text);
+}
+
+/* Ancora accanto al titolo di sezione: compare al passaggio del mouse e
+   quando prende il fuoco. Resta nel flusso — `margin-left` negativo lo
+   toglierebbe dall'allineamento del testo su schermi stretti. */
+/* Arrivando da `#sezione`, il titolo si ferma sotto l'intestazione
+   appiccicata invece che dietro. */
+.articolo-corpo h2 {
+  position: relative;
+  scroll-margin-top: calc(var(--header-h) + 1.5rem);
+}
+.ancora {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-family: var(--font-testo);
+  font-size: 0.62em;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0;
+  translate: -4px 0;
+  transition: opacity var(--transition), translate var(--transition);
+}
+.articolo-corpo h2:hover .ancora,
+.ancora:focus-visible { opacity: 1; translate: 0 0; }
+/* Su schermi a tocco il passaggio del mouse non esiste: li' l'ancora si vede
+   sempre, in secondo piano, invece di essere irraggiungibile. */
+@media (hover: none) {
+  .ancora { opacity: 0.45; translate: 0 0; }
+}
+/* Conferma della copia: l'ancora diventa un segno di spunta per un attimo.
+   Il carattere sta nel CSS e non nel markup perche' e' un ritorno visivo, non
+   contenuto: chi legge con uno screen reader ha gia' sentito il nome del
+   collegamento. */
+.ancora.e-copiata { opacity: 1; translate: 0 0; }
+.ancora.e-copiata span::after { content: " ✓"; }
+
+.articolo-indice { order: -1; margin: 0 0 2.5rem; }
+.indice-titolo {
+  margin: 0 0 1rem;
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tr-occhiello);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.articolo-indice ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--border);
+}
+.articolo-indice li { margin: 0; }
+.articolo-indice a {
+  display: block;
+  padding: 0.5rem 0 0.5rem 1rem;
+  margin-left: -1px;
+  border-left: 1px solid transparent;
+  font-size: var(--t-sm);
+  line-height: 1.45;
+  color: var(--text-muted);
+  transition: color var(--transition), border-color var(--transition);
+}
+.articolo-indice a:hover { color: var(--text); }
+/* La sezione in cui ci si trova: il filetto si accende e il testo passa in
+   primo piano. Lo stato lo scrive main.js leggendo la posizione dei titoli. */
+.articolo-indice a.e-corrente {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+.articolo-corpo p {
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--text);
+  margin: 0 0 1.5rem;
+}
+.articolo-corpo h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 400;
+  line-height: var(--lh-titolo);
+  letter-spacing: var(--tr-titolo);
+  margin: 2.75rem 0 1.1rem;
+}
+.articolo-corpo h2:first-child { margin-top: 0; }
+.articolo-corpo p:last-child { margin-bottom: 0; }
+
+/* ---------- Fascia dei numeri ---------- */
+.articolo-numeri {
+  margin: 4rem 0 0;
+  padding: 3.5rem 0;
+  background: var(--bg-soft);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--transition), border-color var(--transition);
+}
+.articolo-numeri .stagione-dati { margin: 0; }
+.articolo-numeri-nota {
+  margin: 2.25rem 0 0;
+  font-size: var(--t-xs);
+  color: var(--placeholder);
+}
+
+/* ---------- Citazione ---------- */
+.articolo-citazione { max-width: 680px; margin: 3.5rem 0 0; }
+.articolo-citazione .gold-rule { margin: 0 0 1.5rem; }
+.articolo-citazione blockquote {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: var(--tr-titolo);
+  color: var(--text);
+}
+.articolo-citazione figcaption {
+  margin-top: 1rem;
+  font-size: var(--t-xs);
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---------- Tag ---------- */
+.articolo-tag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  list-style: none;
+  max-width: 680px;
+  margin: 3.5rem 0 0;
+  padding: 0;
+}
+.articolo-tag li {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.85rem;
+}
+
+.articolo + .cta-band { margin-top: 4.5rem; }
+
+/* ---------- Da leggere dopo ---------- */
+.art-dopo { display: grid; grid-template-columns: 1fr; gap: 2rem; list-style: none; padding: 0; margin: 0; }
+.art-dopo li { padding-top: 1.25rem; border-top: 1px solid var(--accent); }
+.dopo-media {
+  aspect-ratio: 3 / 2;
+  margin-bottom: 1.1rem;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+}
+.dopo-media img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.art-dopo li:hover .dopo-media img { transform: scale(1.05); }
+.art-dopo h3 {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+  line-height: var(--lh-titolo);
+  letter-spacing: var(--tr-titolo);
+  margin: 0 0 0.6rem;
+}
+.art-dopo h3 a { color: var(--text); }
+.art-dopo li:hover h3 a { color: var(--accent); }
+
+/* ---------- Torna su ---------- */
+.torna-su {
+  position: fixed;
+  right: 1.5rem; bottom: 1.5rem;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  width: 2.9rem; height: 2.9rem;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  box-shadow: var(--card-shadow);
+  transition: border-color var(--transition), background-color var(--transition),
+              opacity var(--transition), translate var(--transition);
+}
+.torna-su svg { width: 18px; height: 18px; }
+.torna-su:hover { border-color: var(--accent); background: var(--accent-dim); }
+/* Nasconde con `hidden`, che main.js commuta: cosi' l'elemento esce anche
+   dall'ordine del tabulatore invece di restare un bersaglio invisibile. */
+.torna-su[hidden] { display: none; }
+
+/* La comparsa e' un'animazione, quindi vive dentro `.js-anim`: senza, il
+   pulsante appare e basta. */
+.js-anim .torna-su { animation: ev-torna-su 320ms ease-out both; }
+@keyframes ev-torna-su {
+  from { opacity: 0; translate: 0 12px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+/* ---------- Il trattino dell'occhiello che si traccia ----------
+   Il filetto oro davanti a «Il Giornale · EV House» non c'e' e poi c'e': si
+   disegna da sinistra quando la testata entra in campo. E' lo stesso gesto dei
+   tratti che uniscono i passi nella pagina Servizi. */
+.js-anim .page-head .eyebrow-riga::before,
+.js-anim .articolo-testa .eyebrow-riga::before {
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms;
+}
+.js-anim [data-reveal].is-visible .eyebrow-riga::before { transform: scaleX(1); }
+
+@supports (animation-timeline: view()) {
+  .js-anim .page-head .eyebrow-riga::before {
+    transition: none;
+    animation: ev-linea-orizzontale linear both;
+    animation-timeline: view();
+    animation-range: entry 18% entry 62%;
+  }
+}
+
+@media (min-width: 600px) {
+  .art-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .art-dopo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .giornale-chiusura { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Da qui l'indice sta nel margine destro e ci resta appiccicato. Sotto questa
+   soglia il margine non c'e': la colonna di lettura occupa quasi tutta la
+   larghezza, e l'indice torna un riquadro sopra il testo. */
+@media (min-width: 1100px) {
+  .articolo-lettura {
+    grid-template-columns: 680px minmax(0, 1fr);
+    gap: 4rem;
+    align-items: start;
+  }
+  /* Posizione esplicita: senza, `order: -1` metterebbe l'indice nella prima
+     casella libera, cioe' nella colonna del testo. */
+  .articolo-corpo  { grid-column: 1; grid-row: 1; }
+  .articolo-indice {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    /* Sotto l'intestazione appiccicata del sito, con un po' d'aria. */
+    top: calc(var(--header-h) + 2rem);
+    margin: 0.5rem 0 0;
+    max-height: calc(100vh - var(--header-h) - 4rem);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 900px) {
+  .art-griglia { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .art-dopo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* Cinque parti al testo, sei all'immagine: la fotografia pesa appena piu'
+     della colonna scritta, che e' quello che la fa leggere come apertura e non
+     come una scheda larga. */
+  .art-evidenza { grid-template-columns: 5fr 6fr; gap: 3.5rem; }
+  .giornale-chiusura { grid-template-columns: 1.15fr 1fr; gap: 2rem; }
+  .articolo-testa { padding: 4.5rem 0 3rem; }
+  .torna-su { right: 2.5rem; bottom: 2.5rem; }
+}
+
+
+/* ==========================================================================
    Breakpoints
    ========================================================================== */
 
