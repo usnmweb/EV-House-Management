@@ -40,7 +40,16 @@
     {% endcomment %}
     <form class="giornale-filtri" method="get" action="{% url 'blog:list' %}"
           role="search" aria-label="Filtra gli articoli" data-reveal="fade">
-      <div class="giornale-categorie">
+      {% comment %}
+        Le categorie sono pulsanti di invio veri. Con JavaScript attivo il
+        filtro avviene sul posto e il cursore d'oro scivola sotto la voce
+        scelta; senza, ogni pulsante ricarica la pagina come sempre. Il
+        cursore e' un elemento a se' perche' deve poter *scorrere* fra due
+        voci: un bordo inferiore su ciascuna comparirebbe e sparirebbe, che e'
+        un'altra cosa.
+      {% endcomment %}
+      <div class="giornale-categorie" id="giornale-categorie">
+        <span class="filtro-cursore" aria-hidden="true"></span>
         <button type="submit" name="categoria" value=""
                 class="filtro-voce{% if not categoria_attiva %} e-attiva{% endif %}"
                 {% if not categoria_attiva %}aria-current="true"{% endif %}>
@@ -58,7 +67,8 @@
       <div class="giornale-cerca">
         <label for="q" class="solo-lettori">Cerca fra gli articoli</label>
         <input type="search" id="q" name="q" value="{{ ricerca }}"
-               placeholder="Cerca fra gli articoli">
+               placeholder="Cerca fra gli articoli" autocomplete="off">
+        <kbd class="cerca-scorciatoia" aria-hidden="true" hidden>/</kbd>
         <button type="submit" class="giornale-cerca-invio" aria-label="Cerca">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
                stroke-linecap="round" aria-hidden="true">
@@ -68,25 +78,31 @@
       </div>
     </form>
 
-    {% if filtri_attivi %}
-      <p class="list-meta" role="status">
-        <span>
-          {{ paginator.count }} articol{{ paginator.count|pluralize:"o,i" }}
-          {% if ricerca %}per «{{ ricerca }}»{% endif %}
-          {% if categoria_attiva_nome %}in «{{ categoria_attiva_nome }}»{% endif %}
-        </span>
-        <a href="{% url 'blog:list' %}">Azzera i filtri</a>
-      </p>
-    {% endif %}
+    {% comment %}
+      L'esito della ricerca. `role="status"` lo fa annunciare da uno screen
+      reader quando cambia: filtrando dal vivo la pagina non si ricarica, e
+      senza questo chi non vede lo schermo non saprebbe che l'elenco e'
+      cambiato sotto le sue mani.
+    {% endcomment %}
+    <p class="giornale-esito" id="giornale-esito" role="status"
+       {% if not filtri_attivi %}hidden{% endif %}>
+      <span id="giornale-esito-testo">
+        {{ paginator.count }} articol{{ paginator.count|pluralize:"o,i" }}
+        {% if ricerca %}per «{{ ricerca }}»{% endif %}
+        {% if categoria_attiva_nome %}in «{{ categoria_attiva_nome }}»{% endif %}
+      </span>
+      <a href="{% url 'blog:list' %}" id="giornale-azzera">Azzera i filtri</a>
+    </p>
 
     {% comment %}
       L'articolo di apertura, solo senza filtri: con un filtro attivo la pagina
       risponde a una domanda precisa, e una vetrina in cima sarebbe fuori posto.
     {% endcomment %}
     {% if evidenza %}
-    <article class="art-evidenza" data-reveal>
+    <article class="art-evidenza" data-reveal id="art-evidenza">
       <div class="art-evidenza-testo">
         <p class="art-meta">
+          <span class="art-apertura">In apertura</span>
           <span class="art-categoria">{{ evidenza.get_categoria_display }}</span>
           <time datetime="{{ evidenza.pubblicato_il|date:'Y-m-d' }}">{{ evidenza.pubblicato_il|date:"j F Y"|lower }}</time>
           <span class="art-minuti">{{ evidenza.tempo_lettura }} min</span>
@@ -111,12 +127,41 @@
     </article>
     {% endif %}
 
+    {% comment %}
+      L'indice. Non e' una griglia di schede: e' un elenco datato, una riga per
+      articolo, con la data nel margine come su un giornale di bordo. Otto
+      schede identiche in tre colonne lasciavano una riga spaiata in fondo e
+      non dicevano niente di cosa fosse questa pagina; una riga per uscita si
+      scorre con gli occhi, si legge in ordine di data e non ha righe spaiate
+      per costruzione.
+
+      `data-titolo`, `data-categoria` e `data-testo` servono al filtro dal
+      vivo: sono gli stessi campi su cui filtra il server, cosi' i due danno
+      lo stesso risultato.
+    {% endcomment %}
     {% if articoli %}
-      <div class="art-griglia" data-stagger>
+      {% comment %}
+        Il filtro dal vivo si accende solo quando in pagina c'e' *tutto*: una
+        pagina sola e nessun filtro gia' applicato dal server. Arrivando su un
+        indirizzo filtrato il server ha reso un elenco parziale, e filtrarlo
+        ancora darebbe risultati sbagliati — «Tutti» mostrerebbe solo cio' che
+        era rimasto. In quel caso comanda il server, come senza JavaScript.
+      {% endcomment %}
+      <ol class="registro-articoli" id="registro-articoli" data-stagger
+          {% if not is_paginated and not filtri_attivi %}data-dal-vivo="1"{% endif %}>
         {% for articolo in articoli %}
           {% include "blog/_article_card.html" with articolo=articolo %}
         {% endfor %}
-      </div>
+      </ol>
+
+      {% comment %}
+        Comparsa quando il filtro dal vivo non lascia niente. Sta nel markup e
+        non lo costruisce JavaScript: e' testo, e il testo sta nei template.
+      {% endcomment %}
+      <p class="registro-vuoto" id="registro-vuoto" hidden>
+        Nessun articolo per questa ricerca.
+        <button type="button" class="collegamento-finto" id="registro-vuoto-azzera">Azzera i filtri</button>
+      </p>
 
       {% if is_paginated %}
       <nav class="pagination" aria-label="Pagine del Giornale">

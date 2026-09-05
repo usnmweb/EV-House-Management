@@ -81,14 +81,14 @@ class ElencoTest(BaseGiornale):
         _articolo(titolo="In cima", in_evidenza=True)
         h = self.client.get(reverse("blog:list")).content.decode()
         # Due collegamenti nel riquadro d'apertura, nessuna scheda in griglia.
-        self.assertEqual(h.count('class="art-card"'), 0)
+        self.assertEqual(h.count('class="voce-articolo"'), 0)
         self.assertEqual(h.count('class="art-evidenza"'), 1)
 
     def test_con_i_filtri_niente_articolo_in_apertura(self):
         _articolo(titolo="In cima", in_evidenza=True, categoria="localita")
         h = self.client.get(reverse("blog:list"), {"categoria": "localita"}).content.decode()
         self.assertNotIn('class="art-evidenza"', h)
-        self.assertEqual(h.count('class="art-card"'), 1)
+        self.assertEqual(h.count('class="voce-articolo"'), 1)
 
     def test_ricerca_e_categoria(self):
         """Si controllano gli indirizzi delle schede, non le parole in pagina.

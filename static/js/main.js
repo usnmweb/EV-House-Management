@@ -906,6 +906,171 @@
   }
 
   /* ------------------------------------------------------------------
+     Il Giornale: filtri e ricerca dal vivo
+
+     La barra resta un <form> vero e il server continua a filtrare: senza
+     JavaScript, o con l'elenco spezzato in piu' pagine, ogni pulsante
+     ricarica la pagina come sempre. Qui si aggiunge solo il caso in cui tutti
+     gli articoli sono gia' in pagina — `data-dal-vivo` lo dice — e allora si
+     filtra sul posto, che e' immediato e non perde la posizione di
+     scorrimento.
+
+     I criteri sono gli stessi del server (categoria, e testo su titolo,
+     estratto e tag), altrimenti i due darebbero risultati diversi a seconda
+     di come ci si e' arrivati.
+     ------------------------------------------------------------------ */
+  var registro = document.getElementById("registro-articoli");
+  var barra = document.querySelector(".giornale-filtri");
+
+  if (registro && barra) {
+    var voci = Array.prototype.slice.call(registro.querySelectorAll(".voce-articolo"));
+    var bottoniCat = Array.prototype.slice.call(barra.querySelectorAll(".filtro-voce"));
+    var cursore = barra.querySelector(".filtro-cursore");
+    var campo = barra.querySelector("#q");
+    var esito = document.getElementById("giornale-esito");
+    var esitoTesto = document.getElementById("giornale-esito-testo");
+    var apertura = document.getElementById("art-evidenza");
+    var vuoto = document.getElementById("registro-vuoto");
+    var azzeraVuoto = document.getElementById("registro-vuoto-azzera");
+    var dalVivo = registro.getAttribute("data-dal-vivo") === "1";
+
+    /* --- il cursore d'oro --- */
+    function spostaCursore() {
+      if (!cursore) return;
+      var attivo = barra.querySelector(".filtro-voce.e-attiva");
+      if (!attivo) { cursore.style.opacity = 0; return; }
+      var b = attivo.getBoundingClientRect();
+      var contenitore = attivo.parentElement.getBoundingClientRect();
+      cursore.style.width = Math.round(b.width) + "px";
+      cursore.style.transform = "translateX(" + Math.round(b.left - contenitore.left) + "px)";
+      cursore.style.opacity = 1;
+    }
+    // La classe dice al CSS di spegnere il bordo di ripiego: da qui in poi a
+    // marcare la voce attiva ci pensa il cursore.
+    if (cursore) barra.classList.add("js-cursore");
+    spostaCursore();
+    window.addEventListener("resize", spostaCursore, { passive: true });
+    // I caratteri arrivano dopo il primo disegno e cambiano la larghezza dei
+    // pulsanti: senza questo il cursore resta largo quanto il testo di ripiego.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(spostaCursore);
+    }
+
+    if (dalVivo) {
+      var categoriaViva = "";
+      var cercaViva = "";
+      var bottoneTutti = bottoniCat[0];
+
+      function applica() {
+        var termine = cercaViva.trim().toLowerCase();
+        var quanti = 0;
+
+        voci.forEach(function (voce) {
+          var okCat = !categoriaViva || voce.getAttribute("data-categoria") === categoriaViva;
+          var okTesto = !termine || voce.getAttribute("data-cerca").indexOf(termine) !== -1;
+          var mostra = okCat && okTesto;
+          voce.hidden = !mostra;
+          if (mostra) quanti++;
+        });
+
+        // L'articolo di apertura sparisce appena c'e' un filtro, come fa il
+        // server: e' una vetrina, e chi ha filtrato non sta guardando la
+        // vetrina.
+        var filtrato = !!(categoriaViva || termine);
+        if (apertura) apertura.hidden = filtrato;
+
+        if (vuoto) vuoto.hidden = quanti !== 0;
+
+        if (esito && esitoTesto) {
+          esito.hidden = !filtrato;
+          var parti = [quanti + " articol" + (quanti === 1 ? "o" : "i")];
+          if (termine) parti.push("per «" + cercaViva.trim() + "»");
+          if (categoriaViva) {
+            var b = barra.querySelector('.filtro-voce[value="' + categoriaViva + '"]');
+            if (b) parti.push("in «" + b.firstChild.textContent.trim() + "»");
+          }
+          esitoTesto.textContent = parti.join(" ");
+        }
+
+        bottoniCat.forEach(function (b) {
+          var attivo = b.value === categoriaViva;
+          b.classList.toggle("e-attiva", attivo);
+          if (attivo) b.setAttribute("aria-current", "true");
+          else b.removeAttribute("aria-current");
+        });
+        spostaCursore();
+
+        /* L'indirizzo segue quello che si vede: cosi' un ricaricamento, un
+           preferito o un link condiviso riportano allo stesso elenco. E'
+           `replaceState` e non `pushState` — filtrare non e' navigare, e
+           riempire la cronologia costringerebbe a premere «indietro» dieci
+           volte per uscire dalla pagina. */
+        var cerca = new URLSearchParams();
+        if (categoriaViva) cerca.set("categoria", categoriaViva);
+        if (termine) cerca.set("q", cercaViva.trim());
+        var qs = cerca.toString();
+        history.replaceState(null, "", qs ? "?" + qs : location.pathname);
+      }
+
+      bottoniCat.forEach(function (b) {
+        b.addEventListener("click", function (e) {
+          e.preventDefault();
+          categoriaViva = b.value;
+          applica();
+        });
+      });
+
+      if (campo) {
+        var attesa;
+        campo.addEventListener("input", function () {
+          // Un filo d'attesa: si filtra quando si smette di scrivere, non a
+          // ogni tasto. Sotto i 120ms l'elenco sfarfalla mentre si digita.
+          clearTimeout(attesa);
+          attesa = setTimeout(function () {
+            cercaViva = campo.value;
+            applica();
+          }, 120);
+        });
+        // Invio non deve ricaricare: il risultato e' gia' sotto gli occhi.
+        barra.addEventListener("submit", function (e) { e.preventDefault(); });
+        campo.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && campo.value) {
+            campo.value = "";
+            cercaViva = "";
+            applica();
+          }
+        });
+      }
+
+      function azzera() {
+        categoriaViva = "";
+        cercaViva = "";
+        if (campo) campo.value = "";
+        applica();
+        if (bottoneTutti) bottoneTutti.focus();
+      }
+      var azzeraEsito = document.getElementById("giornale-azzera");
+      if (azzeraEsito) azzeraEsito.addEventListener("click", function (e) { e.preventDefault(); azzera(); });
+      if (azzeraVuoto) azzeraVuoto.addEventListener("click", azzera);
+
+      /* «/» porta al campo di ricerca, come in tanti strumenti da tastiera.
+         Non quando si sta gia' scrivendo da qualche parte, altrimenti la
+         barra si mangerebbe la barra. */
+      var finePuntatore = window.matchMedia("(pointer: fine)").matches;
+      var suggerimento = barra.querySelector(".cerca-scorciatoia");
+      if (suggerimento && finePuntatore) suggerimento.hidden = false;
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+        var dove = document.activeElement;
+        if (dove && (dove.tagName === "INPUT" || dove.tagName === "TEXTAREA" || dove.isContentEditable)) return;
+        e.preventDefault();
+        if (campo) { campo.focus(); campo.select(); }
+      });
+    }
+  }
+
+  /* ------------------------------------------------------------------
      Il Giornale: l'indice segue la lettura
 
      Si accende la voce della sezione in cui ci si trova. Non si usa

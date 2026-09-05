@@ -1103,6 +1103,57 @@ fermate per una destinazione. Verificato in browser: **una fermata per scheda**,
 col titolo dell'articolo come nome, e il contorno del fuoco disegnato attorno
 alla scheda intera.
 
+### L'elenco: un indice datato, non una griglia di schede
+
+La prima versione era otto riquadri identici in tre colonne: lasciava una riga
+spaiata in fondo e non diceva niente di cosa fosse questa pagina — era
+l'impaginato di un blog qualsiasi. Ora è **una riga per uscita**, con la data
+nel margine in cifre allineate (`tabular-nums`, altrimenti un «11» e un «20»
+partono da due punti diversi e la colonna balla). È la forma di un giornale di
+bordo, si legge in ordine di data e righe spaiate non ne ha per costruzione.
+
+Al passaggio del mouse: velo `--accent-dim` che sborda oltre il testo — una
+riga che si accende solo dove c'è scritto qualcosa sembrerebbe rotta — titolo
+in oro, miniatura che si allarga, freccia che entra da sinistra. Il bersaglio è
+tutta la riga (`::after` sul titolo), ma nell'ordine di lettura resta **un
+collegamento solo**, col titolo per nome: miniatura e freccia sono fuori dal
+tabulatore, altrimenti porterebbero allo stesso posto tre volte.
+
+### L'elenco: filtri e ricerca dal vivo
+
+Le categorie erano cinque chip riquadrati. Ora sono **etichette su una guida**,
+con un cursore d'oro che scivola sotto quella scelta. Il cursore è un elemento a
+sé perché deve poter *scorrere* fra due voci: un bordo inferiore su ciascuna
+comparirebbe e sparirebbe, che è un'altra cosa. `main.js` lo misura sul pulsante
+attivo e lo riposiziona anche a caratteri caricati — arrivano dopo il primo
+disegno e cambiano la larghezza dei pulsanti.
+
+Il filtro avviene **sul posto**: nessun ricaricamento, nessuna posizione di
+scorrimento persa. La ricerca filtra mentre si scrive (120ms di attesa: sotto,
+l'elenco sfarfalla), `/` porta al campo, `Esc` lo svuota.
+
+**Si accende solo quando in pagina c'è tutto** — una pagina sola e nessun filtro
+già applicato dal server. Arrivando su un indirizzo filtrato il server ha reso
+un elenco parziale, e filtrarlo ancora darebbe risultati sbagliati: «Tutti»
+mostrerebbe solo ciò che era rimasto. In quel caso comanda il server, come senza
+JavaScript. I criteri sono gli stessi nei due casi (categoria; testo su titolo,
+estratto e tag), altrimenti i due darebbero risultati diversi a seconda di come
+ci si è arrivati.
+
+L'indirizzo segue quello che si vede, con `replaceState` e non `pushState`:
+filtrare non è navigare, e riempire la cronologia costringerebbe a premere
+«indietro» dieci volte per uscire dalla pagina.
+
+L'esito della ricerca ha `role="status"`: filtrando dal vivo la pagina non si
+ricarica, e senza quello chi non vede lo schermo non saprebbe che l'elenco è
+cambiato sotto le sue mani.
+
+**Una trappola trovata misurando**: `display: grid` su `.art-evidenza` batte il
+`display: none` che il browser dà a `[hidden]`. L'articolo di apertura restava
+in pagina anche filtrando, pur avendo l'attributo. Vale per ogni elemento a cui
+si assegna un `display` e che poi si nasconde con l'attributo — nel foglio ora
+ce n'è una riga esplicita per ciascuno.
+
 ### Articolo: la colonna di lettura
 
 Sopra i **1100px** la pagina è a due colonne: il testo a 680px e, nel margine

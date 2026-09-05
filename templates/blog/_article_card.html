@@ -1,40 +1,49 @@
 {% comment %}
-  Scheda di un articolo. Stessa struttura della scheda immobile — media in
-  alto, corpo, piede sopra un filetto — perche' e' lo stesso gesto: si scorre
-  una griglia e si sceglie dove entrare. Cambiare impaginazione fra le due
-  pagine avrebbe reso il sito due siti.
+  Una riga dell'indice. La data sta nel margine, in cifre allineate: e' il
+  segno che tiene insieme la pagina — questi sono dispacci datati, non schede
+  di prodotto — ed e' anche l'unica cosa che distingue due articoli prima di
+  averne letto il titolo.
+
+  Il collegamento sta sul titolo e si allarga a tutta la riga con `::after`:
+  bersaglio grande quanto la riga, ma nell'ordine di lettura resta un link
+  solo, col titolo per nome. La fotografia e la freccia sono escluse dal
+  tabulatore proprio per questo — porterebbero allo stesso posto tre volte.
+
+  Gli attributi `data-` alimentano il filtro dal vivo di main.js.
 {% endcomment %}
-<article class="art-card" data-reveal>
-  <div class="art-card-media">
+<li class="voce-articolo" data-reveal="fade"
+    data-categoria="{{ articolo.categoria }}"
+    data-cerca="{{ articolo.titolo|lower }} {{ articolo.estratto|lower }} {{ articolo.tag|lower }}">
+
+  <p class="voce-data">
+    <time datetime="{{ articolo.pubblicato_il|date:'Y-m-d' }}">
+      <span class="voce-giorno">{{ articolo.pubblicato_il|date:"j" }}</span>
+      <span class="voce-mese">{{ articolo.pubblicato_il|date:"M Y" }}</span>
+    </time>
+  </p>
+
+  <div class="voce-media">
     {% if articolo.copertina %}
-      <a href="{{ articolo.get_absolute_url }}" tabindex="-1" aria-hidden="true">
-        <img src="{{ articolo.copertina.url }}" alt="{{ articolo.copertina_alt }}"
-             loading="lazy" decoding="async" width="800" height="600">
-      </a>
+      <img src="{{ articolo.copertina.url }}" alt="" aria-hidden="true"
+           loading="lazy" decoding="async" width="480" height="360">
     {% else %}
       <div class="media-placeholder" aria-hidden="true">EV</div>
     {% endif %}
   </div>
 
-  <div class="art-card-body">
-    <p class="art-meta">
+  <div class="voce-testo">
+    <p class="voce-alto">
       <span class="art-categoria">{{ articolo.get_categoria_display }}</span>
-      <time datetime="{{ articolo.pubblicato_il|date:'Y-m-d' }}">{{ articolo.pubblicato_il|date:"j F Y"|lower }}</time>
+      <span class="art-minuti">{{ articolo.tempo_lettura }} min</span>
     </p>
-
-    {% comment %}
-      Il collegamento sta sul titolo e si allarga a tutta la scheda con
-      `::after`: un bersaglio grande quanto la casella, ma nell'ordine di
-      lettura resta un link solo, col titolo per nome. La fotografia sopra e'
-      esclusa dal tabulatore proprio per questo — porterebbe allo stesso posto
-      due volte.
-    {% endcomment %}
     <h3><a href="{{ articolo.get_absolute_url }}">{{ articolo.titolo }}</a></h3>
     <p class="art-estratto">{{ articolo.estratto }}</p>
-
-    <p class="art-piede">
-      <span>{{ articolo.autore }}</span>
-      <span class="art-minuti">{{ articolo.tempo_lettura }} min di lettura</span>
-    </p>
   </div>
-</article>
+
+  <span class="voce-freccia" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M13 6l6 6-6 6"/>
+    </svg>
+  </span>
+</li>
