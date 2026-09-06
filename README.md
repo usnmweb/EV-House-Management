@@ -1238,6 +1238,31 @@ Due cose da sapere:
    l'abbiamo — le rese di un immobile — il testo spiega *come si ottiene*
    invece di inventarlo.
 
+#### Perché le copertine si erano rotte in produzione
+
+La migration scrive il percorso della copertina per esteso, ma le fotografie
+degli immobili stanno in `properties/%Y/%m/`: **la cartella è il mese in cui la
+foto è stata scaricata**, non una costante. In locale l'import era di agosto e
+la migration diceva `properties/2026/08/`; su Render l'import è avvenuto a
+settembre, quindi le stesse fotografie stavano in `properties/2026/09/` e le
+otto copertine rispondevano 404 — sul sito pubblicato, non in teoria:
+
+    /media/properties/2026/08/villa-ginepro-...jpg  ->  404
+    /media/properties/2026/09/villa-ginepro-...jpg  ->  200
+
+Il file media veniva servito benissimo: era l'indirizzo a essere sbagliato.
+
+Rimedio: `python manage.py ripara_copertine --applica`, che `build.sh` lancia a
+ogni rilascio **dopo** `import_properties`. Cerca, per ogni copertina il cui
+file non esiste, una fotografia di immobile con lo stesso **nome**, ignorando
+la cartella: il nome (`{slug}-{n}.jpg`) è la parte che l'importatore tiene
+ferma, la cartella è quella che si muove. Senza `--applica` elenca e basta.
+
+Il comando **non tocca le copertine il cui file esiste**, così le immagini
+editoriali caricate a mano dall'amministrazione sopravvivono a tutti i rilasci
+successivi. Se una copertina non ha riscontro, lo dice invece di inventare un
+sostituto: meglio un'immagine mancante che quella di un altro immobile.
+
 L'articolo sugli adempimenti (CIN, CIR, alloggiati, tassa di soggiorno,
 sicurezza) è una mappa, non una consulenza, e lo dice: le norme cambiano e i
 regolamenti comunali sono diversi l'uno dall'altro. **Va fatto rileggere al

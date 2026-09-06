@@ -13,3 +13,9 @@ python manage.py migrate --no-input
 # È ripetibile: le foto già presenti sul disco vengono riconosciute e saltate,
 # quindi dal secondo rilascio in poi questo passaggio è quasi immediato.
 python manage.py import_properties
+
+# Le copertine del Giornale riusano fotografie degli immobili, il cui percorso
+# contiene il mese di scaricamento: se qui e' diverso da quello scritto nella
+# migrazione, le copertine vanno ripuntate. Va dopo l'import, che e' quello
+# che mette le fotografie sul disco.
+python manage.py ripara_copertine --applica

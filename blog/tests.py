@@ -1,7 +1,16 @@
+import io
+import pathlib
+import shutil
+import tempfile
 from datetime import date
 
-from django.test import TestCase
+from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.management import call_command
+from django.test import TestCase, override_settings
 from django.urls import reverse
+
+from properties.models import Property, PropertyImage
 
 from .models import Article
 
@@ -191,3 +200,71 @@ class ContenutiInizialiTest(TestCase):
 
     def test_uno_solo_apre_l_elenco(self):
         self.assertEqual(Article.objects.in_evidenza().count(), 1)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix="prova-media-"))
+class RiparaCopertineTest(TestCase):
+    """Il caso vero: la copertina punta al mese sbagliato.
+
+    In produzione le fotografie degli immobili stanno nella cartella del mese
+    in cui sono state scaricate, che non e' quello scritto nella migration:
+    stesso nome di file, cartella diversa, copertina in 404.
+    """
+
+    def setUp(self):
+        immobile = Property.objects.create(title="Prova", location="La Caletta")
+        immagine = PropertyImage(property=immobile, order=0)
+        immagine.image.save("prova-1.jpg", ContentFile(b"finta"), save=False)
+        immagine.save()
+        self.percorso_vero = immagine.image.name
+
+    def _ripara(self, applica=True):
+        uscita = io.StringIO()
+        call_command("ripara_copertine", *(["--applica"] if applica else []), stdout=uscita)
+        return uscita.getvalue()
+
+    def test_ripunta_la_copertina_al_percorso_esistente(self):
+        rotto = "properties/1999/01/" + pathlib.PurePosixPath(self.percorso_vero).name
+        articolo = _articolo(titolo="Con copertina rotta")
+        Article.objects.filter(pk=articolo.pk).update(copertina=rotto)
+
+        self._ripara()
+
+        articolo.refresh_from_db()
+        self.assertEqual(articolo.copertina.name, self.percorso_vero)
+
+    def test_senza_applica_non_scrive(self):
+        rotto = "properties/1999/01/" + pathlib.PurePosixPath(self.percorso_vero).name
+        articolo = _articolo(titolo="Solo elenco")
+        Article.objects.filter(pk=articolo.pk).update(copertina=rotto)
+
+        self._ripara(applica=False)
+
+        articolo.refresh_from_db()
+        self.assertEqual(articolo.copertina.name, rotto)
+
+    def test_non_tocca_le_copertine_il_cui_file_esiste(self):
+        """Le foto editoriali caricate a mano devono sopravvivere al comando."""
+        articolo = _articolo(titolo="Copertina buona")
+        Article.objects.filter(pk=articolo.pk).update(copertina=self.percorso_vero)
+
+        self._ripara()
+
+        articolo.refresh_from_db()
+        self.assertEqual(articolo.copertina.name, self.percorso_vero)
+
+    def test_segnala_le_copertine_senza_riscontro(self):
+        articolo = _articolo(titolo="Introvabile")
+        Article.objects.filter(pk=articolo.pk).update(copertina="giornale/2026/09/mai-vista.jpg")
+
+        uscita = self._ripara()
+
+        self.assertIn("senza riscontro", uscita)
+        articolo.refresh_from_db()
+        self.assertEqual(articolo.copertina.name, "giornale/2026/09/mai-vista.jpg")
+
+    @classmethod
+    def tearDownClass(cls):
+        # La cartella temporanea e' della classe: si toglie di mezzo qui.
+        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
