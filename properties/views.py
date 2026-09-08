@@ -1,10 +1,10 @@
 from django.db.models import Prefetch
 from django.views.generic import DetailView, ListView
 
-from .models import Property, PropertyImage
+from .models import ORDINE_FOTO, Property, PropertyImage
 from .utils import conteggio_indicativo
 
-IMMAGINI = Prefetch("images", queryset=PropertyImage.objects.order_by("order", "id"))
+IMMAGINI = Prefetch("images", queryset=PropertyImage.objects.order_by(*ORDINE_FOTO))
 
 
 class PropertyListView(ListView):

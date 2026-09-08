@@ -209,6 +209,122 @@ python manage.py import_properties --reset       # svuota prima di importare
 Il comando è **ripetibile**: le foto già scaricate vengono riconosciute dal campo
 `source_ref` e saltate, quindi una seconda esecuzione non riscarica nulla.
 
+### I nomi in vetrina non sono quelli del portale
+
+Il portale usa nomi di lavoro: «Villetta G2», «Via Gallura - Siniscola»,
+«Trilocale con Giardino a 3 minuti dal Mare». Vanno bene in agenda e non dicono
+nulla a chi cerca casa. Le riscritture stanno in `properties/nomi_vetrina.py`,
+in un elenco solo, abbinate all'`external_id` del portale.
+
+```bash
+python manage.py applica_nomi_vetrina             # elenca e basta
+python manage.py applica_nomi_vetrina --applica   # scrive
+```
+
+**Perché un comando e non una migration.** Una migration sembra la scelta
+ovvia, ma su un ambiente nuovo le migration girano *prima* dell'importazione,
+quando gli immobili non esistono ancora: non troverebbe niente da rinominare e
+i nomi non arriverebbero mai. Il comando gira in `build.sh` **dopo**
+`import_properties`, dove le righe ci sono sempre. È ripetibile: riscrive solo
+i titoli ancora uguali a quelli del portale, quindi dalla seconda volta in poi
+non fa niente e non calpesta un nome cambiato a mano nell'amministrazione.
+
+**Lo slug non si tocca.** È l'indirizzo della pagina: `/villetta-a1/` resta
+`/villetta-a1/` anche se il titolo diventa «[Villetta A1] 300mt dalla
+spiaggia». Cambiarlo romperebbe i collegamenti già in giro e quel che i motori
+hanno indicizzato. Il `meta_title` invece si svuota, così si ricompone dal nome
+nuovo — altrimenti il risultato di ricerca continuerebbe a mostrare il vecchio.
+
+### Tipologie: il portale ne conosce quattro
+
+Trentaquattro appartamenti arrivavano da GR8 come **«Aparthotel»**, che è una
+struttura ricettiva con servizi alberghieri: non è quello che sono, e in
+vetrina sarebbe una promessa sbagliata. La conversione sta in ingresso, nella
+tabella `CATEGORIE` di `import_properties.py`, non in una correzione una
+tantum sui dati: così vale anche per gli immobili che il portale aggiungerà
+domani.
+
+Restano tre tipologie: 61 appartamenti pubblicati, 2 ville, 1 hotel in bozza.
+Il filtro nella pagina Immobili offre solo le tipologie **effettivamente
+presenti fra i pubblicati** — le ricava da loro, non dall'elenco delle scelte
+possibili — quindi «Aparthotel» è sparito da solo.
+
+Le due ville sono *[San Giovanni] Villa con accesso sulla spiaggia* e *[Villa
+Ginepro] Jacuzzi e Vista Mare*. Se altre case vanno segnate come ville, si fa
+dall'amministrazione: la tipologia è fra i campi protetti qui sotto, quindi la
+scelta resta.
+
+#### Il portale non riprende il sopravvento
+
+`import_properties` gira a ogni rilascio e riscrive i campi dallo snapshot con
+`update_or_create`. Senza una guardia, il primo rilascio utile rimetterebbe
+«Villetta G2» al posto del nome scelto, **in silenzio**.
+
+La guardia è il campo `valori_portale`, un dizionario con l'ultimo valore
+arrivato dal portale per i campi di `CAMPI_PROTETTI` (oggi `title` e
+`category`). Se il valore attuale è diverso da quello registrato, vuol dire che
+qualcuno l'ha riscritto e l'importazione lo lascia stare — e col titolo lascia
+stare anche il meta title, che su di esso è costruito.
+
+Non è una spunta da ricordarsi di attivare: è un confronto fra due valori, e
+funziona sia per le riscritture scritte nel codice (`nomi_vetrina.py`) sia per
+quelle fatte a mano dall'amministrazione. Se un domani il portale cambia nome a
+una casa, `valori_portale` si aggiorna ma la vetrina continua a mostrare il
+nome scelto qui. In amministrazione, sotto «Provenienza», si legge cosa dice il
+portale e se il campo è stato riscritto.
+
+Si registra il valore **già corretto**, non quello grezzo: se in
+`valori_portale` finisse «Aparthotel» mentre in banca dati c'è «Appartamento»,
+al giro dopo ogni riga risulterebbe riscritta a mano e l'importazione
+smetterebbe di aggiornare tipologie che nessuno ha toccato.
+
+**Gli altri campi non sono protetti.** Descrizione, stato pubblicato/bozza,
+località e caratteristiche continuano ad arrivare dal portale a ogni rilascio:
+una modifica fatta a mano lì viene sovrascritta. Per proteggerne un altro basta
+aggiungerlo a `CAMPI_PROTETTI`.
+
+### La copertina la sceglie il gestore
+
+La foto che apre un immobile arrivava dal portale: la prima dell'elenco, che
+spesso non è la migliore. Ora è una scelta, e si fa **dall'amministrazione**:
+Immobili → apri l'immobile → nella tabella delle foto spunta **Copertina**
+accanto alla miniatura giusta e salva.
+
+Una sola per immobile: spuntandone un'altra, la precedente si libera da sé —
+l'esclusiva è in `PropertyImage.save()`, non in un vincolo sul database. Un
+vincolo scatterebbe a metà del salvataggio dell'inline, che scrive le righe una
+alla volta: l'utente vedrebbe un errore per aver fatto esattamente la cosa
+giusta, cioè spostare la spunta da una foto all'altra. Senza nessuna spunta
+vale la prima del portale, come prima.
+
+**La scelta vale ovunque con un meccanismo solo.** Non è una regola ripetuta in
+ogni vista, ma l'ordinamento delle fotografie:
+
+```python
+ORDINE_FOTO = ("-copertina", "order", "id")   # properties/models.py
+```
+
+Lo usano il `Meta` del modello, il prefetch delle viste, la galleria e la
+rinumerazione. Quindi la copertina scelta guida insieme la scheda in elenco, la
+foto grande della pagina immobile, l'anteprima social (`og:image`), la fila
+della galleria e la numerazione nei testi alternativi — «foto 1 di 8» resta
+sotto quella che in pagina viene per prima. Se le viste ordinassero ognuna per
+conto proprio, la scelta varrebbe in un posto e non nell'altro, ed è il genere
+di divergenza che nessuno nota finché non la nota un cliente.
+
+Due conseguenze pratiche:
+
+- **La scelta sopravvive ai rilasci.** `import_properties` riconosce le foto
+  già presenti da `source_ref` e non le tocca, quindi la spunta resta. La
+  perde solo `--reset`, che cancella le fotografie e le riscarica da zero.
+- **La pulizia dei doppioni non cancella la copertina.** `pulisci_foto_doppie`
+  esamina le foto nello stesso ordine, così fra due scatti gemelli cade sempre
+  l'altro.
+
+Nell'elenco degli immobili una colonna dice quali hanno già una copertina
+scelta: senza, per sapere quali sono stati passati in rassegna bisognerebbe
+aprirli uno per uno.
+
 ### Scatti ripetuti
 
 Il portale a volte serve **la stessa fotografia sotto due indirizzi diversi**, e
@@ -289,6 +405,83 @@ Le fotografie sono limitate a **8 per immobile** (533 in tutto), scaricate dal C
 del portale alla dimensione da 1310px.
 
 ---
+
+## Dati societari
+
+Nel footer, quarta colonna. Non sono un ornamento: per una S.r.l. l'**art. 2250
+c.c.** vuole che negli atti e nella corrispondenza — sito compreso — compaiano
+sede, ufficio del registro delle imprese e numero REA.
+
+| voce | valore |
+|---|---|
+| Ragione sociale | EV SRL |
+| Sede legale | Fraz. La Caletta, Via Marsala 10, 08029 Siniscola (NU) |
+| Partita IVA | 01684260910 |
+| Registro imprese / REA | NU - 121190 |
+| PEC | evhsrl@pec.it |
+| Capitale sociale | **da fornire** |
+
+**La ragione sociale non è il marchio.** Il sito si chiama *EV House Management*
+(`SITE_NAME`, usato nei `<title>`), la società che lo gestisce è *EV SRL*
+(`COMPANY_LEGAL_NAME`). La distinzione conta dove il testo ha valore legale, e
+sono tutti posti in cui il valore arriva dalla stessa impostazione: il
+copyright in fondo, i dati societari, il titolare del trattamento nella privacy
+policy e il `name` dei dati strutturati. Se ognuno avesse la sua copia,
+l'identità dell'azienda divergerebbe da una pagina all'altra.
+
+**La sede sta nelle impostazioni in pezzi** — via, CAP, comune, provincia —
+perché i dati strutturati la vogliono così (`PostalAddress`). La riga unica che
+si legge in pagina si compone da quelli, quindi le due forme non possono dire
+cose diverse. `COMPANY_ADDRESS` resta sovrascrivibile, ma di norma si lascia
+comporre.
+
+**Il capitale sociale non c'è e la riga non compare.** L'art. 2250 lo vuole,
+quindi è un dato da chiedere; ma stamparlo come `[da inserire]` sarebbe peggio
+che ometterlo — dice al visitatore che il sito non è finito, e a un controllo
+non risparmia nulla. Appena arriva basta valorizzare `COMPANY_CAPITAL`
+(«10.000,00 euro interamente versato») e la riga torna da sé; c'è un test che
+verifica proprio questo comportamento nei due sensi.
+
+**L'indirizzo non si ripete nel footer.** La colonna Contatti tiene email e
+telefono, cioè i modi per farsi rispondere; la sede sta due colonne più in là.
+Ripetere la stessa riga a trenta centimetri di distanza fa sembrare che siano
+due indirizzi diversi.
+
+## Portale proprietari
+
+Voce di menu che porta all'area riservata sul gestionale
+(`OWNER_PORTAL_URL`, oggi `https://vr.krossbooking.com/evhouse/login`). Sta
+nelle impostazioni per la stessa ragione di `BOOKING_URL`: è un indirizzo
+aziendale, e se il gestionale cambia si tocca un punto solo.
+
+**Non è il pulsante principale.** Quello resta «Contatti», che è il gesto che
+il sito chiede a chi non è ancora cliente; il portale è per chi lo è già, e sta
+un gradino sotto — voce normale con una freccina, non riquadro dorato. C'è
+anche nella colonna Navigazione del footer, perché chi cerca l'area riservata
+guarda in fondo quanto in cima.
+
+Si apre in una scheda nuova (`target="_blank"`, con `rel="noopener"` perché la
+pagina di destinazione non deve poter toccare questa) e **lo dichiara** a chi
+usa un lettore di schermo: una scheda che si apre senza preavviso è una
+sorpresa, non una comodità.
+
+### La barra del menu ora parte da 1150px
+
+La voce è lunga e ha reso visibile un limite che c'era già: **sette voci più il
+logo non stanno in una riga da 900px.** Il risultato era che il logo veniva
+compresso in silenzio — misurato: 9 pixel di larghezza a 900px, contro i 246
+naturali — e la pagina scorreva di lato.
+
+Tre correzioni, tutte verificate misurando l'header da 900 a 1920:
+
+- il menu orizzontale parte da **1150px**; sotto resta il pannello a scomparsa
+  col pulsante, che il sito ha già. Il resto della pagina continua a passare in
+  versione larga a 900: qui cambia solo il menu;
+- lo spazio fra le voci scende da 2,25rem a **1,4rem**. Con sette voci sono
+  novanta pixel, cioè la differenza fra logo intero e logo tagliato;
+- `.brand { flex: none }`: **la marca non si comprime più**. Se un domani lo
+  spazio manca, a doversi ripensare è il menu, e il difetto si vede subito
+  invece di nascondersi in un logo assottigliato.
 
 ## Consenso cookie
 
@@ -734,25 +927,41 @@ in `settings.py`, in un punto solo, aggiornabili senza toccare un template.
 | casella | da dove | oggi |
 |---|---|---|
 | Immobili gestiti | `PROPERTIES_MANAGED` | `+100` |
-| Occupazione tra … | `SEASON_OCCUPANCY`, `SEASON_WEEK` | `93,19%`, `10–16 agosto 2026` |
-| Notti occupate su disponibili | `SEASON_NIGHTS_SOLD`, `SEASON_NIGHTS_AVAILABLE` | `424 / 455` |
-| Ospiti accolti | `GUESTS_TOTAL`, `GUESTS_LAST_12M`, `GUESTS_AS_OF` | *da fornire* |
+| Notti vendute nell'anno | `SEASON_NIGHTS_YEAR`, `SEASON_YEAR` | `7.722` nel `2026` |
+| Prenotazioni generate nell'anno | `SEASON_BOOKINGS_VALUE`, `SEASON_YEAR` | `1.212.470 €` nel `2026` |
+| Ospiti accolti | `GUESTS_TOTAL`, `GUESTS_LAST_12M`, `GUESTS_AS_OF` | `3.406` |
 | Proprietari che rinnovano | `OWNERS_SERVED`, `OWNERS_RETAINED` | *da fornire* |
 
 La cifra d'apertura è `SEASON_FIRST_YEAR`: quante stagioni complete e da quando.
-Non ripete nessuna delle caselle — occupazione e notti stavano anche lì, e la
-sezione diceva tre volte la stessa cosa in mezzo schermo.
+Non ripete nessuna delle caselle: qui gli anni di lavoro, lì le quantità.
+
+**L'anno, non una settimana.** Prima la barra mostrava l'occupazione al 93,19%
+fra il 10 e il 16 agosto e le 424 notti su 455 di quella stessa settimana. Sono
+numeri veri, ma sono la settimana di Ferragosto: da sola non dice quanto lavora
+un immobile, e chi legge non ha modo di saperlo — quindi o si fida o non si
+fida, e in nessuno dei due casi ha imparato qualcosa. `SEASON_OCCUPANCY`,
+`SEASON_WEEK`, `SEASON_NIGHTS_SOLD` e `SEASON_NIGHTS_AVAILABLE` restano fra le
+impostazioni perché li usa la scheda dei numeri del Giornale, dove la settimana
+è dichiarata e il contesto sta scritto intorno.
+
+Il simbolo dell'euro sta nel **template**, non nell'impostazione:
+`SEASON_BOOKINGS_VALUE` contiene solo cifre e separatori, così resta un numero
+da aggiornare e la valuta non può perdersi per strada in una modifica. La cifra
+lunga non va a capo (`.num-lungo`): spezzata fra le migliaia si leggerebbe come
+due numeri. Resta invece **grande come le altre** — alla larghezza più stretta
+che il sito serve occupa 123px su 148 disponibili, quindi rimpicciolirla la
+farebbe solo sembrare un dato di serie B accanto a «3.406».
 
 **Nessuna casella ha un valore di comodo, e nessuna mostra un segnaposto.**
 Finché i numeri non ci sono, la casella non viene stampata affatto: un
 `[da inserire]` in mezzo alla prova sociale dice al visitatore che il sito non è
-finito. Appena `GUESTS_TOTAL` e `OWNERS_SERVED` sono valorizzati, le due caselle
-tornano da sole. Un numero inventato, invece, sarebbe una pratica ingannevole
+finito. Appena `OWNERS_SERVED` e `OWNERS_RETAINED` sono valorizzati, l'ultima
+casella torna da sé. Un numero inventato, invece, sarebbe una pratica ingannevole
 (Codice del Consumo, art. 21-22), non un riempitivo.
 
 La griglia si conta da sé (`auto-fit`) proprio perché il numero di caselle non è
-fisso: tre oggi, cinque quando arrivano gli altri dati, senza buchi in fondo alla
-riga. Sul telefono le colonne sono due e l'ultima casella, se resta spaiata,
+fisso: quattro oggi, cinque quando arriva il dato sui rinnovi, senza buchi in
+fondo alla riga. Sul telefono le colonne sono due e l'ultima casella, se resta spaiata,
 occupa la riga intera.
 
 La percentuale di rinnovo **non si scrive a mano**: si calcola da serviti e
@@ -798,6 +1007,18 @@ Tre conseguenze pratiche:
   quanto tempo è passato davvero;
 - il timer si programma sull'istante in cui il valore cambierà, invece di
   ridipingere lo stesso numero sessanta volte al secondo.
+
+**Senza `GUESTS_AS_OF` il totale si mostra fermo**, invece di sparire. La data
+serve a far salire il contatore, non a rendere vero il numero: pretenderla
+significherebbe nascondere un dato che c'è per far mancare un'animazione che
+non serve. Oggi è così — `GUESTS_TOTAL` vale 3.406 e non c'è ancora né la data
+di riferimento né il dato sugli ultimi dodici mesi.
+
+Le migliaia si raggruppano **a mano** (`3.406`), non con `Intl.NumberFormat`:
+per le regole CLDR l'italiano raggruppa solo da cinque cifre in su, quindi Intl
+scriverebbe «3406» accanto a «7.722» e i due numeri sembrerebbero scritti da
+due persone diverse. In più la grafia non dipende dai dati di locale del
+browser, che è l'altra metà del motivo.
 
 ### Recensioni
 
@@ -1643,13 +1864,21 @@ imposta almeno le prime tre.
 | `EMAIL_USE_TLS` | `True` | |
 | `DEFAULT_FROM_EMAIL` | `noreply@evhousemanagement.com` | Mittente. |
 | `CONTACT_RECIPIENT_EMAIL` | `evhouse92@gmail.com` | Destinatario del modulo contatti. |
+| `OWNER_PORTAL_URL` | `https://vr.krossbooking.com/evhouse/login` | Area riservata dei proprietari, sul gestionale. |
 | `SITE_NAME` | `EV House Management` | Usato nei `<title>`. |
 | `SITE_DOMAIN` | `www.evhousemanagement.com` | Dominio di riferimento. |
-| `COMPANY_LEGAL_NAME` | `EV House Management` | Footer e JSON-LD. **Manca la ragione sociale completa.** |
-| `COMPANY_VAT` | `01634110918` | P.IVA reale, presa dal sito attuale. |
-| `COMPANY_ADDRESS` | `Sardegna, Italia` | **Da sostituire con l'indirizzo completo.** |
+| `COMPANY_LEGAL_NAME` | `EV SRL` | La società, non il marchio: copyright, dati societari, titolare del trattamento. |
+| `COMPANY_VAT` | `01684260910` | Partita IVA. |
+| `COMPANY_STREET` | `Fraz. La Caletta, Via Marsala 10` | Via della sede legale. |
+| `COMPANY_POSTAL_CODE` | `08029` | CAP. |
+| `COMPANY_CITY` | `Siniscola` | Comune. |
+| `COMPANY_PROVINCE` | `NU` | Sigla della provincia. |
+| `COMPANY_ADDRESS` | composto dai quattro sopra | La riga unica che si legge in pagina. Si può forzare, ma di norma si lascia comporre. |
+| `COMPANY_REA` | `NU - 121190` | Registro imprese / REA. |
+| `COMPANY_PEC` | `evhsrl@pec.it` | Casella certificata, nei dati societari. |
+| `COMPANY_CAPITAL` | vuoto | Capitale sociale. **Manca**: finché è vuoto la riga non compare. |
 | `COMPANY_EMAIL` | `evhouse92@gmail.com` | Email reale, presa dal sito attuale. |
-| `COMPANY_PHONE` | vuoto | Se vuoto la riga sparisce da footer e contatti. |
+| `COMPANY_PHONE` | `+39 327 797 9201` | Se vuoto la riga sparisce da footer e contatti. |
 
 Le variabili vengono lette con `os.environ`: esportale nella shell, nel file di
 servizio systemd o nel pannello dell'hosting. Non e incluso un loader `.env`.
@@ -1671,8 +1900,9 @@ impaginazione.
 
 ## Da completare prima della pubblicazione
 
-- [ ] Completare i dati societari: ragione sociale completa, indirizzo, telefono,
-      e i campi `[da inserire]` nel footer e nelle pagine legali.
+- [ ] Fornire il **capitale sociale** (importo e parte versata): per una S.r.l.
+      l'art. 2250 c.c. lo vuole indicato insieme a sede e numero REA, che ci sono
+      già. Finché manca, la riga non viene stampata — vedi "Dati societari".
 - [ ] Far revisionare Privacy e Cookie Policy da un consulente legale (GDPR / LPD).
 - [ ] Completare i 21 immobili in bozza (descrizione, dotazioni, fotografie)
       e pubblicarli dall'amministrazione.

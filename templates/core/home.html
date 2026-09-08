@@ -121,14 +121,15 @@
 <section class="stagione" aria-labelledby="t-numeri">
   <div class="container">
     <span class="eyebrow eyebrow-riga">
-      {% if stagione.occupazione and stagione.anno %}Stagione {{ stagione.anno }}{% else %}Il portfolio{% endif %}
+      {% if stagione.notti_anno and stagione.anno %}Stagione {{ stagione.anno }}{% else %}Il portfolio{% endif %}
     </span>
 
     {% comment %}
-      La cifra d'apertura non ripete nessuno dei dati qui sotto. Occupazione e
-      notti sono passate nella riga dei numeri: se restassero anche qui, la
-      sezione direbbe tre volte la stessa cosa in mezzo schermo, e un numero
-      ripetuto perde il peso che aveva.
+      La cifra d'apertura non ripete nessuno dei dati qui sotto: gli anni di
+      lavoro stanno qui, le quantita' nella riga dei numeri. Se un dato
+      comparisse in tutti e due i posti, la sezione direbbe due volte la
+      stessa cosa in mezzo schermo, e un numero ripetuto perde il peso che
+      aveva.
     {% endcomment %}
     {% if stagione.stagioni %}
       <p class="stagione-cifra" data-reveal="fade">{{ stagione.stagioni }}</p>
@@ -148,27 +149,39 @@
         <span class="label">Immobili gestiti</span>
       </li>
 
-      {% if stagione.occupazione %}
+      {% comment %}
+        I numeri dell'anno, non di una settimana. L'occupazione al 93,19% fra
+        il 10 e il 16 agosto e' vera, ma e' la settimana di Ferragosto: da
+        sola non dice quanto lavora un immobile, e chi legge non ha modo di
+        saperlo. Quel dato resta dov'e' spiegato, nella scheda del Giornale.
+      {% endcomment %}
+      {% if stagione.notti_anno %}
       <li data-reveal="fade">
-        <span class="num">{{ stagione.occupazione }}%</span>
-        <span class="label">Occupazione{% if stagione.settimana %} tra {{ stagione.settimana }}{% endif %}</span>
+        <span class="num">{{ stagione.notti_anno }}</span>
+        <span class="label">Notti vendute nel {{ stagione.anno }}</span>
       </li>
       {% endif %}
 
-      {% if stagione.notti_vendute and stagione.notti_disponibili %}
+      {% if stagione.prenotazioni %}
       <li data-reveal="fade">
-        <span class="num">{{ stagione.notti_vendute }} / {{ stagione.notti_disponibili }}</span>
-        <span class="label">Notti occupate su notti disponibili</span>
+        {% comment %}
+          Il simbolo sta nel template e non nell'impostazione: cosi' il dato
+          resta un numero — che si puo' cambiare senza rischiare di perdere
+          la valuta per strada — e la grafia resta una scelta di questa pagina.
+        {% endcomment %}
+        <span class="num num-lungo">{{ stagione.prenotazioni }}&nbsp;&euro;</span>
+        <span class="label">Prenotazioni generate nel {{ stagione.anno }}</span>
       </li>
       {% endif %}
 
       {% comment %}
-        Ospiti accolti e rinnovi dei proprietari restano previsti, ma senza
-        segnaposto: finche' i numeri non arrivano dalle impostazioni la
-        casella non c'e' proprio. Un «[da inserire]» in mezzo alla prova
-        sociale e' peggio di un dato in meno — dice al visitatore che il sito
-        non e' finito. Appena GUESTS_TOTAL / OWNERS_SERVED sono valorizzati,
-        le due caselle tornano da sole.
+        Nessun segnaposto: una casella senza numero non c'e' proprio. Un
+        «[da inserire]» in mezzo alla prova sociale e' peggio di un dato in
+        meno — dice al visitatore che il sito non e' finito.
+
+        Gli ospiti arrivano da GUESTS_TOTAL; il rinnovo dei proprietari
+        aspetta ancora OWNERS_SERVED e OWNERS_RETAINED, e fino ad allora la
+        sua casella resta fuori.
       {% endcomment %}
       {% if ospiti %}
       <li data-reveal="fade">
@@ -180,7 +193,7 @@
         <span class="num contatore"
               data-totale="{{ ospiti.totale }}"
               data-al-secondo="{{ ospiti.al_secondo|stringformat:'.9f' }}"
-              data-da-quando="{{ ospiti.da_quando }}">{{ ospiti.totale }}</span>
+              data-da-quando="{{ ospiti.da_quando }}">{{ ospiti.scritto }}</span>
         <span class="label">Ospiti accolti</span>
       </li>
       {% endif %}

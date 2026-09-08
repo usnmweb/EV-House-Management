@@ -17,7 +17,7 @@ import collections
 
 from django.core.management.base import BaseCommand
 
-from properties.models import PropertyImage
+from properties.models import ORDINE_FOTO, PropertyImage
 from properties.utils import (
     SOGLIA_DOPPIONE,
     impronta_visiva,
@@ -44,8 +44,11 @@ class Command(BaseCommand):
         soglia = opzioni["soglia"]
 
         per_immobile = collections.defaultdict(list)
+        # La copertina scelta a mano viene esaminata per prima, cosi' fra due
+        # scatti gemelli e' sempre l'altro a cadere: chi ha scelto quella foto
+        # non deve ritrovarsela cancellata da una pulizia.
         for foto in PropertyImage.objects.select_related("property").order_by(
-            "property_id", "order", "id"
+            "property_id", *ORDINE_FOTO
         ):
             per_immobile[foto.property_id].append(foto)
 
@@ -70,8 +73,9 @@ class Command(BaseCommand):
                 if gemella is None:
                     tenute.append((foto, impronta))
                 else:
-                    # Si tiene sempre la prima: l'ordine viene dal portale ed e'
-                    # quello scelto da chi ha caricato le fotografie.
+                    # Si tiene sempre la prima esaminata: la copertina se c'e',
+                    # altrimenti l'ordine del portale, che e' quello scelto da
+                    # chi ha caricato le fotografie.
                     da_eliminare.append((foto, gemella))
 
         for foto, gemella in da_eliminare:

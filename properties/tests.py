@@ -11,6 +11,7 @@ import shutil
 import tempfile
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -215,3 +216,291 @@ class AmministrazioneImmobiliTest(TestCase):
         r = self.client.get(reverse("admin:properties_property_changelist"))
         self.assertEqual(r.status_code, 302)
         self.assertIn("/admin/login/", r.url)
+
+
+@override_settings(MEDIA_ROOT=MEDIA_TEMP)
+class CopertinaSceltaTest(TestCase):
+    """La copertina la sceglie il gestore, non l'ordine con cui arriva dal portale."""
+
+    def setUp(self):
+        self.casa = Property.objects.create(
+            title="Casa con vista", location="La Caletta",
+            status=Property.Status.PUBLISHED, short_description="Due righe.",
+        )
+        self.foto = [
+            PropertyImage.objects.create(
+                property=self.casa, order=n, source_ref=f"rif-{n}",
+                image=immagine_finta(f"scatto-{n}.jpg", (n * 40, 90, 40)),
+            )
+            for n in range(3)
+        ]
+
+    def test_senza_scelta_vale_la_prima_del_portale(self):
+        self.assertEqual(self.casa.cover_image, self.foto[0])
+
+    def test_la_foto_spuntata_diventa_la_copertina(self):
+        self.foto[2].copertina = True
+        self.foto[2].save()
+        self.assertEqual(self.casa.cover_image, self.foto[2])
+
+    def test_una_sola_copertina_per_immobile(self):
+        self.foto[1].copertina = True
+        self.foto[1].save()
+        self.foto[2].copertina = True
+        self.foto[2].save()
+
+        self.foto[1].refresh_from_db()
+        self.assertFalse(self.foto[1].copertina, "la precedente doveva liberarsi")
+        self.assertEqual(
+            list(PropertyImage.objects.filter(property=self.casa, copertina=True)),
+            [self.foto[2]],
+        )
+
+    def test_la_scelta_non_esce_dall_immobile(self):
+        """Due immobili hanno ognuno la propria copertina, senza interferenze."""
+        altra = Property.objects.create(
+            title="Casa accanto", location="Siniscola", status=Property.Status.PUBLISHED
+        )
+        sua = PropertyImage.objects.create(
+            property=altra, order=0, image=immagine_finta("altra-0.jpg")
+        )
+        sua.copertina = True
+        sua.save()
+
+        self.foto[1].copertina = True
+        self.foto[1].save()
+
+        sua.refresh_from_db()
+        self.assertTrue(sua.copertina)
+        self.assertEqual(altra.cover_image, sua)
+
+    def test_se_la_copertina_sparisce_si_torna_alla_prima(self):
+        self.foto[2].copertina = True
+        self.foto[2].save()
+        self.foto[2].delete()
+        self.assertEqual(self.casa.cover_image, self.foto[0])
+
+    def test_la_scelta_vale_su_scheda_pagina_e_anteprima_social(self):
+        self.foto[2].copertina = True
+        self.foto[2].save()
+        scelta = self.foto[2].image.url
+
+        elenco = self.client.get(reverse("properties:list")).content.decode()
+        self.assertIn(scelta, elenco)
+
+        scheda = self.client.get(self.casa.get_absolute_url()).content.decode()
+        # og:image e prima foto della galleria: la stessa, quella scelta.
+        self.assertIn(f'property="og:image" content="http://testserver{scelta}"', scheda)
+        self.assertIn(f'id="gallery-main-img" src="{scelta}"', scheda)
+
+    def test_la_scelta_apre_anche_la_galleria(self):
+        self.foto[2].copertina = True
+        self.foto[2].save()
+        galleria = self.client.get(reverse("core:gallery")).content.decode()
+        # La galleria prende due scatti per immobile: la copertina e' il primo.
+        posizione_scelta = galleria.find(self.foto[2].image.url)
+        posizione_prima = galleria.find(self.foto[0].image.url)
+        self.assertNotEqual(posizione_scelta, -1)
+        self.assertLess(posizione_scelta, posizione_prima)
+
+    def test_i_testi_alternativi_contano_dalla_copertina(self):
+        """La numerazione negli alt segue l'ordine con cui le foto si vedono.
+
+        Il primo scatto ha un alt suo — «tipologia a localita'» — e gli altri
+        sono numerati. Scelta la copertina, quel testo deve spostarsi su di
+        lei: altrimenti in pagina la prima foto direbbe «foto 3 di 3».
+        """
+        from properties.utils import rinumera_foto
+
+        self.foto[2].copertina = True
+        self.foto[2].save()
+        rinumera_foto(self.casa)
+
+        for foto in self.foto:
+            foto.refresh_from_db()
+        self.assertIn("a La Caletta", self.foto[2].alt_text)
+        self.assertIn("foto 2 di 3", self.foto[0].alt_text)
+        self.assertIn("foto 3 di 3", self.foto[1].alt_text)
+
+    def test_la_rinumerazione_non_perde_la_scelta(self):
+        """La rinumerazione gira a ogni rilascio: non deve disfare la scelta."""
+        from properties.utils import rinumera_foto
+
+        self.foto[1].copertina = True
+        self.foto[1].save()
+        rinumera_foto(self.casa)
+
+        self.assertEqual(self.casa.cover_image, PropertyImage.objects.get(pk=self.foto[1].pk))
+
+    def test_la_spunta_e_accanto_all_anteprima_nell_amministrazione(self):
+        """Si sceglie guardando le foto: la casella sta di fianco alla miniatura."""
+        staff = get_user_model().objects.create_superuser(
+            username="capo", email="capo@example.com", password="prova-12345"
+        )
+        self.client.force_login(staff)
+        pagina = self.client.get(
+            reverse("admin:properties_property_change", args=[self.casa.pk])
+        ).content.decode()
+
+        self.assertIn("images-0-copertina", pagina)
+        self.assertLess(pagina.index("Anteprima"), pagina.index("Copertina"))
+
+
+@override_settings(MEDIA_ROOT=MEDIA_TEMP)
+class NomiInVetrinaTest(TestCase):
+    """I nomi riscritti per la vetrina devono sopravvivere ai rilasci.
+
+    L'importazione gira a ogni rilascio e riscrive i campi dallo snapshot del
+    portale: senza una guardia, il primo rilascio utile rimetterebbe «Villetta
+    G2» al posto del nome scelto, in silenzio.
+    """
+
+    RECORD = {
+        "external_id": "999", "titolo": "Villetta Z9", "stato": "published",
+        "categoria": "Aparthotel", "citta": "Budoni", "indirizzo": "Via Prova 1",
+        "descrizione": "Due righe di descrizione.", "camere": 2, "bagni": 1,
+        "ospiti": 4, "booking_url": "", "codice_licenza": "", "dotazioni": [],
+        "lat": "40.5", "lon": "9.6", "foto": [],
+    }
+
+    def _importa(self, titolo=None):
+        """Un giro di importazione per un solo immobile, senza rete."""
+        from properties.management.commands.import_properties import Command
+
+        record = dict(self.RECORD)
+        if titolo:
+            record["titolo"] = titolo
+        return Command()._salva(record, {})[0]
+
+    def test_la_prima_importazione_prende_il_nome_dal_portale(self):
+        immobile = self._importa()
+        self.assertEqual(immobile.title, "Villetta Z9")
+        self.assertEqual(immobile.valori_portale["title"], "Villetta Z9")
+
+    def test_un_nome_riscritto_a_mano_non_viene_sovrascritto(self):
+        immobile = self._importa()
+        Property.objects.filter(pk=immobile.pk).update(
+            title="[Villetta Z9] 300mt dalla spiaggia", meta_title=""
+        )
+
+        self._importa()
+
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.title, "[Villetta Z9] 300mt dalla spiaggia")
+        self.assertEqual(immobile.meta_title, "", "il meta title tornerebbe al nome vecchio")
+
+    def test_il_nome_del_portale_resta_registrato_anche_dopo(self):
+        """Cambiando nome sul portale, in vetrina resta quello scelto qui."""
+        immobile = self._importa()
+        Property.objects.filter(pk=immobile.pk).update(title="[Villetta Z9] 300mt dalla spiaggia")
+
+        self._importa(titolo="Villetta Z9 - rev 2")
+
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.title, "[Villetta Z9] 300mt dalla spiaggia")
+        self.assertEqual(immobile.valori_portale["title"], "Villetta Z9 - rev 2")
+
+    def test_gli_aparthotel_del_portale_diventano_appartamenti(self):
+        """«Aparthotel» promette servizi alberghieri che questi immobili non hanno."""
+        immobile = self._importa()
+        self.assertEqual(immobile.category, Property.Category.APARTMENT)
+        self.assertEqual(
+            immobile.valori_portale["category"], Property.Category.APARTMENT,
+            "va registrato il valore corretto, non quello grezzo: altrimenti al "
+            "giro dopo la riga risulterebbe riscritta a mano",
+        )
+
+    def test_una_tipologia_corretta_a_mano_non_viene_sovrascritta(self):
+        """Segnata una villa nell'amministrazione, deve restare una villa."""
+        immobile = self._importa()
+        Property.objects.filter(pk=immobile.pk).update(category=Property.Category.VILLA)
+
+        self._importa()
+
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.category, Property.Category.VILLA)
+
+    def test_le_altre_tipologie_del_portale_restano_come_sono(self):
+        immobile = self._importa()
+        Property.objects.filter(pk=immobile.pk).delete()
+        record = dict(self.RECORD, categoria="Villa")
+        from properties.management.commands.import_properties import Command
+        immobile = Command()._salva(record, {})[0]
+        self.assertEqual(immobile.category, Property.Category.VILLA)
+
+    def test_senza_riscritture_l_importazione_aggiorna_come_prima(self):
+        immobile = self._importa()
+        self._importa(titolo="Villetta Z9 - rev 2")
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.title, "Villetta Z9 - rev 2")
+
+
+class NomiInVetrinaApplicatiTest(TestCase):
+    """Il comando che mette in vetrina i nomi scelti."""
+
+    def _immobile(self, titolo, external_id="104"):
+        return Property.objects.create(
+            title=titolo, location="Siniscola", external_id=external_id,
+            valori_portale={"title": titolo}, meta_title=f"{titolo} a Siniscola",
+        )
+
+    def _applica(self, scrivi=True):
+        uscita = io.StringIO()
+        call_command("applica_nomi_vetrina", *(["--applica"] if scrivi else []), stdout=uscita)
+        return uscita.getvalue()
+
+    def test_riscrive_il_nome_di_lavoro_del_portale(self):
+        immobile = self._immobile("Via Gallura - Siniscola")
+
+        self._applica()
+
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.title, "Vacanze da sogno in Sardegna [APT a 7km dal mare]")
+        self.assertEqual(immobile.meta_title, "", "il meta title terrebbe il nome vecchio")
+
+    def test_l_indirizzo_della_pagina_non_si_sposta(self):
+        """Cambiare lo slug romperebbe i collegamenti gia' in giro."""
+        immobile = self._immobile("Via Gallura - Siniscola")
+        slug = immobile.slug
+
+        self._applica()
+
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.slug, slug)
+
+    def test_e_ripetibile(self):
+        """Gira a ogni rilascio: la seconda volta non deve fare niente."""
+        immobile = self._immobile("Via Gallura - Siniscola")
+        self._applica()
+        seconda = self._applica()
+
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.title, "Vacanze da sogno in Sardegna [APT a 7km dal mare]")
+        self.assertIn("gia' a posto", seconda)
+
+    def test_non_tocca_un_nome_gia_cambiato_a_mano(self):
+        immobile = self._immobile("Via Gallura - Siniscola")
+        Property.objects.filter(pk=immobile.pk).update(title="Nome scelto dal gestore")
+
+        self._applica()
+
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.title, "Nome scelto dal gestore")
+
+    def test_senza_applica_non_scrive(self):
+        immobile = self._immobile("Via Gallura - Siniscola")
+
+        uscita = self._applica(scrivi=False)
+
+        immobile.refresh_from_db()
+        self.assertEqual(immobile.title, "Via Gallura - Siniscola")
+        self.assertIn("da applicare", uscita)
+
+    def test_l_elenco_dei_nomi_non_ha_ripetizioni(self):
+        """Due righe sullo stesso immobile sarebbero una in silenzio ignorata."""
+        from properties.nomi_vetrina import NOMI
+
+        identificatori = [n[0] for n in NOMI]
+        self.assertEqual(len(identificatori), len(set(identificatori)))
+        nuovi = [n[2] for n in NOMI]
+        self.assertEqual(len(nuovi), len(set(nuovi)))

@@ -3,6 +3,21 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 
+# Ordine delle fotografie di un immobile, in un punto solo. Lo usano il Meta
+# del modello, il prefetch delle viste, la galleria e la rinumerazione: se
+# divergessero, la copertina scelta guiderebbe la scheda ma non la pagina, o
+# la pagina ma non l'anteprima social.
+ORDINE_FOTO = ("-copertina", "order", "id")
+
+# Campi che l'importazione smette di aggiornare quando qualcuno li riscrive.
+# Il titolo perche' i nomi del portale sono nomi di lavoro; la tipologia
+# perche' il portale ne conosce quattro e le usa a modo suo. Il confronto e'
+# fra il valore attuale e l'ultimo arrivato dal portale (`valori_portale`):
+# niente spunte da ricordarsi di attivare, e vale sia per le riscritture
+# scritte nel codice sia per quelle fatte dall'amministrazione.
+CAMPI_PROTETTI = ("title", "category")
+
+
 class Amenity(models.Model):
     """Dotazione di un immobile (aria condizionata, lavatrice, ...)."""
 
@@ -82,6 +97,12 @@ class Property(models.Model):
         "Codice licenza", max_length=60, blank=True,
         help_text="Codice identificativo obbligatorio per le locazioni brevi.",
     )
+    valori_portale = models.JSONField(
+        "Valori dal portale", default=dict, blank=True,
+        help_text="Ultimo valore arrivato dal portale per i campi riscrivibili. "
+                  "Dove il valore qui sopra e' diverso, il campo e' stato "
+                  "riscritto a mano e l'importazione non lo tocca piu'.",
+    )
     external_id = models.CharField(
         "ID sul portale", max_length=32, blank=True, db_index=True
     )
@@ -130,8 +151,19 @@ class Property(models.Model):
         text = self.short_description or self.description
         return text[:157].strip()
 
+    def riscritto_a_mano(self, campo):
+        """Se `campo` e' stato riscritto rispetto a quel che dice il portale.
+
+        Il valore di riferimento e' l'ultimo arrivato dall'importazione. Se non
+        c'e' — riga mai importata — non c'e' niente da proteggere: il campo e'
+        di chi lo scrive.
+        """
+        atteso = (self.valori_portale or {}).get(campo)
+        return bool(atteso) and getattr(self, campo) != atteso
+
     @property
     def cover_image(self):
+        """La prima foto secondo ORDINE_FOTO: la scelta a mano, se c'e'."""
         return self.images.first()
 
 
@@ -145,6 +177,13 @@ class PropertyImage(models.Model):
     image = models.ImageField("Immagine", upload_to="properties/%Y/%m/")
     alt_text = models.CharField("Testo alternativo", max_length=200, blank=True)
     order = models.PositiveIntegerField("Ordine", default=0)
+    copertina = models.BooleanField(
+        "Copertina", default=False,
+        help_text="La foto che apre l'immobile ovunque: scheda, pagina, "
+                  "galleria e anteprima social. Una sola per immobile: "
+                  "spuntandone un'altra, la precedente si libera da se'. "
+                  "Senza nessuna spunta vale la prima del portale.",
+    )
     source_ref = models.CharField(
         "Riferimento originale", max_length=120, blank=True, db_index=True,
         help_text="Nome del file sul portale: evita di riscaricare la stessa foto.",
@@ -153,7 +192,25 @@ class PropertyImage(models.Model):
     class Meta:
         verbose_name = "Immagine immobile"
         verbose_name_plural = "Immagini immobile"
-        ordering = ["order", "id"]
+        # La copertina scelta a mano viene prima: cosi' la scelta vale
+        # dappertutto senza che ogni vista debba ricordarsene. Dove non c'e'
+        # scelta l'ordine e' quello del portale, come e' sempre stato.
+        ordering = list(ORDINE_FOTO)
+
+    def save(self, *args, **kwargs):
+        """Una copertina per immobile.
+
+        L'esclusiva si fa qui e non con un vincolo sul database: in fase di
+        salvataggio dell'inline dell'amministrazione le righe si scrivono una
+        alla volta, e un vincolo scatterebbe a meta' strada — l'utente si
+        vedrebbe un errore per aver fatto esattamente la cosa giusta,
+        spostare la spunta da una foto all'altra.
+        """
+        super().save(*args, **kwargs)
+        if self.copertina:
+            PropertyImage.objects.filter(property=self.property_id).exclude(
+                pk=self.pk
+            ).filter(copertina=True).update(copertina=False)
 
     def __str__(self):
         return f"{self.property.title} - immagine {self.order}"

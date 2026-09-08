@@ -14,6 +14,12 @@ python manage.py migrate --no-input
 # quindi dal secondo rilascio in poi questo passaggio è quasi immediato.
 python manage.py import_properties
 
+# I nomi da vetrina al posto di quelli di lavoro del portale. Va qui e non in
+# una migration perche' su un ambiente nuovo le migration girano quando gli
+# immobili non esistono ancora. E' ripetibile: tocca solo i titoli ancora
+# uguali a quelli del portale.
+python manage.py applica_nomi_vetrina --applica
+
 # Le copertine del Giornale riusano fotografie degli immobili, il cui percorso
 # contiene il mese di scaricamento: se qui e' diverso da quello scritto nella
 # migrazione, le copertine vanno ripuntate. Va dopo l'import, che e' quello

@@ -100,7 +100,10 @@
     "vatID": "{{ COMPANY_VAT }}",
     "address": {
       "@type": "PostalAddress",
-      "addressRegion": "Sardegna",
+      "streetAddress": "{{ COMPANY_STREET|escapejs }}",
+      "postalCode": "{{ COMPANY_POSTAL_CODE }}",
+      "addressLocality": "{{ COMPANY_CITY|escapejs }}",
+      "addressRegion": "{{ COMPANY_PROVINCE }}",
       "addressCountry": "IT"
     },
     "areaServed": {"@type": "AdministrativeArea", "name": "Sardegna"},
@@ -195,6 +198,28 @@
           <li><a class="nav-voce" href="{% url 'core:services' %}">Servizi</a></li>
           <li><a class="nav-voce" href="{% url 'core:gallery' %}">Galleria</a></li>
           <li><a class="nav-voce" href="{% url 'blog:list' %}">Giornale</a></li>
+          {% comment %}
+            Il portale proprietari porta fuori dal sito, sul gestionale: si
+            apre in una scheda nuova — chi ci va sta facendo un'altra cosa e
+            non deve perdere la pagina — e lo dice, perche' una scheda che si
+            apre da sola senza preavviso e' una sorpresa, non una comodita'.
+            `rel="noopener"` perche' la pagina di destinazione non deve poter
+            toccare questa.
+
+            Non e' il pulsante principale: quello resta «Contatti», che e' il
+            gesto che il sito chiede a chi non e' ancora cliente. Questo e' per
+            chi lo e' gia', e sta un gradino sotto.
+          {% endcomment %}
+          <li>
+            <a class="nav-voce nav-portale" href="{{ OWNER_PORTAL_URL }}"
+               target="_blank" rel="noopener">
+              Portale proprietari
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+              <span class="solo-lettori">(si apre in una nuova scheda)</span>
+            </a>
+          </li>
           <li><a class="nav-cta" href="{% url 'core:contact' %}">Contatti</a></li>
         </ul>
       </nav>
@@ -236,26 +261,51 @@
           <li><a href="{% url 'core:gallery' %}">Galleria</a></li>
           <li><a href="{% url 'blog:list' %}">Giornale</a></li>
           <li><a href="{% url 'core:contact' %}">Contatti</a></li>
+          <li>
+            <a href="{{ OWNER_PORTAL_URL }}" target="_blank" rel="noopener">
+              Portale proprietari
+              <span class="solo-lettori">(si apre in una nuova scheda)</span>
+            </a>
+          </li>
         </ul>
       </div>
 
       <div class="footer-col">
         <h3>Contatti</h3>
+        {% comment %}
+          Qui email e telefono, cioe' i modi per farsi rispondere. L'indirizzo
+          non si ripete: e' due colonne piu' in la' come sede legale, ed e' la
+          stessa riga — ripeterla nel giro di trenta centimetri fa sembrare
+          che siano due indirizzi diversi.
+        {% endcomment %}
         <ul class="footer-contacts">
-          <li>{{ COMPANY_ADDRESS }}</li>
           <li><a href="mailto:{{ COMPANY_EMAIL }}">{{ COMPANY_EMAIL }}</a></li>
           {% if COMPANY_PHONE %}<li><a href="tel:{{ COMPANY_PHONE|cut:" " }}">{{ COMPANY_PHONE }}</a></li>{% endif %}
         </ul>
       </div>
 
+      {% comment %}
+        Dati societari. Per una S.r.l. non sono un ornamento: l'art. 2250 c.c.
+        vuole sede, ufficio del registro delle imprese e numero REA negli atti
+        e nella corrispondenza, sito compreso. Vengono tutti dalle
+        impostazioni, in un punto solo, perche' gli stessi dati compaiono
+        anche nella privacy policy (titolare del trattamento) e nei dati
+        strutturati: se divergessero, divergerebbe l'identita' dell'azienda.
+      {% endcomment %}
       <div class="footer-col">
         <h3>Dati societari</h3>
-        {# TODO: sostituire con i dati societari definitivi #}
         <ul class="footer-legal-data">
-          <li>{{ COMPANY_LEGAL_NAME }}</li>
-          <li>P.IVA / IVA: {{ COMPANY_VAT }}</li>
-          <li>Iscrizione RC: <span class="placeholder">[da inserire]</span></li>
-          <li>Capitale sociale: <span class="placeholder">[da inserire]</span></li>
+          <li><span class="dato-voce">Ragione sociale</span> {{ COMPANY_LEGAL_NAME }}</li>
+          <li><span class="dato-voce">Sede legale</span> {{ COMPANY_ADDRESS }}</li>
+          <li><span class="dato-voce">Partita IVA</span> <span class="dato-cifra">{{ COMPANY_VAT }}</span></li>
+          <li><span class="dato-voce">Registro imprese / REA</span> <span class="dato-cifra">{{ COMPANY_REA }}</span></li>
+          {% if COMPANY_CAPITAL %}
+          <li><span class="dato-voce">Capitale sociale</span> {{ COMPANY_CAPITAL }}</li>
+          {% endif %}
+          <li>
+            <span class="dato-voce">PEC</span>
+            <a href="mailto:{{ COMPANY_PEC }}">{{ COMPANY_PEC }}</a>
+          </li>
         </ul>
       </div>
     </div>

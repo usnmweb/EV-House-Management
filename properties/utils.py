@@ -100,9 +100,12 @@ def rinumera_foto(immobile):
 
     Restituisce quante righe ha toccato.
     """
-    from properties.models import PropertyImage
+    from properties.models import ORDINE_FOTO, PropertyImage
 
-    foto = list(immobile.images.order_by("order", "id"))
+    # Stesso ordine con cui le foto si vedono, copertina compresa: se qui
+    # fosse diverso, il testo alternativo direbbe «foto 5 di 8» sotto quella
+    # che in pagina sta per prima.
+    foto = list(immobile.images.order_by(*ORDINE_FOTO))
     totale = len(foto)
     toccate = 0
     for posizione, immagine in enumerate(foto):

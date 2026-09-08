@@ -504,6 +504,11 @@ ul { margin: 0; padding: 0; list-style: none; }
 .nav-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
 .nav-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
+/* La marca non si comprime: se lo spazio manca e' il menu a doversi
+   ripensare. Senza questo il flex la assottigliava in silenzio, e il difetto
+   si vedeva solo guardando l'header a una misura precisa. */
+.brand { flex: none; }
+
 .primary-nav {
   position: absolute; top: 100%; left: 0; right: 0;
   background: var(--bg-soft);
@@ -528,6 +533,29 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .primary-nav a:hover { color: var(--accent); }
 .primary-nav .nav-cta { color: var(--accent); }
+
+/* Voce che porta fuori dal sito. La freccina lo dice prima del clic: chi la
+   vede sa che sta per cambiare pagina — e scheda — invece di scoprirlo dopo.
+   `display: flex` e non `inline-flex` perche' sul telefono la voce deve
+   riempire la riga, altrimenti il filetto sotto sarebbe piu' corto delle
+   altre voci e sembrerebbe un errore di impaginazione. */
+.nav-portale {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* Maiuscoletto spaziato: «Portale proprietari» e' lungo e andava a capo in
+     mezzo alla barra, con la freccina orfana sulla seconda riga. Le voci di
+     un menu stanno su una riga sola. */
+  white-space: nowrap;
+}
+.nav-portale svg {
+  width: 0.85em; height: 0.85em;
+  flex: none;
+  opacity: 0.65;
+  transition: opacity var(--transition);
+}
+.nav-portale:hover svg,
+.nav-portale:focus-visible svg { opacity: 1; }
 
 /* ---------- Voce «Immobili» con tendina delle localita' ----------
    Il link alla pagina completa e il pulsante che apre la tendina sono due
@@ -858,6 +886,14 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
   color: var(--accent);
   margin-bottom: 0.5rem;
 }
+/* La cifra delle prenotazioni e' quattro volte piu' lunga di «+100», ma alla
+   dimensione delle altre ci sta in tutte le colonne — 123px su 148 alla
+   larghezza piu' stretta che il sito serve. Quindi resta grande come le
+   altre: rimpicciolirla la farebbe sembrare un dato di serie B accanto a
+   «3.406». Le si vieta solo di andare a capo, perche' un numero spezzato fra
+   le migliaia si legge come due numeri. */
+.stagione-dati .num-lungo { white-space: nowrap; }
+
 .stagione-dati .label {
   display: block;
   font-size: var(--t-xs);
@@ -2131,6 +2167,24 @@ html.visore-aperto { overflow: hidden; }
   color: var(--accent); background: var(--accent-dim); padding: 0 0.35rem; font-size: 0.9em;
 }
 
+/* Dati societari: l'etichetta sopra e il valore sotto. Sono cinque righe di
+   coppie voce/valore, e messe in linea diventano un muro in cui bisogna
+   cercare la partita IVA; l'etichetta piccola in maiuscoletto la si salta con
+   l'occhio quando non serve. */
+.footer-legal-data li { margin-bottom: 0.9rem; line-height: 1.5; }
+.footer-legal-data .dato-voce {
+  display: block;
+  font-size: var(--t-2xs);
+  letter-spacing: var(--tr-etichetta);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.75;
+  margin-bottom: 0.1rem;
+}
+/* Cifre in tabulare: partita IVA e REA si leggono a cifra a cifra, e le cifre
+   a larghezza variabile fanno ballare i gruppi. */
+.footer-legal-data .dato-cifra { font-variant-numeric: tabular-nums; }
+
 /* ---------- Paginazione ---------- */
 .pagination {
   display: flex; gap: 0.5rem; justify-content: center; align-items: center;
@@ -3304,6 +3358,36 @@ a.art-categoria:hover { color: var(--accent-hover); }
   :root { font-size: 17px; }
   .section { padding: 7rem 0; }
 
+
+  .header-actions { margin-left: 1.75rem; order: 3; }
+
+  /* Da qui in su c'e' spazio per il logo alla misura piena, e l'header
+     cresce di conseguenza: il token governa anche lo scostamento dell'hero. */
+  :root { --header-h: 104px; }
+  .brand-logo { height: 64px; }
+
+  /* localita, tipologia, ospiti e pulsante su una riga sola */
+  .filter-bar { grid-template-columns: 1.4fr 1.1fr 0.7fr auto; }
+
+  .hero { --hero-fade: 190px; }
+
+  .property-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .passi-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; }
+  .footer-grid   { grid-template-columns: 1.5fr 1fr 1fr 1fr; }
+
+  .detail-layout { grid-template-columns: 1.7fr 1fr; align-items: start; }
+  .contact-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 4rem; align-items: start; }
+}
+
+/* ---------- La barra orizzontale del menu parte da 1150px ----------
+   Sotto, resta il pannello a scomparsa col pulsante. Non e' una scelta di
+   gusto: sette voci — «Portale proprietari» e' lunga — piu' il logo a 246px
+   piu' il cambio tema non stanno negli 860px di riga utile di uno schermo da
+   900. Fino a 1100 il logo veniva schiacciato a una scheggia di nove pixel e
+   la pagina scorreva di lato. Col pannello il menu si apre intero e il logo
+   resta leggibile. Da 900 a 1150 il resto della pagina e' gia' in versione
+   larga: qui cambia solo il menu. */
+@media (min-width: 1150px) {
   .nav-toggle { display: none; }
 
   .primary-nav {
@@ -3312,7 +3396,10 @@ a.art-categoria:hover { color: var(--accent-hover); }
     margin-left: auto;
     order: 2;              /* dopo il brand, prima del toggle tema */
   }
-  .primary-nav ul { flex-direction: row; gap: 2.25rem; padding: 0; align-items: center; }
+  /* Il respiro fra le voci: stretto dove la riga e' contata, pieno piu' in la
+     (vedi il blocco a 1400). Con sette voci la differenza fra 1,4rem e
+     2,25rem sono novanta pixel, cioe' se il logo resta intero o no. */
+  .primary-nav ul { flex-direction: row; gap: 1.4rem; padding: 0; align-items: center; }
   .primary-nav a { padding: 0; border: 0; font-size: var(--t-2xs); }
   .primary-nav .nav-cta {
     border: 1px solid var(--accent); padding: 0.65rem 1.4rem;
@@ -3398,25 +3485,6 @@ a.art-categoria:hover { color: var(--accent-hover); }
     padding-top: 0.9rem;
     border-top: 1px solid var(--border);
   }
-
-  .header-actions { margin-left: 1.75rem; order: 3; }
-
-  /* Da qui in su c'e' spazio per il logo alla misura piena, e l'header
-     cresce di conseguenza: il token governa anche lo scostamento dell'hero. */
-  :root { --header-h: 104px; }
-  .brand-logo { height: 64px; }
-
-  /* localita, tipologia, ospiti e pulsante su una riga sola */
-  .filter-bar { grid-template-columns: 1.4fr 1.1fr 0.7fr auto; }
-
-  .hero { --hero-fade: 190px; }
-
-  .property-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .passi-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; }
-  .footer-grid   { grid-template-columns: 1.5fr 1fr 1fr 1fr; }
-
-  .detail-layout { grid-template-columns: 1.7fr 1fr; align-items: start; }
-  .contact-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 4rem; align-items: start; }
 }
 
 
@@ -4137,3 +4205,4 @@ html.ev-intro .intro {
     translate: -50% 0;
   }
 }
+

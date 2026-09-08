@@ -589,7 +589,17 @@
     var totale = parseFloat(contatore.getAttribute("data-totale"));
     var alSecondo = parseFloat(contatore.getAttribute("data-al-secondo"));
     var daQuando = parseFloat(contatore.getAttribute("data-da-quando"));
-    var formato = new Intl.NumberFormat("it-IT");
+    // La grafia e' quella del resto della barra: 3.406, col punto. Intl con
+    // locale italiano non lo metterebbe — nelle regole CLDR l'italiano
+    // raggruppa solo da cinque cifre in su, quindi scriverebbe «3406»
+    // accanto a «7.722» e i due numeri sembrerebbero scritti da due persone
+    // diverse. Il raggruppamento a mano non dipende dai dati di locale del
+    // browser, che e' l'altra meta' del motivo.
+    var formato = {
+      format: function (n) {
+        return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      },
+    };
 
     function valoreOra() {
       var trascorsi = (Date.now() - daQuando) / 1000;

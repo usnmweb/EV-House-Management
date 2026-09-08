@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django.views.decorators.http import require_GET
 
-from properties.models import Property, PropertyImage
+from properties.models import ORDINE_FOTO, Property, PropertyImage
 
 from .forms import ContactForm
 from .models import Recensione
@@ -26,6 +26,16 @@ def _numero(valore):
     """Legge un'impostazione numerica tollerando spazi, punti e vuoto."""
     testo = (valore or "").replace(".", "").replace(" ", "").strip()
     return int(testo) if testo.isdigit() else None
+
+
+def _con_migliaia(n):
+    """3406 -> «3.406»: la stessa grafia dei numeri scritti nelle impostazioni.
+
+    Serve al valore che finisce nel markup, quello che si vede senza
+    JavaScript: l'animazione poi lo riscrive con Intl.NumberFormat, e le due
+    grafie devono coincidere o il numero cambia forma sotto gli occhi.
+    """
+    return f"{n:,}".replace(",", ".")
 
 
 def _ospiti_accolti():
@@ -44,9 +54,20 @@ def _ospiti_accolti():
     try:
         alla_data = date.fromisoformat(settings.GUESTS_AS_OF)
     except ValueError:
-        return None
+        # Senza data di riferimento il totale si mostra fermo. La data serve a
+        # far salire il contatore, non a rendere vero il numero: pretenderla
+        # significherebbe nascondere un dato che c'e' per far mancare
+        # un'animazione che non serve.
+        return {
+            "totale": totale,
+            "scritto": _con_migliaia(totale),
+            "al_secondo": 0,
+            "da_quando": 0,
+            "ultimi_dodici_mesi": None,
+        }
     return {
         "totale": totale,
+        "scritto": _con_migliaia(totale),
         "al_secondo": (ultimi / (365 * 24 * 3600)) if ultimi else 0,
         # In millisecondi dall'epoca: il conto in pagina parte da qui, non da
         # "adesso", altrimenti il numero mostrato dipenderebbe da quando la
@@ -120,6 +141,15 @@ def _zone_coperte():
     # costa attorno da capire dove si e'.
     xs = [float(z["x"]) for z in zone]
     ys = [float(z["y"]) for z in zone]
+    if not zone:
+        # Nessun immobile pubblicato con coordinate: senza questa uscita
+        # `max()` su una lista vuota fa saltare la home con un errore 500. Non
+        # e' un caso di scuola — succede a database appena creato e succederebbe
+        # se qualcuno riportasse in bozza tutti gli immobili insieme. Si
+        # restituisce l'isola intera: il template non disegna punti e la
+        # sezione resta vuota, che e' molto meglio di una pagina rotta.
+        intera = "0 0 %g %g" % (SARDEGNA["larghezza"], SARDEGNA["altezza"])
+        return zone, intera
     margine = max(max(xs) - min(xs), max(ys) - min(ys)) * 0.22
     x0 = max(0, min(xs) - margine)
     y0 = max(0, min(ys) - margine)
@@ -146,6 +176,8 @@ def home(request):
         "settimana": settings.SEASON_WEEK,
         "notti_vendute": settings.SEASON_NIGHTS_SOLD,
         "notti_disponibili": settings.SEASON_NIGHTS_AVAILABLE,
+        "notti_anno": settings.SEASON_NIGHTS_YEAR,
+        "prenotazioni": settings.SEASON_BOOKINGS_VALUE,
         "primo_anno": settings.SEASON_FIRST_YEAR,
     }
     if settings.SEASON_FIRST_YEAR.isdigit():
@@ -283,7 +315,9 @@ def gallery(request):
     scatti = (
         PropertyImage.objects.select_related("property")
         .filter(property__status=Property.Status.PUBLISHED)
-        .order_by("property__title", "order")
+        # La copertina scelta a mano apre anche la fila della galleria:
+        # e' la stessa regola della scheda, applicata dove i posti sono due.
+        .order_by("property__title", *ORDINE_FOTO)
     )
 
     per_immobile = {}

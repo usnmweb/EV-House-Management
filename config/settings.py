@@ -145,15 +145,46 @@ CONTACT_RECIPIENT_EMAIL = os.environ.get("CONTACT_RECIPIENT_EMAIL", "evhouse92@g
 # Dati usati nei template (footer, SEO, JSON-LD)
 SITE_NAME = os.environ.get("SITE_NAME", "EV House Management")
 SITE_DOMAIN = os.environ.get("SITE_DOMAIN", "www.evhousemanagement.com")
-COMPANY_LEGAL_NAME = os.environ.get("COMPANY_LEGAL_NAME", "EV House Management")
-COMPANY_VAT = os.environ.get("COMPANY_VAT", "01634110918")
-COMPANY_ADDRESS = os.environ.get("COMPANY_ADDRESS", "Sardegna, Italia")  # TODO: indirizzo completo
+# La ragione sociale non e' il marchio: il sito si chiama EV House Management
+# (SITE_NAME), la societa' che lo gestisce e' EV SRL. La distinzione conta dove
+# il testo ha valore legale — copyright, dati societari, titolare del
+# trattamento nella privacy policy — e questi campi finiscono tutti li'.
+COMPANY_LEGAL_NAME = os.environ.get("COMPANY_LEGAL_NAME", "EV SRL")
+COMPANY_VAT = os.environ.get("COMPANY_VAT", "01684260910")
+# La sede in pezzi, perche' i dati strutturati la vogliono cosi' (via, CAP,
+# comune, provincia). La riga unica che si legge nel footer e nella privacy si
+# compone da questi: un solo posto da aggiornare, e le due forme non possono
+# dire cose diverse.
+COMPANY_STREET = os.environ.get("COMPANY_STREET", "Fraz. La Caletta, Via Marsala 10")
+COMPANY_POSTAL_CODE = os.environ.get("COMPANY_POSTAL_CODE", "08029")
+COMPANY_CITY = os.environ.get("COMPANY_CITY", "Siniscola")
+COMPANY_PROVINCE = os.environ.get("COMPANY_PROVINCE", "NU")
+COMPANY_ADDRESS = os.environ.get(
+    "COMPANY_ADDRESS",
+    f"{COMPANY_STREET}, {COMPANY_POSTAL_CODE} {COMPANY_CITY} ({COMPANY_PROVINCE})",
+)
 COMPANY_EMAIL = os.environ.get("COMPANY_EMAIL", "evhouse92@gmail.com")
-COMPANY_PHONE = os.environ.get("COMPANY_PHONE", "")  # TODO: telefono pubblico
+COMPANY_PHONE = os.environ.get("COMPANY_PHONE", "+39 327 797 9201")
+# Numero di iscrizione al Registro delle imprese: sigla della provincia e
+# numero REA, come vanno indicati negli atti e sul sito (art. 2250 c.c.).
+COMPANY_REA = os.environ.get("COMPANY_REA", "NU - 121190")
+COMPANY_PEC = os.environ.get("COMPANY_PEC", "evhsrl@pec.it")
+# Capitale sociale: per una S.r.l. l'art. 2250 c.c. lo vuole indicato, con la
+# parte versata. Non ci e' stato fornito, quindi la riga non compare: meglio
+# una riga in meno di una cifra inventata. Appena arriva, basta valorizzare
+# qui — per esempio "10.000,00 euro interamente versato".
+COMPANY_CAPITAL = os.environ.get("COMPANY_CAPITAL", "")
 
 # Portale prenotazioni. Disponibilita' e tariffe restano gestite li' (fuori
 # perimetro, §7 del capitolato): il sito ci rimanda e basta.
 BOOKING_URL = os.environ.get("BOOKING_URL", "https://evhouse.kross.travel/")
+
+# Area riservata dei proprietari, sempre sul gestionale. Sta qui e non nel
+# template per la stessa ragione di BOOKING_URL: e' un indirizzo aziendale, e
+# il giorno che il gestionale cambia si tocca un punto solo.
+OWNER_PORTAL_URL = os.environ.get(
+    "OWNER_PORTAL_URL", "https://vr.krossbooking.com/evhouse/login"
+)
 
 # ==========================================================================
 # Numeri dichiarati dall'azienda
@@ -177,6 +208,17 @@ SEASON_NIGHTS_SOLD = os.environ.get("SEASON_NIGHTS_SOLD", "424")
 SEASON_NIGHTS_AVAILABLE = os.environ.get("SEASON_NIGHTS_AVAILABLE", "455")
 SEASON_FIRST_YEAR = os.environ.get("SEASON_FIRST_YEAR", "2021")
 
+# I numeri dell'anno intero. Sulla home prendono il posto dell'occupazione di
+# una settimana e del rapporto notti-su-notti: quella settimana e' vera, ma e'
+# una settimana di agosto e chi legge non ha modo di sapere se e'
+# rappresentativa. Occupazione e settimana restano fra le impostazioni perche'
+# le usa la scheda del Giornale, dove il contesto c'e' scritto intorno.
+SEASON_NIGHTS_YEAR = os.environ.get("SEASON_NIGHTS_YEAR", "7.722")
+# Valore delle prenotazioni generate nell'anno, in euro. Qui vanno solo cifre
+# e separatori: il simbolo lo mette il template, cosi' non finisce dentro il
+# dato e resta una scelta di grafia, non di contenuto.
+SEASON_BOOKINGS_VALUE = os.environ.get("SEASON_BOOKINGS_VALUE", "1.212.470")
+
 # --- Immobili gestiti ---
 # Diverso dal numero di immobili in vetrina, che il sito conta da se' (63
 # pubblicati). Questo e' il portafoglio dichiarato dal gestore: se i due
@@ -196,7 +238,10 @@ PROPERTIES_MANAGED = os.environ.get("PROPERTIES_MANAGED", "+100")
 # si sale di uno ogni quarantatre minuti: in pagina non si vedra' quasi mai
 # scattare, ed e' giusto cosi'. Un contatore che corre piu' del reale e' un
 # numero falso che si aggiorna da solo.
-GUESTS_TOTAL = os.environ.get("GUESTS_TOTAL", "")
+#
+# GUESTS_LAST_12M e GUESTS_AS_OF servono solo alla salita: senza, il totale si
+# mostra fermo. Un totale senza ritmo e' un dato in meno, non un dato falso.
+GUESTS_TOTAL = os.environ.get("GUESTS_TOTAL", "3.406")
 GUESTS_LAST_12M = os.environ.get("GUESTS_LAST_12M", "")
 GUESTS_AS_OF = os.environ.get("GUESTS_AS_OF", "")
 

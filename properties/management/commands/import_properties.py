@@ -22,7 +22,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import Truncator
 
-from properties.models import Amenity, Property, PropertyImage
+from properties.models import CAMPI_PROTETTI, Amenity, Property, PropertyImage
 from properties.utils import (
     SOGLIA_DOPPIONE,
     impronta_visiva,
@@ -78,6 +78,14 @@ HEADERS = {
 def riferimento(url):
     """Nome del file sul CDN, usato per non riscaricare la stessa foto."""
     return url.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+
+
+# Il portale conosce quattro tipologie e le usa a modo suo: trentaquattro
+# appartamenti risultano «Aparthotel», che e' una struttura ricettiva con
+# servizi alberghieri — non e' quello che sono, e in vetrina sarebbe una
+# promessa sbagliata. Si converte in ingresso, cosi' vale anche per gli
+# immobili che il portale aggiungera' domani.
+CATEGORIE = {"Aparthotel": Property.Category.APARTMENT}
 
 
 class Command(BaseCommand):
@@ -150,7 +158,7 @@ class Command(BaseCommand):
         campi = {
             "title": r["titolo"][:200],
             "status": r["stato"],
-            "category": r["categoria"],
+            "category": CATEGORIE.get(r["categoria"], r["categoria"]),
             "location": citta,
             "address": r["indirizzo"][:250],
             "short_description": breve,
@@ -168,6 +176,28 @@ class Command(BaseCommand):
                 campi[chiave] = round(float(r[sorgente]), 7)
             except (TypeError, ValueError):
                 campi[chiave] = None
+
+        # Quel che il portale direbbe adesso, per i campi che si possono
+        # riscrivere. Si registra il valore gia' corretto — non quello grezzo —
+        # altrimenti ogni riga risulterebbe «riscritta a mano» al giro dopo.
+        campi["valori_portale"] = {c: campi.get(c, "") for c in CAMPI_PROTETTI}
+
+        # Un campo riscritto non si sovrascrive. I nomi del portale sono nomi
+        # di lavoro — «Villetta G2», «Via Gallura - Siniscola» — e le tipologie
+        # sono le sue quattro voci: in vetrina si riscrivono, e senza questa
+        # guardia il primo rilascio utile li rimetterebbe com'erano, in
+        # silenzio. Il confronto e' fra valore attuale e ultimo valore dal
+        # portale: niente spunte da ricordarsi di attivare.
+        esistente = Property.objects.filter(external_id=r["external_id"]).first()
+        if esistente:
+            for campo in CAMPI_PROTETTI:
+                if esistente.riscritto_a_mano(campo):
+                    campi.pop(campo, None)
+                    if campo == "title":
+                        # Anche il meta title: e' costruito sul titolo, e
+                        # lasciarlo aggiornare farebbe dire alla scheda un nome
+                        # e al risultato di ricerca un altro.
+                        campi.pop("meta_title", None)
 
         obj, nuovo = Property.objects.update_or_create(
             external_id=r["external_id"], defaults=campi
