@@ -18,9 +18,12 @@ media/
 # Variabili d'ambiente
 .env
 
-# Sorgente video (45 MB, 4K): in repository vanno solo i file gia' pronti
-# per il web, in static/video/. Conserva il master fuori da git.
+# Sorgenti video: in repository vanno solo i file gia' pronti per il web, in
+# static/video/. I master si conservano fuori da git — pesano da soli piu' di
+# tutto il resto del progetto.
 video_villaggio_con_piscina.mp4
+211152v.mp4
+211152.mov
 
 # Editor / OS
 .vscode/

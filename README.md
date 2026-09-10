@@ -576,12 +576,25 @@ Scelte tecniche:
 
 ### Il video
 
-Due varianti, scelte da `main.js` sulla larghezza della finestra:
+Due filmati diversi — non due misure dello stesso — scelti da `main.js` sulla
+larghezza della finestra:
 
 | file | risoluzione | peso | quando |
 |---|---|---|---|
-| `static/video/hero-960.mp4` | 960x540 | 700 KB | finestra fino a 760px |
-| `static/video/hero.mp4` | 1920x1080 | 3,0 MB | oltre |
+| `static/video/hero-mobile.mp4` | 720x1282, verticale | 1,5 MB | finestra fino a 760px |
+| `static/video/hero.mp4` | 1920x1080, orizzontale | 3,0 MB | oltre |
+
+**Sul telefono il filmato è girato in verticale.** Un 16:9 ritagliato a 9:16
+mostra un terzo di sé stesso: si perde l'inquadratura e resta il centro. Con la
+sorgente verticale lo schermo si riempie con quello che il video voleva
+mostrare. Cambia insieme al filmato anche la fotografia di riserva
+(`hero-mobile-720.jpg`, 89 KB): è un fotogramma di *quel* filmato, e i due
+strati devono combaciare o alla dissolvenza si vede un salto.
+
+La soglia dei 760px è scritta in due posti — il `media` del `<picture>` in
+`home.html` e il confronto in `main.js` che sceglie la sorgente del video. Se
+divergessero, un telefono largo prenderebbe la locandina verticale e il filmato
+orizzontale.
 
 Solo H.264: su questo materiale (ripresa aerea, molto fogliame) la stessa clip in
 VP9/WebM veniva **piu' pesante** della MP4, quindi un secondo formato sarebbe
@@ -608,6 +621,13 @@ punto di giunzione non si nota. La differenza media di luminanza fra l'ultimo e
 il primo fotogramma e' 5,5/255, contro 30,4 fra due fotogrammi qualsiasi a
 distanza di otto secondi.
 
+Lo stesso vale per il filmato verticale, e li' serviva ancora di piu': fra il
+primo e l'ultimo fotogramma della sorgente c'erano **65,3/255** di differenza —
+più che fra due fotogrammi presi a caso a cinque secondi di distanza (58,6), cioè
+un salto netto a ogni giro. Cucito con una dissolvenza di 1,2 secondi la
+giuntura scende a **19,1**, contro 66,2 del riferimento. Il filmato dura 8,8
+secondi invece dei 10 originali: la coda è consumata dalla dissolvenza.
+
 ### Rigenerare i file dal master
 
 Il master (4K, 45 MB) non sta in repository — e' in `.gitignore`. Da un nuovo
@@ -618,9 +638,9 @@ SRC=video_villaggio_con_piscina.mp4
 D=16      # durata della sorgente in secondi
 F=1.5     # durata della dissolvenza che cuce l'anello
 
-for W in 960 1920; do
-  [ $W = 960 ] && CRF=33 || CRF=31
-  [ $W = 960 ] && OUT=static/video/hero-960.mp4 || OUT=static/video/hero.mp4
+for W in 1920; do
+  CRF=31
+  OUT=static/video/hero.mp4
   ffmpeg -i "$SRC" -filter_complex "\
 [0:v]scale=$W:-2,fps=25,format=yuv420p,split=3[s0][s1][s2];\
 [s0]trim=start=$(echo "$D-$F"|bc):end=$D,setpts=PTS-STARTPTS,fps=25[coda];\
@@ -636,6 +656,16 @@ for W in 1000 1600 2400; do
   ffmpeg -ss $(echo "$D-$F"|bc) -i "$SRC" -frames:v 1 \
     -vf "scale=$W:-2:flags=lanczos" -q:v 4 -y "static/img/hero-video-$W.jpg"
 done
+```
+
+Il filmato verticale si fa con lo stesso comando, cambiando sorgente, durata,
+larghezza (`scale=720:-2`) e uscita (`static/video/hero-mobile.mp4`); la sua
+locandina si prende dal **primo fotogramma del filmato già cucito**, non dalla
+sorgente, altrimenti mostrerebbe la testa senza la dissolvenza:
+
+```bash
+ffmpeg -ss 0 -i static/video/hero-mobile.mp4 -frames:v 1 -q:v 4 \
+  -y static/img/hero-mobile-720.jpg
 ```
 
 Due dettagli che fanno fallire il comando se si tolgono: `fps=25` prima dello
@@ -1498,6 +1528,44 @@ giuridica e informativa per un trattamento che non esiste) e una promessa non
 mantenuta. Al suo posto c'è l'indirizzo email dell'azienda.
 
 ---
+
+## Il marchio
+
+Il file consegnato dal cliente sta in `static/img/sorgenti/` con le istruzioni
+per rigenerare i derivati. In pagina si usano due file, non uno:
+
+| file | dove si vede |
+|---|---|
+| `logo-su-chiaro.png` | tema chiaro, e dati strutturati (chi li ripubblica usa il fondo bianco) |
+| `logo-su-scuro.png` | tema scuro, header sopra il video, sipario d'apertura, immagine di condivisione |
+
+La versione per fondo scuro non è un file diverso: è lo stesso marchio con la
+scritta portata ad avorio, perché quella quasi nera dell'originale su fondo
+nero sparirebbe. La selezione dei pixel da ricolorare guarda la
+**saturazione**, non la sola luminosità — altrimenti i bordi scuri dell'oro
+verrebbero scambiati per testo e ricolorati anche loro.
+
+**Il marchio nuovo è impilato** (tetti ed «EV» sopra, «HOUSE MANAGEMENT»
+sotto): proporzione 1,8:1 contro il 3,8:1 di prima. Due conseguenze:
+
+- le altezze sono cresciute — 54px nell'header, 72px da 1150px in su, 66px nel
+  footer — perché la scritta ora è un dodicesimo dell'altezza invece di un
+  quarto della larghezza. In larghezza occupa comunque **meno** di prima
+  (130px contro 246px), che è anche il motivo per cui la barra del menu ora
+  respira;
+- gli attributi `width`/`height` nel markup sono stati aggiornati a 922 × 512.
+  Non sono decorativi: il browser ci riserva lo spazio prima che l'immagine
+  arrivi, e sbagliati fanno saltare la pagina al caricamento — un difetto che
+  si vede solo con la rete lenta, cioè quasi mai in prova. Un test verifica che
+  corrispondano ai file veri.
+
+Rifatta anche `og-default.jpg`, l'immagine che compare quando il sito viene
+condiviso su WhatsApp o LinkedIn: 1200 × 630, fondo scuro, filetto d'oro e
+marchio al centro con aria intorno, perché i ritagli più aggressivi tolgono i
+bordi e non il centro.
+
+Il `favicon.svg` è ancora la «EV» disegnata a mano in un riquadro dorato: alla
+misura di una scheda del browser il marchio completo diventerebbe illeggibile.
 
 ## Tipografia
 

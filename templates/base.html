@@ -93,7 +93,12 @@
     "@id": "{{ request.scheme }}://{{ request.get_host }}/#organizzazione",
     "name": "{{ COMPANY_LEGAL_NAME|escapejs }}",
     "url": "{{ request.scheme }}://{{ request.get_host }}/",
-    "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo-su-scuro.png' %}",
+    {% comment %}
+      Per i dati strutturati vale la versione con la scritta scura: chi la
+      ripubblica — Google, un aggregatore — la mette su fondo bianco, e quella
+      per fondo scuro ha la scritta avorio, che li' sparirebbe.
+    {% endcomment %}
+    "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo-su-chiaro.png' %}",
     "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-default.jpg' %}",
     "email": "{{ COMPANY_EMAIL }}",{% if COMPANY_PHONE %}
     "telephone": "{{ COMPANY_PHONE }}",{% endif %}
@@ -122,9 +127,9 @@
     <div class="container header-inner">
       <a class="brand" href="{% url 'core:home' %}">
         <img class="brand-logo brand-logo-scuro" src="{% static 'img/logo-su-scuro.png' %}"
-             alt="EV House Management" width="760" height="198">
+             alt="EV House Management" width="922" height="512">
         <img class="brand-logo brand-logo-chiaro" src="{% static 'img/logo-su-chiaro.png' %}"
-             alt="EV House Management" width="760" height="198">
+             alt="EV House Management" width="922" height="512">
       </a>
 
       <div class="header-actions">
@@ -243,9 +248,9 @@
       <div class="footer-col">
         <a class="brand brand-footer" href="{% url 'core:home' %}">
           <img class="brand-logo brand-logo-scuro" src="{% static 'img/logo-su-scuro.png' %}"
-               alt="EV House Management" width="760" height="198">
+               alt="EV House Management" width="922" height="512">
           <img class="brand-logo brand-logo-chiaro" src="{% static 'img/logo-su-chiaro.png' %}"
-               alt="EV House Management" width="760" height="198">
+               alt="EV House Management" width="922" height="512">
         </a>
         <p class="footer-tagline">
           Gestione immobiliare e affitti brevi. Cura del dettaglio, risultati misurabili.

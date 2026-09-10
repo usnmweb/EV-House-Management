@@ -449,7 +449,11 @@ ul { margin: 0; padding: 0; list-style: none; }
    quindi su fondo chiaro sparirebbe. La variante "su-chiaro" la ricolora,
    lasciando intatto l'oro dei tetti. Lo scambio e' in CSS, cosi' funziona
    anche quando il tema segue le preferenze di sistema. */
-.brand-logo { display: block; height: 46px; width: auto; }
+/* Il marchio e' impilato — tetti e «EV» sopra, «HOUSE MANAGEMENT» sotto — e
+   sta in una proporzione di 1,8:1. Con la scritta su una riga sola bastavano
+   46px per farla leggere; qui la parte bassa e' un dodicesimo dell'altezza,
+   quindi il logo cresce, e in larghezza occupa comunque meno di prima. */
+.brand-logo { display: block; height: 54px; width: auto; }
 .brand-logo-scuro { display: none; }
 
 @media (prefers-color-scheme: dark) {
@@ -459,7 +463,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 :root[data-theme="dark"] .brand-logo-chiaro { display: none; }
 :root[data-theme="dark"] .brand-logo-scuro  { display: block; }
 
-.brand-footer .brand-logo { height: 56px; }
+.brand-footer .brand-logo { height: 66px; }
 
 .header-actions { display: flex; align-items: center; gap: 0.5rem; }
 
@@ -3364,7 +3368,7 @@ a.art-categoria:hover { color: var(--accent-hover); }
   /* Da qui in su c'e' spazio per il logo alla misura piena, e l'header
      cresce di conseguenza: il token governa anche lo scostamento dell'hero. */
   :root { --header-h: 104px; }
-  .brand-logo { height: 64px; }
+  .brand-logo { height: 72px; }
 
   /* localita, tipologia, ospiti e pulsante su una riga sola */
   .filter-bar { grid-template-columns: 1.4fr 1.1fr 0.7fr auto; }

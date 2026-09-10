@@ -7,6 +7,7 @@ pagina li perde per strada, non e' un difetto estetico.
 """
 
 import json
+import pathlib
 import re
 
 from django.conf import settings
@@ -104,3 +105,59 @@ class PortaleProprietariTest(TestCase):
         home = self.client.get(reverse("core:home")).content.decode()
         self.assertIn('href="https://esempio.test/accesso"', home)
         self.assertNotIn("vr.krossbooking.com", home)
+
+
+class MarchioTest(TestCase):
+    """Le due versioni del logo e le misure dichiarate nei template.
+
+    Le misure nel markup non sono decorative: il browser ci riserva lo spazio
+    prima che l'immagine arrivi. Sbagliate, la pagina salta al caricamento —
+    e il salto si vede solo con la rete lenta, cioe' quasi mai in prova.
+    """
+
+    CARTELLA = pathlib.Path(settings.BASE_DIR) / "static" / "img"
+
+    def test_ci_sono_tutt_e_due_le_versioni(self):
+        for nome in ("logo-su-chiaro.png", "logo-su-scuro.png"):
+            with self.subTest(file=nome):
+                self.assertTrue((self.CARTELLA / nome).exists())
+
+    def test_le_misure_nel_markup_sono_quelle_vere(self):
+        from PIL import Image
+
+        for nome in ("logo-su-chiaro.png", "logo-su-scuro.png"):
+            with Image.open(self.CARTELLA / nome) as im:
+                larghezza, altezza = im.size
+            with self.subTest(file=nome):
+                home = self.client.get(reverse("core:home")).content.decode()
+                self.assertIn(f'width="{larghezza}" height="{altezza}"', home)
+
+    def test_le_due_versioni_hanno_la_stessa_forma(self):
+        """Se divergessero, il logo ballerebbe al cambio di tema."""
+        from PIL import Image
+
+        misure = []
+        for nome in ("logo-su-chiaro.png", "logo-su-scuro.png"):
+            with Image.open(self.CARTELLA / nome) as im:
+                misure.append(im.size)
+        self.assertEqual(*misure)
+
+    def test_la_versione_per_fondo_scuro_ha_la_scritta_chiara(self):
+        """Su nero una scritta quasi nera non si vede: e' il motivo dei due file."""
+        from PIL import Image
+
+        def quanto_e_scura(nome):
+            with Image.open(self.CARTELLA / nome).convert("RGBA") as im:
+                px = im.load()
+                scuri = 0
+                for y in range(0, im.height, 4):
+                    for x in range(0, im.width, 4):
+                        r, g, b, a = px[x, y]
+                        massimo, minimo = max(r, g, b), min(r, g, b)
+                        saturazione = 0 if massimo == 0 else (massimo - minimo) / massimo
+                        if a > 200 and saturazione < 0.28 and massimo < 150:
+                            scuri += 1
+                return scuri
+
+        self.assertGreater(quanto_e_scura("logo-su-chiaro.png"), 0)
+        self.assertEqual(quanto_e_scura("logo-su-scuro.png"), 0)

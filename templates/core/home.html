@@ -35,15 +35,30 @@
     veda un buco al posto dell'hero mentre il video arriva.
   {% endcomment %}
   <div class="hero-media">
+    {% comment %}
+      Sul telefono lo sfondo e' un altro filmato, girato in verticale: quello
+      orizzontale, ritagliato a 9:16, mostrava una fetta di se' stesso. La
+      locandina cambia insieme al filmato — e' un suo fotogramma, e i due
+      strati devono combaciare, altrimenti al momento della dissolvenza si
+      vede un salto.
+
+      La soglia dei 760px e' scritta in due posti, qui e in main.js che
+      sceglie la sorgente del video: se divergessero, un telefono largo
+      prenderebbe la locandina verticale e il filmato orizzontale.
+    {% endcomment %}
+    <picture>
+    <source media="(max-width: 760px)"
+            srcset="{% static 'img/hero-mobile-720.jpg' %}">
     <img src="{% static 'img/hero-video-1600.jpg' %}"
          srcset="{% static 'img/hero-video-1000.jpg' %} 1000w,
                  {% static 'img/hero-video-1600.jpg' %} 1600w,
                  {% static 'img/hero-video-2400.jpg' %} 2400w"
          sizes="100vw" width="2400" height="1350"
          alt="" fetchpriority="high" decoding="async">
+    </picture>
 
     <video class="hero-video" id="hero-video"
-           data-src-piccolo="{% static 'video/hero-960.mp4' %}"
+           data-src-piccolo="{% static 'video/hero-mobile.mp4' %}"
            data-src-grande="{% static 'video/hero.mp4' %}"
            width="1920" height="1080"
            muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
