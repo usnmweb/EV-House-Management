@@ -1,0 +1,9 @@
+# Code owners — auto-requested as reviewers on PRs.
+# Replace the placeholder with the responsible team or people (see PROJECT.md "Owner").
+# Docs: https://docs.github.com/articles/about-code-owners
+
+* @Mont3-Suisse/{{TEAM}}
+
+# Example per-area ownership:
+# /.github/        @Mont3-Suisse/{{TEAM}}
+# /docs/           @Mont3-Suisse/{{TEAM}}

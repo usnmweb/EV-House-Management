@@ -1,0 +1,12 @@
+{
+  "schema": "mont3.deploy/v1",
+  "project": "REPLACE_repo_name",
+  "repository": "https://github.com/Mont3-Suisse/REPLACE_repo_name",
+  "type": "web",
+  "status": "not-deployed",
+  "production_branch": "main",
+  "stack": [],
+  "deployments": [],
+  "last_reviewed": "REPLACE_YYYY-MM-DD",
+  "_docs": "Machine-readable deployment manifest read by the Mont3 ops dashboard. Fill via /bootstrap and keep current on every deploy change (see CLAUDE.md). Fields -> type: web|api|mobile|worker|static|infra. status: live|staging|dev|archived|not-deployed. Each deployments[] entry: environment (production|staging|...), provider (digitalocean|windows-server|github-actions|app-store|...), server (host or IP), path, method (git-checkout|git-sparse-checkout|non-git|scp|ci|app-store), branch, process (systemd unit / nssm service / nginx-static), port (int), reverse_proxy (nginx|caddy|none), url, aligned_with_branch (bool: deployed HEAD == origin/<branch> at last_reviewed)."
+}

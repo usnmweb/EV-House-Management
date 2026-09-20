@@ -1,0 +1,23 @@
+# ── Centralized security pipeline — per-repo caller ──────────────────────────
+# ALL logic lives in Mont3-Suisse/security-ci. To change the scanners or policy,
+# edit the central repo once — every repo picks it up automatically.
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  security:
+    uses: Mont3-Suisse/security-ci/.github/workflows/security-scan.yml@v1
+    # Optional per-repo overrides (uncomment to tune):
+    # with:
+    #   fail-on: secrets-and-high   # secrets-and-high (default) | secrets-only | none | all
+    #   create-issue: true          # open/update a tracking issue on push to main
+    #   cvss-threshold: "7.0"       # min CVSS to treat a dependency CVE as blocking
+    #   semgrep-config: "auto"      # or "p/security-audit p/secrets p/django p/react"
