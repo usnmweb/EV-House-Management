@@ -161,3 +161,66 @@ class MarchioTest(TestCase):
 
         self.assertGreater(quanto_e_scura("logo-su-chiaro.png"), 0)
         self.assertEqual(quanto_e_scura("logo-su-scuro.png"), 0)
+
+
+class PannelloAmministrazioneTest(TestCase):
+    """L'amministrazione su misura: pagina iniziale, sezioni, filtri."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from properties.models import Property, PropertyImage
+
+        self.staff = get_user_model().objects.create_superuser(
+            username="gestore", email="gestore@example.com", password="prova-12345"
+        )
+        self.client.force_login(self.staff)
+        self.con_scelta = Property.objects.create(
+            title="Casa scelta", location="Siniscola", status=Property.Status.PUBLISHED
+        )
+        self.dal_portale = Property.objects.create(
+            title="Casa dal portale", location="Siniscola", status=Property.Status.PUBLISHED
+        )
+        PropertyImage.objects.create(property=self.con_scelta, image="x/a.jpg", copertina=True)
+        PropertyImage.objects.create(property=self.dal_portale, image="x/b.jpg")
+
+    def test_la_pagina_iniziale_mostra_il_pannello(self):
+        pagina = self.client.get(reverse("admin:index"))
+        self.assertEqual(pagina.status_code, 200)
+        schede = {s["titolo"]: s for s in pagina.context["cruscotto"]}
+        self.assertEqual(schede["Immobili"]["numero"], 2)
+        self.assertEqual(schede["Copertine"]["numero"], 1, "conta solo chi usa ancora la foto del portale")
+        self.assertTrue(schede["Copertine"]["da_fare"])
+        self.assertTrue(schede["Recensioni"]["da_fare"], "senza recensioni la sezione in home resta nascosta")
+
+    def test_le_sezioni_hanno_nomi_italiani_e_un_ordine_di_lavoro(self):
+        pagina = self.client.get(reverse("admin:index"))
+        nomi = [s["name"] for s in pagina.context["app_list"]]
+        self.assertEqual(nomi, ["Immobili", "Il Giornale", "Recensioni", "Utenti e accessi"])
+
+    def test_il_filtro_copertina_separa_scelte_e_portale(self):
+        elenco = reverse("admin:properties_property_changelist")
+        portale = self.client.get(elenco + "?copertina=portale").context["cl"].result_list
+        scelte = self.client.get(elenco + "?copertina=scelta").context["cl"].result_list
+        self.assertEqual([p.title for p in portale], ["Casa dal portale"])
+        self.assertEqual([p.title for p in scelte], ["Casa scelta"])
+
+    def test_la_scheda_copertine_porta_all_elenco_filtrato(self):
+        """Il numero del pannello e l'elenco a cui porta devono dire la stessa cosa."""
+        pagina = self.client.get(reverse("admin:index"))
+        scheda = next(s for s in pagina.context["cruscotto"] if s["titolo"] == "Copertine")
+        righe = self.client.get(scheda["url"]).context["cl"].result_count
+        self.assertEqual(righe, scheda["numero"])
+
+    def test_le_pagine_principali_si_aprono(self):
+        for nome in ("admin:properties_property_changelist", "admin:blog_article_changelist",
+                     "admin:core_recensione_changelist", "admin:properties_property_add"):
+            with self.subTest(pagina=nome):
+                self.assertEqual(self.client.get(reverse(nome)).status_code, 200)
+        scheda = reverse("admin:properties_property_change", args=[self.con_scelta.pk])
+        self.assertEqual(self.client.get(scheda).status_code, 200)
+
+    def test_la_pagina_di_accesso_ha_il_marchio(self):
+        self.client.logout()
+        pagina = self.client.get(reverse("admin:login")).content.decode()
+        self.assertIn("logo-su-chiaro.png", pagina)
+        self.assertIn("css/admin.css", pagina)

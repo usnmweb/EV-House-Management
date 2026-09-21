@@ -37,7 +37,9 @@ CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", [])
 
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    # L'amministrazione con il pannello su misura (config/admin.py) al posto
+    # di quella predefinita.
+    "config.apps.EVAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

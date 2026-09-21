@@ -86,7 +86,7 @@ class Article(models.Model):
 
     in_evidenza = models.BooleanField(
         "In evidenza", default=False,
-        help_text="Il piu' recente fra quelli in evidenza apre l'elenco.",
+        help_text="Il più recente fra quelli in evidenza apre l'elenco.",
     )
     pubblicato = models.BooleanField(
         "Pubblicato", default=False,

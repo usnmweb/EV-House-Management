@@ -100,8 +100,8 @@ class Property(models.Model):
     valori_portale = models.JSONField(
         "Valori dal portale", default=dict, blank=True,
         help_text="Ultimo valore arrivato dal portale per i campi riscrivibili. "
-                  "Dove il valore qui sopra e' diverso, il campo e' stato "
-                  "riscritto a mano e l'importazione non lo tocca piu'.",
+                  "Dove il valore qui sopra è diverso, il campo è stato "
+                  "riscritto a mano e l'importazione non lo tocca più.",
     )
     external_id = models.CharField(
         "ID sul portale", max_length=32, blank=True, db_index=True
@@ -181,7 +181,7 @@ class PropertyImage(models.Model):
         "Copertina", default=False,
         help_text="La foto che apre l'immobile ovunque: scheda, pagina, "
                   "galleria e anteprima social. Una sola per immobile: "
-                  "spuntandone un'altra, la precedente si libera da se'. "
+                  "spuntandone un'altra, la precedente si libera da sé. "
                   "Senza nessuna spunta vale la prima del portale.",
     )
     source_ref = models.CharField(

@@ -34,12 +34,12 @@ class Recensione(models.Model):
     )
     canale = models.CharField(
         "canale", max_length=60,
-        help_text="Dove e' stata pubblicata: Airbnb, Booking.com, Google, email…",
+        help_text="Dove è stata pubblicata: Airbnb, Booking.com, Google, email…",
     )
     data = models.DateField("data")
     url = models.URLField(
         "collegamento", blank=True,
-        help_text="Alla recensione originale, se e' pubblica. Rende verificabile ciò che si afferma.",
+        help_text="Alla recensione originale, se è pubblica. Rende verificabile ciò che si afferma.",
     )
     luogo = models.CharField(
         "località", max_length=100, blank=True,

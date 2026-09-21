@@ -14,6 +14,10 @@ class ArticleAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("titolo",)}
     ordering = ("-pubblicato_il",)
 
+    def changelist_view(self, request, extra_context=None):
+        extra_context = {"title": "Articoli del Giornale", **(extra_context or {})}
+        return super().changelist_view(request, extra_context)
+
     fieldsets = (
         ("Testo", {
             "fields": ("titolo", "slug", "categoria", "estratto", "sottotitolo", "corpo"),

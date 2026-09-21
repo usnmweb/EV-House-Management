@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% comment %}
+  Aspetto dell'amministrazione: i colori, i caratteri e il logo del sito.
+  Non un tema scaricato: le variabili CSS che l'amministrazione di Django
+  espone gia' (--primary, --header-bg, --button-bg...) ridefinite con quelle
+  del sito, piu' un foglio di stile per il resto. Niente dipendenze nuove, e
+  un aggiornamento di Django non lo rompe.
+{% endcomment %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}" class="marchio">
+    <img class="marchio-logo marchio-su-chiaro" src="{% static 'img/logo-su-chiaro.png' %}" alt="" width="922" height="512">
+    <img class="marchio-logo marchio-su-scuro" src="{% static 'img/logo-su-scuro.png' %}" alt="" width="922" height="512">
+    <span class="marchio-testo">{{ site_header }}<span class="marchio-sotto">Pannello di gestione</span></span>
+  </a>
+</div>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

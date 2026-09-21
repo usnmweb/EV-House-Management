@@ -1,0 +1,36 @@
+{% extends "admin/index.html" %}
+{% comment %}
+  La pagina iniziale apre con un pannello di schede — quanto c'e' e cosa
+  manca — e sotto l'elenco delle sezioni, come prima. Le schede le prepara
+  `EVAdminSite._cruscotto` (config/admin.py); ogni numero porta all'elenco gia'
+  filtrato su quelle righe.
+{% endcomment %}
+
+{% block content_title %}
+  <div class="benvenuto">
+    <h1>Ciao {{ user.first_name|default:user.get_username }}</h1>
+    <p>Da qui gestisci immobili, articoli e recensioni del sito. Le modifiche sono online appena salvi.</p>
+  </div>
+{% endblock %}
+
+{% block content %}
+  {% if cruscotto %}
+  <section class="cruscotto" aria-label="Riepilogo">
+    {% for s in cruscotto %}
+    <article class="scheda{% if s.da_fare %} scheda-da-fare{% endif %}">
+      <h2>{{ s.titolo }}</h2>
+      <a class="scheda-numero" href="{{ s.url }}">
+        <span class="numero">{{ s.numero }}</span>
+        <span class="dicitura">{{ s.dicitura }}</span>
+      </a>
+      {% for d in s.dettagli %}
+        <a class="scheda-dettaglio" href="{{ d.url }}">{{ d.numero }} {{ d.testo }}</a>
+      {% endfor %}
+      {% if s.nota %}<p class="scheda-nota">{{ s.nota }}</p>{% endif %}
+      {% if s.azione %}<a class="scheda-azione" href="{{ s.azione.url }}">+ {{ s.azione.testo }}</a>{% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

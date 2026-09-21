@@ -447,6 +447,49 @@ telefono, cioè i modi per farsi rispondere; la sede sta due colonne più in là
 Ripetere la stessa riga a trenta centimetri di distanza fa sembrare che siano
 due indirizzi diversi.
 
+## L'amministrazione
+
+`/admin/` è l'amministrazione di Django, ma rivestita e riordinata per chi
+gestisce i contenuti, non per chi scrive il codice. **Nessun tema esterno**:
+l'amministrazione espone il suo aspetto come variabili CSS (`--primary`,
+`--header-bg`, `--button-bg`…), e `static/css/admin.css` le ridefinisce con
+colori e caratteri del sito. Un aggiornamento di Django non lo rompe; al peggio
+una regola non combacia più e si torna all'aspetto predefinito.
+
+| cosa | dove |
+|---|---|
+| sito su misura (ordine delle sezioni, pannello iniziale) | `config/admin.py`, attivato da `config/apps.py` |
+| logo, colori, tema chiaro e scuro | `templates/admin/base_site.html`, `static/css/admin.css` |
+| pagina iniziale con le schede | `templates/admin/index.html` |
+
+**La pagina iniziale dice cosa c'è da fare.** Quattro schede — immobili
+pubblicati e in bozza, copertine ancora scelte dal portale, articoli, recensioni
+in evidenza — e ogni numero porta all'elenco già filtrato su quelle righe. Le
+schede con qualcosa in sospeso hanno un filetto dorato in cima, e tornano
+quiete da sole quando il lavoro è fatto. Un test controlla che il numero della
+scheda «Copertine» e l'elenco a cui porta dicano la stessa cosa.
+
+**Le sezioni hanno nomi italiani e un ordine di lavoro**: Immobili, Il Giornale,
+Recensioni, Utenti e accessi — da quel che si tocca ogni giorno a quel che si
+tocca una volta l'anno. Prima erano in ordine alfabetico e si chiamavano
+«Core» e «Properties».
+
+**Il menu laterale è spento** (`enable_nav_sidebar = False`). Ripeteva l'elenco
+delle sezioni su ogni pagina e si prendeva 280px: negli elenchi erano proprio
+quelli che mancavano, e i titoli degli immobili andavano a capo su cinque
+righe. Per spostarsi bastano le briciole di pane e la pagina iniziale.
+
+**L'elenco immobili** si legge a colpo d'occhio: miniatura della copertina,
+titolo con spazio sufficiente, stato, località, tipologia e — al posto di una
+colonna di crocette rosse — un'etichetta «Scelta» o «Dal portale» sulla
+copertina. «Dal portale» non è un errore, è lo stato di partenza. Ospiti, camere
+e bagni sono usciti dalla tabella: stanno nella scheda. Il filtro «Tipologia»
+offre solo i valori che esistono davvero, quindi niente più «Aparthotel».
+
+I testi che si leggono nell'amministrazione — aiuti dei campi, descrizioni —
+usano gli accenti veri (è, più, sé): l'apostrofo al posto dell'accento resta
+solo nei commenti del codice.
+
 ## Portale proprietari
 
 Voce di menu che porta all'area riservata sul gestionale

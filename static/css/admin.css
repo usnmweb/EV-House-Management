@@ -1,0 +1,521 @@
+/* ==========================================================================
+   Amministrazione: i colori, i caratteri e il tono del sito
+   --------------------------------------------------------------------------
+   L'amministrazione di Django espone il suo aspetto come variabili CSS
+   (--primary, --header-bg, --button-bg...). Qui si ridefiniscono con quelle
+   del sito, e il resto sono ritocchi mirati. Nessun tema esterno: un
+   aggiornamento di Django non lo rompe, e se una regola qui non combacia piu'
+   si torna semplicemente all'aspetto predefinito, non a una pagina rotta.
+
+   Lo stesso schema del sito per il tema: chiaro, scuro dal sistema, oppure
+   scelto a mano col pulsante dell'amministrazione (html[data-theme]).
+   ========================================================================== */
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../fonts/archivo-var-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../fonts/fraunces-var-latin.woff2") format("woff2");
+}
+
+/* ---------- Tema chiaro ---------- */
+html[data-theme="light"],
+:root {
+  --ev-bg:        #faf8f4;
+  --ev-bg-soft:   #f2eee6;
+  --ev-surface:   #ffffff;
+  --ev-border:    #e0d9cc;
+  --ev-text:      #17150f;
+  --ev-muted:     #6b6459;
+  --ev-accent:    #8a6d10;
+  --ev-accent-2:  #6b530a;
+  --ev-accent-dim: rgba(138, 109, 16, 0.10);
+  --ev-on-accent: #ffffff;
+  --ev-ombra:     0 1px 2px rgba(23, 21, 15, 0.05), 0 4px 16px rgba(23, 21, 15, 0.05);
+
+  --primary: var(--ev-accent);
+  --secondary: var(--ev-accent-2);
+  --accent: var(--ev-accent);
+  --primary-fg: var(--ev-on-accent);
+
+  --body-fg: var(--ev-text);
+  --body-bg: var(--ev-bg);
+  --body-quiet-color: var(--ev-muted);
+  --body-medium-color: #3d382f;
+  --body-loud-color: var(--ev-text);
+
+  --header-color: var(--ev-text);
+  --header-branding-color: var(--ev-text);
+  --header-bg: var(--ev-surface);
+  --header-link-color: var(--ev-text);
+
+  --breadcrumbs-fg: var(--ev-muted);
+  --breadcrumbs-link-fg: var(--ev-accent);
+  --breadcrumbs-bg: var(--ev-bg-soft);
+
+  --link-fg: var(--ev-accent);
+  --link-hover-color: var(--ev-accent-2);
+  --link-selected-fg: var(--ev-accent-2);
+
+  --hairline-color: #ece6da;
+  --border-color: var(--ev-border);
+
+  --message-success-bg: #e8f3e3;
+  --message-warning-bg: #fbf1d6;
+  --message-error-bg: #fbe6e3;
+
+  --darkened-bg: var(--ev-bg-soft);
+  --selected-bg: #efe7d4;
+  --selected-row: #fbf3dc;
+
+  --button-fg: var(--ev-on-accent);
+  --button-bg: var(--ev-accent);
+  --button-hover-bg: var(--ev-accent-2);
+  --default-button-bg: var(--ev-accent);
+  --default-button-hover-bg: var(--ev-accent-2);
+  --close-button-bg: #8f887c;
+  --close-button-hover-bg: #6b6459;
+
+  --object-tools-fg: var(--ev-on-accent);
+  --object-tools-bg: var(--ev-accent);
+  --object-tools-hover-bg: var(--ev-accent-2);
+
+  --font-family-primary: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* ---------- Tema scuro: dal sistema, se non si e' scelto il chiaro ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ev-bg:        #0a0a0a;
+    --ev-bg-soft:   #121212;
+    --ev-surface:   #171717;
+    --ev-border:    #2a2a2a;
+    --ev-text:      #f2efe9;
+    --ev-muted:     #a9a49b;
+    --ev-accent:    #c9a227;
+    --ev-accent-2:  #e3c667;
+    --ev-accent-dim: rgba(201, 162, 39, 0.14);
+    --ev-on-accent: #0a0a0a;
+    --ev-ombra:     none;
+
+    --body-medium-color: #d9d4cb;
+    --hairline-color: #232323;
+    --message-success-bg: #16301a;
+    --message-warning-bg: #3a2e0c;
+    --message-error-bg: #3d1512;
+    --selected-bg: #262116;
+    --selected-row: #2a2413;
+    --close-button-bg: #3a3a3a;
+    --close-button-hover-bg: #555;
+    --link-fg: var(--ev-accent);
+    --link-hover-color: var(--ev-accent-2);
+    --body-fg: var(--ev-text);
+    --body-bg: var(--ev-bg);
+    --body-quiet-color: var(--ev-muted);
+    --darkened-bg: var(--ev-bg-soft);
+    --breadcrumbs-bg: var(--ev-bg-soft);
+    --primary-fg: var(--ev-on-accent);
+  }
+}
+
+/* ---------- Tema scuro scelto a mano ---------- */
+html[data-theme="dark"] {
+  --ev-bg:        #0a0a0a;
+  --ev-bg-soft:   #121212;
+  --ev-surface:   #171717;
+  --ev-border:    #2a2a2a;
+  --ev-text:      #f2efe9;
+  --ev-muted:     #a9a49b;
+  --ev-accent:    #c9a227;
+  --ev-accent-2:  #e3c667;
+  --ev-accent-dim: rgba(201, 162, 39, 0.14);
+  --ev-on-accent: #0a0a0a;
+  --ev-ombra:     none;
+
+  --body-medium-color: #d9d4cb;
+  --hairline-color: #232323;
+  --message-success-bg: #16301a;
+  --message-warning-bg: #3a2e0c;
+  --message-error-bg: #3d1512;
+  --selected-bg: #262116;
+  --selected-row: #2a2413;
+  --close-button-bg: #3a3a3a;
+  --close-button-hover-bg: #555;
+  --link-fg: var(--ev-accent);
+  --link-hover-color: var(--ev-accent-2);
+  --body-fg: var(--ev-text);
+  --body-bg: var(--ev-bg);
+  --body-quiet-color: var(--ev-muted);
+  --darkened-bg: var(--ev-bg-soft);
+  --breadcrumbs-bg: var(--ev-bg-soft);
+  --primary-fg: var(--ev-on-accent);
+}
+
+body { font-size: 15px; line-height: 1.5; }
+
+/* ---------- Intestazione ---------- */
+#header {
+  background: var(--ev-surface);
+  border-bottom: 1px solid var(--ev-border);
+  padding: 12px 32px;
+  color: var(--ev-text);
+}
+#site-name { margin: 0; }
+#site-name a.marchio {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--ev-text);
+  text-decoration: none;
+}
+.marchio-logo { height: 44px; width: auto; display: block; }
+.marchio-su-scuro { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .marchio-su-chiaro { display: none; }
+  :root:not([data-theme="light"]) .marchio-su-scuro  { display: block; }
+}
+html[data-theme="dark"] .marchio-su-chiaro { display: none; }
+html[data-theme="dark"] .marchio-su-scuro  { display: block; }
+
+.marchio-testo {
+  display: flex;
+  flex-direction: column;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.marchio-sotto {
+  font-family: var(--font-family-primary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ev-accent);
+}
+
+#user-tools {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ev-muted);
+}
+#user-tools a, #logout-form button {
+  border-bottom: 0;
+  color: var(--ev-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ev-border);
+  text-underline-offset: 3px;
+}
+#user-tools a:hover, #logout-form button:hover {
+  color: var(--ev-accent);
+  text-decoration-color: currentColor;
+}
+
+/* ---------- Briciole di pane ---------- */
+div.breadcrumbs {
+  padding: 10px 32px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--ev-border);
+}
+div.breadcrumbs a { color: var(--ev-accent); }
+
+/* ---------- Titoli e contenitori ---------- */
+#content h1 {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  color: var(--ev-text);
+}
+#content { padding: 24px 32px; }
+
+/* Le intestazioni di sezione erano bande colorate in maiuscolo: urlavano, e
+   in una pagina con sei sezioni si leggevano solo quelle. Qui sono etichette. */
+.module h2, .module caption, .inline-group h2 {
+  background: transparent;
+  color: var(--ev-text);
+  font-family: var(--font-family-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 16px 10px;
+  border-bottom: 2px solid var(--ev-accent);
+}
+.module caption a, .module h2 a { color: var(--ev-text); }
+.module caption a:hover, .module h2 a:hover { color: var(--ev-accent); }
+
+.module {
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: 6px;
+  box-shadow: var(--ev-ombra);
+  overflow: hidden;
+}
+#content-main .module, #content-related .module { margin-bottom: 24px; }
+fieldset.module { overflow: visible; }
+
+/* ---------- Tabelle ---------- */
+thead th, tfoot td {
+  background: var(--ev-bg-soft);
+  color: var(--ev-muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--ev-border);
+}
+thead th a:link, thead th a:visited { color: var(--ev-muted); }
+td, th { border-bottom-color: var(--hairline-color); vertical-align: middle; }
+#result_list tbody tr:hover td, #result_list tbody tr:hover th { background: var(--ev-accent-dim); }
+#result_list td, #result_list th { padding: 10px 12px; }
+
+/* Righe dell'elenco sezioni nella pagina iniziale: piu' aria, voci piu' grandi. */
+.app-list .module th, .dashboard .module th { font-size: 15px; font-weight: 500; padding: 12px 16px; }
+.dashboard .module td { padding: 12px 16px; }
+
+/* ---------- Pulsanti ---------- */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+  border-radius: 4px;
+  padding: 10px 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.button.default, input[type=submit].default, .submit-row input.default {
+  font-weight: 700;
+}
+.submit-row {
+  background: var(--ev-bg-soft);
+  border: 1px solid var(--ev-border);
+  border-radius: 6px;
+}
+.object-tools a:link, .object-tools a:visited {
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Campi ---------- */
+input[type=text], input[type=password], input[type=email], input[type=url],
+input[type=number], input[type=tel], input[type=search], textarea, select, .vTextField {
+  border-radius: 4px;
+  border: 1px solid var(--ev-border);
+  padding: 8px 10px;
+  background: var(--ev-surface);
+  color: var(--ev-text);
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--ev-accent);
+  outline: 2px solid var(--ev-accent-dim);
+  outline-offset: 0;
+}
+form .help, p.help, div.help { color: var(--ev-muted); font-size: 13px; }
+fieldset .fieldset-heading, fieldset legend { font-family: var(--font-family-primary); }
+
+/* ---------- Filtri a destra dell'elenco ---------- */
+#changelist-filter {
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: 6px;
+}
+#changelist-filter h2 {
+  background: transparent;
+  color: var(--ev-text);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  border-bottom: 2px solid var(--ev-accent);
+}
+#changelist-filter h3, #changelist-filter summary { color: var(--ev-muted); font-size: 12px; letter-spacing: 0.06em; }
+#changelist-filter li.selected a { color: var(--ev-accent); font-weight: 700; }
+#changelist #toolbar { background: var(--ev-bg-soft); border-radius: 6px; border: 1px solid var(--ev-border); }
+
+/* ---------- Messaggi ---------- */
+ul.messagelist li { border-radius: 6px; margin-bottom: 8px; font-size: 14px; }
+
+/* ---------- Menu laterale ---------- */
+#nav-sidebar .module th, #nav-sidebar .module td { font-size: 14px; }
+#nav-sidebar .current-app .section:link, #nav-sidebar .current-app .section:visited { color: var(--ev-accent); }
+#nav-sidebar .current-model { background: var(--ev-accent-dim); }
+
+/* ---------- Miniature nell'elenco immobili ---------- */
+.miniatura {
+  display: block;
+  width: 64px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--ev-bg-soft);
+}
+.miniatura-vuota {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 48px;
+  border-radius: 4px;
+  background: var(--ev-bg-soft);
+  color: var(--ev-muted);
+}
+
+/* ==========================================================================
+   Pagina iniziale: benvenuto e schede
+   ========================================================================== */
+.benvenuto { margin: 4px 0 24px; }
+.benvenuto h1 { margin: 0 0 4px; font-size: 32px; }
+.benvenuto p { margin: 0; color: var(--ev-muted); font-size: 15px; }
+
+.cruscotto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.scheda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-top: 3px solid var(--ev-border);
+  border-radius: 6px;
+  box-shadow: var(--ev-ombra);
+}
+/* Le schede con qualcosa da fare si distinguono dal filetto dorato: si
+   notano senza gridare, e quando il lavoro e' fatto tornano quiete da sole. */
+.scheda-da-fare { border-top-color: var(--ev-accent); }
+
+.scheda h2 {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ev-muted);
+  background: none;
+  border: 0;
+}
+.scheda-numero { display: flex; flex-direction: column; text-decoration: none; margin-top: 2px; }
+.scheda-numero .numero {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ev-text);
+  font-variant-numeric: tabular-nums;
+}
+.scheda-numero .dicitura { color: var(--ev-muted); font-size: 14px; margin-top: 4px; }
+.scheda-numero:hover .numero { color: var(--ev-accent); }
+.scheda-dettaglio { font-size: 13px; color: var(--ev-muted); }
+.scheda-dettaglio:hover { color: var(--ev-accent); }
+.scheda-nota { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: var(--ev-muted); }
+.scheda-azione {
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ev-accent);
+}
+
+/* ---------- Pagina di accesso ---------- */
+body.login { background: var(--ev-bg); }
+.login #container {
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: 8px;
+  box-shadow: var(--ev-ombra);
+  overflow: hidden;
+}
+.login #header { padding: 20px 28px; justify-content: center; }
+.login #header .marchio-testo { font-size: 18px; }
+.login #content { padding: 24px 28px 28px; }
+.login .submit-row { background: none; border: 0; padding: 12px 0 0; }
+.login .submit-row input { width: 100%; }
+
+/* ---------- Telefono ---------- */
+@media (max-width: 767px) {
+  #header { padding: 10px 16px; }
+  .marchio-logo { height: 36px; }
+  .marchio-testo { font-size: 16px; }
+  #content { padding: 16px; }
+  div.breadcrumbs { padding: 10px 16px; }
+  .benvenuto h1 { font-size: 26px; }
+}
+
+/* ---------- Pagina iniziale: larghezza ----------
+   Django fissa la pagina iniziale a 600px, pensata per il solo elenco delle
+   sezioni: le schede finivano su due colonne strette con mezzo schermo vuoto
+   a destra. Qui la pagina prende la larghezza disponibile — il riquadro delle
+   azioni recenti resta nella sua colonna a destra, come prima. */
+.dashboard #content { width: auto; max-width: 1160px; }
+.dashboard #content-main .module { max-width: 760px; }
+
+/* «Annulla l'accesso» e' un pulsante di un modulo, non un link: Django lo
+   scrive in maiuscolo e piu' piccolo degli altri. Si allinea alle voci
+   accanto. */
+#logout-form button {
+  text-transform: none;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ev-text);
+}
+
+/* Riquadro «Azioni recenti»: stesso titolo-etichetta delle altre sezioni. */
+#content-related {
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: 6px;
+  box-shadow: var(--ev-ombra);
+}
+#content-related .module { border: 0; box-shadow: none; }
+#content-related .module h2 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ev-text);
+  border-bottom: 2px solid var(--ev-accent);
+  padding: 14px 16px 10px;
+}
+
+/* ---------- Elenco immobili ----------
+   Il titolo e' la colonna che si legge: le si da' spazio, cosi' non va a
+   capo su cinque righe mentre accanto ci sono colonne mezze vuote. */
+#result_list th.column-title, #result_list td.field-title { min-width: 280px; }
+#result_list td.field-title a { font-weight: 600; }
+
+.stato-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ev-muted);
+  background: var(--ev-bg-soft);
+  border: 1px solid var(--ev-border);
+  white-space: nowrap;
+}
+.stato-fatto {
+  color: var(--ev-accent);
+  background: var(--ev-accent-dim);
+  border-color: transparent;
+}
+
+/* I menu a tendina hanno un'altezza fissa nel foglio di Django: con il
+   riempimento dei campi di testo qui sopra, il testo finiva tagliato in basso.
+   Altezza libera, riempimento proprio. */
+select {
+  height: auto;
+  min-height: 36px;
+  padding: 6px 28px 6px 10px;
+}
+#result_list select { min-height: 32px; padding-top: 4px; padding-bottom: 4px; }
