@@ -9,6 +9,11 @@ python manage.py collectstatic --no-input
 
 python manage.py migrate --no-input
 
+# L'utente dell'amministrazione, dalle variabili d'ambiente del pannello di
+# Render (mai dal repository). Lo crea solo se manca: non reimposta la password
+# a ogni rilascio, e se le variabili non ci sono va avanti senza errore.
+python manage.py assicura_amministratore
+
 # Importa gli immobili dallo snapshot versionato e scarica le fotografie.
 # È ripetibile: le foto già presenti sul disco vengono riconosciute e saltate,
 # quindi dal secondo rilascio in poi questo passaggio è quasi immediato.

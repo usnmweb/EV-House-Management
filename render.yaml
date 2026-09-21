@@ -35,3 +35,15 @@ services:
         value: /var/data/media
       - key: CONTACT_RECIPIENT_EMAIL
         value: evhouse92@gmail.com
+
+      # Utente dell'amministrazione, creato al deploy se manca
+      # (core/management/commands/assicura_amministratore.py). I valori si
+      # scrivono nel pannello di Render: `sync: false` fa si' che il file ne
+      # dichiari il nome senza contenerli, cosi' la password non finisce mai
+      # nel repository.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false

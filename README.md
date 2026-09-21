@@ -490,6 +490,33 @@ I testi che si leggono nell'amministrazione — aiuti dei campi, descrizioni —
 usano gli accenti veri (è, più, sé): l'apostrofo al posto dell'accento resta
 solo nei commenti del codice.
 
+### L'utente dell'amministrazione sul sito pubblicato
+
+Il database online è separato da quello locale, quindi l'utente creato in
+locale lì non esiste. Lo crea il deploy, dalle variabili d'ambiente impostate
+**nel pannello di Render** — mai nel repository:
+
+| variabile | |
+|---|---|
+| `DJANGO_SUPERUSER_USERNAME` | nome utente |
+| `DJANGO_SUPERUSER_PASSWORD` | password |
+| `DJANGO_SUPERUSER_EMAIL` | facoltativa |
+
+`render.yaml` le dichiara con `sync: false`: il file ne porta il nome, Render
+chiede il valore alla creazione del servizio, e la password non passa mai da
+git. Su un servizio già creato si aggiungono a mano in *Environment*.
+
+`build.sh` lancia `python manage.py assicura_amministratore` dopo le migration.
+Il comando crea l'utente **solo se manca**: non reimposta la password a ogni
+rilascio — se la si cambia dall'amministrazione, il deploy successivo non deve
+rimettere quella vecchia — e se le variabili non ci sono va avanti senza
+errore, perché un deploy non deve fallire per un utente. Per la stessa ragione
+non si usa `createsuperuser --noinput`, che fallisce se l'utente esiste già e
+al secondo rilascio fermerebbe tutto.
+
+Cambiare la variabile dopo la creazione **non** cambia la password online: per
+quello si usa «Modifica password» dall'amministrazione.
+
 ## Portale proprietari
 
 Voce di menu che porta all'area riservata sul gestionale

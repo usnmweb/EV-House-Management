@@ -224,3 +224,58 @@ class PannelloAmministrazioneTest(TestCase):
         pagina = self.client.get(reverse("admin:login")).content.decode()
         self.assertIn("logo-su-chiaro.png", pagina)
         self.assertIn("css/admin.css", pagina)
+
+
+class AssicuraAmministratoreTest(TestCase):
+    """L'utente dell'amministrazione sul sito pubblicato, dalle variabili d'ambiente."""
+
+    VARIABILI = {
+        "DJANGO_SUPERUSER_USERNAME": "gestore-online",
+        "DJANGO_SUPERUSER_PASSWORD": "una-password-di-prova-12",
+        "DJANGO_SUPERUSER_EMAIL": "gestore@example.com",
+    }
+
+    def _esegui(self, variabili):
+        import io
+        from unittest import mock
+        from django.core.management import call_command
+
+        uscita = io.StringIO()
+        pulite = {k: "" for k in self.VARIABILI}
+        with mock.patch.dict("os.environ", {**pulite, **variabili}):
+            call_command("assicura_amministratore", stdout=uscita)
+        return uscita.getvalue()
+
+    def test_crea_l_utente_se_manca(self):
+        from django.contrib.auth import authenticate, get_user_model
+
+        self._esegui(self.VARIABILI)
+
+        utente = get_user_model().objects.get(username="gestore-online")
+        self.assertTrue(utente.is_superuser and utente.is_staff)
+        self.assertIsNotNone(authenticate(username="gestore-online",
+                                          password="una-password-di-prova-12"))
+
+    def test_non_reimposta_la_password_a_ogni_rilascio(self):
+        """Cambiata dall'amministrazione, la password non deve tornare quella vecchia."""
+        from django.contrib.auth import authenticate, get_user_model
+
+        self._esegui(self.VARIABILI)
+        utente = get_user_model().objects.get(username="gestore-online")
+        utente.set_password("cambiata-dal-gestore-34")
+        utente.save()
+
+        uscita = self._esegui(self.VARIABILI)
+
+        self.assertIn("esiste già", uscita)
+        self.assertIsNotNone(authenticate(username="gestore-online",
+                                          password="cambiata-dal-gestore-34"))
+
+    def test_senza_variabili_non_fa_nulla_e_non_fallisce(self):
+        """Un rilascio non deve fermarsi perche' manca l'utente."""
+        from django.contrib.auth import get_user_model
+
+        uscita = self._esegui({})
+
+        self.assertIn("nessun utente creato", uscita)
+        self.assertFalse(get_user_model().objects.exists())
