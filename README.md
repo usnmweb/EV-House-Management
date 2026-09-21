@@ -1071,11 +1071,36 @@ richieste a terzi, niente JavaScript per disegnarla, coerente con la scelta di
 ospitare anche i caratteri.
 
 I punti sono il centro degli immobili di ogni zona, calcolato sulle coordinate
-vere: non sono messi a occhio. L'alone è proporzionale al numero di immobili.
+vere: non sono messi a occhio. L'alone cresce con la radice del numero di
+immobili — l'occhio confronta aree, non raggi — più una base fissa, così una
+località con un solo immobile resta visibile accanto a Siniscola.
 
-L'inquadratura è ritagliata sull'area coperta: le 19 località stanno tutte
-sulla costa nord-orientale e coprono un quinto dell'isola, quindi disegnata
-intera la mappa sarebbe per quattro quinti vuota.
+**L'inquadratura è il quadrante nord-orientale**, con attorno abbastanza
+isola da riconoscerlo. Ci si è arrivati per esclusione:
+
+- ritagliata stretta sull'area coperta (la prima versione) restava un tratto di
+  costa senza capo né coda, e chi non conosce la Sardegna non capiva in che
+  parte dell'isola fosse;
+- l'isola intera risolveva quello, ma spingeva le 19 località in un angolo e
+  l'onda dei punti diventava un puntino.
+
+Il riquadro parte dall'area coperta e la allarga di due terzi del suo lato
+maggiore: a nord arriva al mare, e la costa frastagliata della Gallura è ciò che
+rende riconoscibile il punto; a est al bordo dell'isola; a ovest e a sud entra
+nella terraferma. Allargarlo ancora per includere Capo Testa e La Maddalena
+rimpiccioliva i punti senza aggiungere nulla di leggibile.
+
+**Dove il riquadro taglia la terraferma, il contorno sfuma.** Un taglio netto
+sembra un errore di disegno; una dissolvenza dice «l'isola continua». Sono due
+maschere SVG annidate — una per il bordo ovest, una per quello sud — perché una
+maschera ha un gradiente solo. Le coordinate arrivano dalla vista, e la
+dissolvenza si applica solo ai lati che tagliano davvero la terra.
+
+**Punti e tratto sono misurati in pixel di resa**, non in unità del disegno:
+la vista converte sapendo che la mappa si vede larga circa 300px. Prima erano
+scritti in unità del riquadro, e ogni cambio di zoom li ingrandiva o li
+riduceva a capocchie di spillo; così restano giusti anche se l'inquadratura
+cambierà ancora.
 
 **Le coordinate si emettono come stringhe dalla vista.** Con
 `LANGUAGE_CODE = "it-it"` il template scriverebbe `cx="505,8"` invece di

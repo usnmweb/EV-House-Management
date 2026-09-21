@@ -499,13 +499,49 @@
 
     <div class="zone-layout">
       <div class="zone-mappa" data-reveal="fade">
-        <svg viewBox="{{ inquadratura }}" role="img"
-             aria-label="Mappa della costa nord-orientale della Sardegna con le {{ zone|length }} località coperte">
+        <svg viewBox="{{ inquadratura.viewbox }}" role="img"
+             aria-label="Mappa della Sardegna nord-orientale con le {{ zone|length }} località coperte">
+          {% if inquadratura.sfuma %}
+          {% comment %}
+            Dove il riquadro taglia la terraferma — a ovest e a sud — il
+            contorno si dissolve invece di finire contro un bordo dritto, che
+            sembrerebbe un errore di disegno. Due maschere annidate perche' i
+            bordi sono due e una maschera ha un solo gradiente. Le misure sono
+            in unita' del riquadro (`userSpaceOnUse`) e arrivano dalla vista.
+          {% endcomment %}
+          {% with s=inquadratura.sfuma %}
+          <defs>
+            <linearGradient id="zone-sfuma-ovest" gradientUnits="userSpaceOnUse"
+                            x1="{{ s.sx_da }}" y1="0" x2="{{ s.sx_a }}" y2="0">
+              <stop offset="0" stop-color="#000"/>
+              <stop offset="1" stop-color="#fff"/>
+            </linearGradient>
+            <linearGradient id="zone-sfuma-sud" gradientUnits="userSpaceOnUse"
+                            x1="0" y1="{{ s.giu_da }}" x2="0" y2="{{ s.giu_a }}">
+              <stop offset="0" stop-color="#fff"/>
+              <stop offset="1" stop-color="#000"/>
+            </linearGradient>
+            <mask id="zone-maschera-ovest" maskUnits="userSpaceOnUse"
+                  x="{{ s.x }}" y="{{ s.y }}" width="{{ s.w }}" height="{{ s.h }}">
+              <rect x="{{ s.x }}" y="{{ s.y }}" width="{{ s.w }}" height="{{ s.h }}" fill="url(#zone-sfuma-ovest)"/>
+            </mask>
+            <mask id="zone-maschera-sud" maskUnits="userSpaceOnUse"
+                  x="{{ s.x }}" y="{{ s.y }}" width="{{ s.w }}" height="{{ s.h }}">
+              <rect x="{{ s.x }}" y="{{ s.y }}" width="{{ s.w }}" height="{{ s.h }}" fill="url(#zone-sfuma-sud)"/>
+            </mask>
+          </defs>
+          <g mask="url(#zone-maschera-sud)">
+            <path class="zone-costa" d="{{ mappa.contorno }}"
+                  mask="url(#zone-maschera-ovest)" style="stroke-width: {{ inquadratura.tratto }}"/>
+          </g>
+          {% endwith %}
+          {% else %}
           <path class="zone-costa" d="{{ mappa.contorno }}"/>
+          {% endif %}
           {% for z in zone %}
             <g class="zone-punto" data-luogo="{{ z.slug }}" style="--i: {{ z.ordine_mappa }}">
-              <circle cx="{{ z.x }}" cy="{{ z.y }}" r="{{ z.quanti|add:14 }}" class="zone-alone"/>
-              <circle cx="{{ z.x }}" cy="{{ z.y }}" r="4.5"/>
+              <circle cx="{{ z.x }}" cy="{{ z.y }}" r="{{ z.r_alone }}" class="zone-alone"/>
+              <circle cx="{{ z.x }}" cy="{{ z.y }}" r="{{ z.r_punto }}"/>
               <title>{{ z.nome }} — {{ z.quanti }} immobil{{ z.quanti|pluralize:"e,i" }}</title>
             </g>
           {% endfor %}

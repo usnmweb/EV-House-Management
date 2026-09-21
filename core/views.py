@@ -135,27 +135,66 @@ def _zone_coperte():
     for i, z in enumerate(sorted(zone, key=lambda z: float(z["y"]))):
         z["ordine_mappa"] = i
 
-    # Ritaglio. Le zone coprono un quinto dell'isola, tutte sulla costa
-    # nord-orientale: disegnata intera, la mappa sarebbe per quattro quinti
-    # vuota. Si inquadra l'area coperta con un margine, e resta abbastanza
-    # costa attorno da capire dove si e'.
+    L, H = SARDEGNA["larghezza"], SARDEGNA["altezza"]
+    if not zone:
+        # Nessun immobile pubblicato con coordinate (database appena creato,
+        # tutto in bozza): l'isola intera, senza punti. Prima di questa uscita
+        # il calcolo del riquadro faceva `max()` su una lista vuota e la home
+        # rispondeva 500.
+        return zone, {"viewbox": "0 0 %g %g" % (L, H), "sfuma": None}
+
+    # Inquadratura: il quadrante nord-orientale, con attorno abbastanza isola
+    # da riconoscerlo. Le due prove estreme non funzionavano: ritagliata
+    # stretta sull'area coperta restava un tratto di costa senza capo ne' coda,
+    # e l'isola intera spingeva le 19 localita' in un angolo del disegno.
+    #
+    # Il riquadro parte dall'area coperta e la allarga di due terzi del suo
+    # lato maggiore: verso nord arriva al mare (la Gallura, con la sua costa
+    # frastagliata, e' quel che rende riconoscibile il punto dell'isola),
+    # verso est al bordo dell'isola, verso ovest e sud entra nella terraferma.
     xs = [float(z["x"]) for z in zone]
     ys = [float(z["y"]) for z in zone]
-    if not zone:
-        # Nessun immobile pubblicato con coordinate: senza questa uscita
-        # `max()` su una lista vuota fa saltare la home con un errore 500. Non
-        # e' un caso di scuola — succede a database appena creato e succederebbe
-        # se qualcuno riportasse in bozza tutti gli immobili insieme. Si
-        # restituisce l'isola intera: il template non disegna punti e la
-        # sezione resta vuota, che e' molto meglio di una pagina rotta.
-        intera = "0 0 %g %g" % (SARDEGNA["larghezza"], SARDEGNA["altezza"])
-        return zone, intera
-    margine = max(max(xs) - min(xs), max(ys) - min(ys)) * 0.22
-    x0 = max(0, min(xs) - margine)
-    y0 = max(0, min(ys) - margine)
-    x1 = min(SARDEGNA["larghezza"], max(xs) + margine)
-    y1 = min(SARDEGNA["altezza"], max(ys) + margine)
-    inquadratura = "%g %g %g %g" % (round(x0, 1), round(y0, 1), round(x1 - x0, 1), round(y1 - y0, 1))
+    margine = max(max(xs) - min(xs), max(ys) - min(ys)) * 0.65
+    x0 = max(0.0, min(xs) - margine)
+    y0 = max(0.0, min(ys) - margine)
+    x1 = min(L, max(xs) + margine)
+    y1 = min(H, max(ys) + margine)
+    w, h = x1 - x0, y1 - y0
+
+    # Dove il riquadro taglia la terraferma, il bordo si sfuma. Un taglio
+    # netto sembra un errore di disegno; una dissolvenza dice «l'isola
+    # continua», che e' quello che succede davvero.
+    sfuma = {
+        "x": "%g" % round(x0, 1), "y": "%g" % round(y0, 1),
+        "w": "%g" % round(w, 1), "h": "%g" % round(h, 1),
+        # sinistra: da trasparente a pieno nel primo quarto del riquadro
+        "sx_da": "%g" % round(x0, 1),
+        "sx_a": "%g" % round(x0 + w * 0.28, 1) if x0 > 0 else "%g" % round(x0, 1),
+        # basso: da pieno a trasparente nell'ultimo quinto
+        "giu_da": "%g" % round(y1 - h * 0.22, 1) if y1 < H else "%g" % round(y1, 1),
+        "giu_a": "%g" % round(y1, 1),
+    }
+
+    # La misura dei punti, in pixel di resa: il disegno si vede largo circa
+    # 300px, e le misure si scrivono pensando a quello. Convertite in unita'
+    # del riquadro restano giuste anche se l'inquadratura un giorno cambia —
+    # prima erano scritte in unita' del disegno, e allargando lo zoom i punti
+    # diventavano capocchie di spillo.
+    #
+    # L'alone cresce con la radice del numero di immobili (l'occhio confronta
+    # aree, non raggi) piu' una base, perche' una localita' con un immobile
+    # solo deve restare visibile accanto a Siniscola.
+    unita_per_pixel = w / 300
+    for z in zone:
+        z["r_punto"] = "%g" % round(4.5 * unita_per_pixel, 2)
+        z["r_alone"] = "%g" % round((7 + 4.8 * z["quanti"] ** 0.5) * unita_per_pixel, 2)
+
+    inquadratura = {
+        "viewbox": "%g %g %g %g" % (round(x0, 1), round(y0, 1), round(w, 1), round(h, 1)),
+        "sfuma": sfuma,
+        # anche il tratto della costa e' in pixel di resa, per lo stesso motivo
+        "tratto": "%g" % round(1.4 * unita_per_pixel, 2),
+    }
     return zone, inquadratura
 
 
