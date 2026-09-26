@@ -15,7 +15,7 @@ class ArticleAdmin(admin.ModelAdmin):
     ordering = ("-pubblicato_il",)
 
     def changelist_view(self, request, extra_context=None):
-        extra_context = {"title": "Articoli del Giornale", **(extra_context or {})}
+        extra_context = {"title": "Articoli del blog", **(extra_context or {})}
         return super().changelist_view(request, extra_context)
 
     fieldsets = (

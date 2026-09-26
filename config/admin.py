@@ -98,7 +98,7 @@ class EVAdminSite(admin.AdminSite):
         if utente.has_perm("blog.view_article"):
             elenco = reverse("admin:blog_article_changelist")
             schede.append({
-                "titolo": "Il Giornale",
+                "titolo": "Blog",
                 "numero": Article.objects.pubblicati().count(),
                 "dicitura": "articoli pubblicati",
                 "dettagli": [

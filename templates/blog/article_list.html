@@ -8,7 +8,7 @@
   "itemListElement": [
     {"@type": "ListItem", "position": 1, "name": "Home",
      "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'core:home' %}"},
-    {"@type": "ListItem", "position": 2, "name": "Il Giornale"}
+    {"@type": "ListItem", "position": 2, "name": "Blog"}
   ]
 }
 </script>
@@ -18,7 +18,7 @@
 
 <section class="page-head">
   <div class="container" data-reveal>
-    <span class="eyebrow eyebrow-riga">Il Giornale · EV House</span>
+    <span class="eyebrow eyebrow-riga">Blog · EV House</span>
     <h1>Note dalla costa, <em>scritte da chi la gestisce</em></h1>
     <hr class="gold-rule">
     <p class="lead">
@@ -164,7 +164,7 @@
       </p>
 
       {% if is_paginated %}
-      <nav class="pagination" aria-label="Pagine del Giornale">
+      <nav class="pagination" aria-label="Pagine del blog">
         {% if page_obj.has_previous %}
           <a href="?{% if categoria_attiva %}categoria={{ categoria_attiva }}&amp;{% endif %}{% if ricerca %}q={{ ricerca|urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Precedente</a>
         {% endif %}

@@ -188,6 +188,20 @@ OWNER_PORTAL_URL = os.environ.get(
     "OWNER_PORTAL_URL", "https://vr.krossbooking.com/evhouse/login"
 )
 
+# Profili social, nell'ordine in cui compaiono nel footer. Indirizzi puliti:
+# i parametri che le app aggiungono quando si copia il link (`?si=`, `?_t=`,
+# `?stkn=`...) servono solo a tracciare chi l'ha condiviso. Facebook resta il
+# link di condivisione finche' non c'e' l'indirizzo diretto della pagina.
+# WhatsApp non e' un profilo: sta nel footer ma non nei dati strutturati.
+SOCIAL_LINKS = [
+    ("instagram", "Instagram", "https://www.instagram.com/evhouse_management/"),
+    ("facebook", "Facebook", "https://www.facebook.com/share/1CBiYTML6H/"),
+    ("linkedin", "LinkedIn", "https://www.linkedin.com/company/ev-house-management/"),
+    ("tiktok", "TikTok", "https://www.tiktok.com/@evhouse.management"),
+    ("youtube", "YouTube", "https://www.youtube.com/@evhousemanagement"),
+    ("whatsapp", "WhatsApp", "https://wa.me/message/B2R3XPTEX3KYM1"),
+]
+
 # ==========================================================================
 # Numeri dichiarati dall'azienda
 #

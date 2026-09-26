@@ -198,6 +198,12 @@ def _zone_coperte():
     return zone, inquadratura
 
 
+ORDINALI = {
+    1: "prima", 2: "seconda", 3: "terza", 4: "quarta", 5: "quinta",
+    6: "sesta", 7: "settima", 8: "ottava", 9: "nona", 10: "decima",
+}
+
+
 def home(request):
     pubblicati = Property.objects.published()
 
@@ -219,8 +225,12 @@ def home(request):
         "prenotazioni": settings.SEASON_BOOKINGS_VALUE,
         "primo_anno": settings.SEASON_FIRST_YEAR,
     }
-    if settings.SEASON_FIRST_YEAR.isdigit():
-        stagione["stagioni"] = date.today().year - int(settings.SEASON_FIRST_YEAR)
+    # «La nostra quinta stagione»: si conta rispetto all'anno della stagione
+    # mostrata, non a oggi, cosi' la frase resta coerente con i numeri sotto
+    # anche quando l'anno solare cambia prima dei dati.
+    if settings.SEASON_FIRST_YEAR.isdigit() and settings.SEASON_YEAR.isdigit():
+        n = int(settings.SEASON_YEAR) - int(settings.SEASON_FIRST_YEAR)
+        stagione["ordinale"] = ORDINALI.get(n, "")
 
     recensioni = list(Recensione.objects.filter(in_evidenza=True))
     zone, inquadratura = _zone_coperte()

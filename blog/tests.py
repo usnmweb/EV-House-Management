@@ -177,9 +177,9 @@ class SitemapTest(BaseGiornale):
         _articolo(titolo="Visibile")
         _articolo(titolo="Nascosto", pubblicato=False, pubblicato_il=date(2026, 5, 2))
         xml = self.client.get("/sitemap.xml").content.decode()
-        self.assertIn("/giornale/visibile/", xml)
-        self.assertNotIn("/giornale/nascosto/", xml)
-        self.assertIn("/giornale/</loc>", xml)
+        self.assertIn("/blog/visibile/", xml)
+        self.assertNotIn("/blog/nascosto/", xml)
+        self.assertIn("/blog/</loc>", xml)
 
 
 class ContenutiInizialiTest(TestCase):
@@ -268,3 +268,16 @@ class RiparaCopertineTest(TestCase):
         # La cartella temporanea e' della classe: si toglie di mezzo qui.
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
+
+
+class VecchioIndirizzoTest(TestCase):
+    """/giornale/ era l'indirizzo del blog: deve portare a /blog/ con un 301."""
+
+    def test_elenco(self):
+        r = self.client.get("/giornale/")
+        self.assertRedirects(r, "/blog/", status_code=301, fetch_redirect_response=False)
+
+    def test_articolo_e_filtri(self):
+        r = self.client.get("/giornale/un-articolo/?categoria=x")
+        self.assertRedirects(r, "/blog/un-articolo/?categoria=x", status_code=301,
+                             fetch_redirect_response=False)

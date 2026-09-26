@@ -854,7 +854,7 @@ body.has-hero .hero { margin-top: calc(var(--header-h) * -1); }
 }
 
 .stagione-frase {
-  margin: 0.5rem 0 0;
+  margin: 1rem 0 0;
   font-family: var(--font-display);
   font-size: var(--t-3xl);
   font-weight: 400;
@@ -4210,3 +4210,98 @@ html.ev-intro .intro {
   }
 }
 
+
+
+/* ==========================================================================
+   Pop-up «Prenota ora» (solo home, una volta per visitatore)
+   Un <dialog> modale: il browser lo mette nel top layer, sopra header e
+   banner cookie senza gare di z-index. Lo sfondo e' un velo, non un muro:
+   il sito sotto deve restare riconoscibile, cosi' e' chiaro che basta
+   chiudere per tornarci.
+   ========================================================================== */
+.popup-prenota {
+  width: min(28rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 4rem);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+  overflow: auto;
+}
+.popup-prenota::backdrop {
+  background: rgba(10, 10, 10, 0.45);
+}
+.popup-prenota[open] { animation: popup-entra 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes popup-entra {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popup-prenota[open] { animation: none; }
+}
+
+.popup-chiudi-form { position: absolute; top: 0.5rem; right: 0.5rem; margin: 0; z-index: 1; }
+/* 48px: la misura minima per un dito, e qui e' l'unica via d'uscita a parte
+   il tasto Esc, che sul telefono non c'e'. */
+.popup-chiudi {
+  display: grid; place-items: center;
+  width: 48px; height: 48px;
+  padding: 0;
+  border: 0; border-radius: 50%;
+  background: rgba(10, 10, 10, 0.6);
+  color: #f7f4ee;
+  cursor: pointer;
+  transition: background-color var(--transition);
+}
+.popup-chiudi:hover, .popup-chiudi:focus-visible { background: rgba(10, 10, 10, 0.85); }
+.popup-chiudi svg { width: 26px; height: 26px; }
+
+.popup-foto {
+  display: block;
+  width: 100%; height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.popup-corpo { padding: 1.5rem 1.5rem 1.75rem; text-align: center; }
+.popup-titolo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 400;
+  line-height: var(--lh-titolo);
+  letter-spacing: var(--tr-titolo);
+  color: var(--text);
+}
+.popup-titolo-en {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--t-lg);
+  color: var(--text-muted);
+}
+.popup-cta { margin-top: 1.5rem; }
+.popup-cta-en { opacity: 0.85; }
+
+
+/* ---------- Social nel footer ----------
+   Icone senza riquadro, come il resto del footer. Area di tocco da 44px anche
+   se il disegno e' piu' piccolo: sono sei bersagli fitti, e sul telefono un
+   dito ne prenderebbe due. Niente sottolineatura: sotto un'icona non si legge. */
+.footer-social {
+  display: flex; flex-wrap: wrap; gap: 0.25rem;
+  margin: 1.25rem 0 0 -0.6rem; padding: 0; list-style: none;
+}
+.footer-col .footer-social li { margin: 0; }
+.footer-col .footer-social a {
+  display: grid; place-items: center;
+  width: 44px; height: 44px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.footer-col .footer-social a::after { content: none; }
+.footer-col .footer-social a:hover,
+.footer-col .footer-social a:focus-visible { color: var(--accent); }
+.footer-social svg { width: 20px; height: 20px; }

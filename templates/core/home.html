@@ -135,28 +135,19 @@
 {% endcomment %}
 <section class="stagione" aria-labelledby="t-numeri">
   <div class="container">
+    {% comment %}
+      L'anno sta una volta sola, qui in alto: vale per tutti e quattro i
+      numeri, e le etichette sotto restano corte e uguali fra loro. Il «dal
+      2021» scende in nota in fondo, perche' messo accanto ai numeri li faceva
+      leggere come totali accumulati dal 2021 a oggi.
+    {% endcomment %}
     <span class="eyebrow eyebrow-riga">
-      {% if stagione.notti_anno and stagione.anno %}Stagione {{ stagione.anno }}{% else %}Il portfolio{% endif %}
+      {% if stagione.anno %}Stagione {{ stagione.anno }}{% else %}Il portfolio{% endif %}
     </span>
 
-    {% comment %}
-      La cifra d'apertura non ripete nessuno dei dati qui sotto: gli anni di
-      lavoro stanno qui, le quantita' nella riga dei numeri. Se un dato
-      comparisse in tutti e due i posti, la sezione direbbe due volte la
-      stessa cosa in mezzo schermo, e un numero ripetuto perde il peso che
-      aveva.
-    {% endcomment %}
-    {% if stagione.stagioni %}
-      <p class="stagione-cifra" data-reveal="fade">{{ stagione.stagioni }}</p>
-      <h2 id="t-numeri" class="stagione-frase" data-reveal="fade">
-        stagioni complete in Sardegna, dal {{ stagione.primo_anno }}.
-      </h2>
-    {% else %}
-      <p class="stagione-cifra" data-reveal="fade">{{ immobili_gestiti }}</p>
-      <h2 id="t-numeri" class="stagione-frase" data-reveal="fade">
-        immobili gestiti in Sardegna.
-      </h2>
-    {% endif %}
+    <h2 id="t-numeri" class="stagione-frase" data-reveal="fade">
+      {% if stagione.ordinale %}La nostra {{ stagione.ordinale }} stagione in Sardegna.{% else %}I nostri numeri in Sardegna.{% endif %}
+    </h2>
 
     <ul class="stagione-dati" data-stagger>
       <li data-reveal="fade">
@@ -173,7 +164,7 @@
       {% if stagione.notti_anno %}
       <li data-reveal="fade">
         <span class="num">{{ stagione.notti_anno }}</span>
-        <span class="label">Notti vendute nel {{ stagione.anno }}</span>
+        <span class="label">Notti vendute</span>
       </li>
       {% endif %}
 
@@ -185,7 +176,7 @@
           la valuta per strada — e la grafia resta una scelta di questa pagina.
         {% endcomment %}
         <span class="num num-lungo">{{ stagione.prenotazioni }}&nbsp;&euro;</span>
-        <span class="label">Prenotazioni generate nel {{ stagione.anno }}</span>
+        <span class="label">Prenotazioni generate</span>
       </li>
       {% endif %}
 
@@ -223,6 +214,13 @@
       </li>
       {% endif %}
     </ul>
+
+    {% if stagione.anno %}
+    <p class="stagione-nota" data-reveal="fade">
+      Tutti i dati si riferiscono alla stagione {{ stagione.anno }}.{% if stagione.primo_anno %}
+      Operiamo in Sardegna dal {{ stagione.primo_anno }}.{% endif %}
+    </p>
+    {% endif %}
   </div>
 </section>
 
@@ -576,4 +574,6 @@
     </div>
   </div>
 </section>
+
+{% include "_popup_prenota.html" %}
 {% endblock %}

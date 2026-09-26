@@ -79,6 +79,7 @@
                       ";path=/;max-age=15552000;SameSite=Lax";
     window.evConsenso = scelta;
     if (banner) banner.hidden = true;
+    document.dispatchEvent(new CustomEvent("ev:consenso", { detail: scelta }));
   }
 
   if (banner) {
@@ -115,6 +116,64 @@
       if (check) check.checked = !!(leggiScelta() || {}).misurazione;
       banner.scrollIntoView({ block: "center" });
     });
+  }
+
+  /* ------------------------------------------------------------------
+     Pop-up «Prenota ora» (solo home)
+     Una volta per visitatore: il segno resta in localStorage, non in
+     sessione, altrimenti ricomparirebbe a ogni visita. Si apre solo quando
+     la strada e' libera — scelta sui cookie fatta e sipario d'ingresso
+     finito — piu' una breve pausa, perche' chi arriva veda prima il sito.
+     ------------------------------------------------------------------ */
+  var popup = document.getElementById("popup-prenota");
+  var CHIAVE_POPUP = "ev-popup-prenota";
+
+  function popupGiaVisto() {
+    try { return localStorage.getItem(CHIAVE_POPUP) === "1"; } catch (e) { return false; }
+  }
+
+  if (popup && typeof popup.showModal === "function" && !popupGiaVisto()) {
+    var programmato = false;
+
+    function stradaLibera() {
+      return !!leggiScelta() && !root.classList.contains("ev-intro");
+    }
+
+    function provaAdAprire() {
+      if (programmato || !stradaLibera()) return;
+      programmato = true;
+      setTimeout(function () {
+        if (popup.open) return;
+        popup.showModal();
+        // Segnato all'apertura, non alla chiusura: chi lo vede e poi chiude
+        // la scheda senza toccarlo l'ha visto comunque.
+        try { localStorage.setItem(CHIAVE_POPUP, "1"); } catch (e) {}
+      }, 1200);
+    }
+
+    // Un click sul velo, fuori dal riquadro, chiude come la X.
+    popup.addEventListener("click", function (e) {
+      if (e.target !== popup) return;
+      var r = popup.getBoundingClientRect();
+      var dentro = e.clientX >= r.left && e.clientX <= r.right &&
+                   e.clientY >= r.top && e.clientY <= r.bottom;
+      if (!dentro) popup.close();
+    });
+    // Chi va a prenotare non deve ritrovarselo davanti al ritorno.
+    popup.querySelector(".popup-cta").addEventListener("click", function () {
+      popup.close();
+    });
+
+    document.addEventListener("ev:consenso", provaAdAprire);
+    if (root.classList.contains("ev-intro") && "MutationObserver" in window) {
+      var osservaSipario = new MutationObserver(function () {
+        if (root.classList.contains("ev-intro")) return;
+        osservaSipario.disconnect();
+        provaAdAprire();
+      });
+      osservaSipario.observe(root, { attributes: true, attributeFilter: ["class"] });
+    }
+    provaAdAprire();
   }
 
   /* ------------------------------------------------------------------

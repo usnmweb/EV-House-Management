@@ -115,7 +115,7 @@ class ArticleListView(ListView):
         ctx["filtri_attivi"] = self._filtri
         ctx["evidenza"] = self._in_evidenza()
         ctx["totale"] = Article.objects.pubblicati().count()
-        ctx["page_title"] = "Il Giornale"
+        ctx["page_title"] = "Blog"
         ctx["meta_description"] = (
             "Note dalla costa: gestione degli affitti brevi, adempimenti, località "
             "e consigli per gli ospiti, scritti da chi gestisce le case in Sardegna."

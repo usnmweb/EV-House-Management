@@ -1,0 +1,42 @@
+{% load static %}
+{% comment %}
+  Invito a prenotare, come sul sito precedente. Solo in home e una volta sola
+  per visitatore: lo decide main.js, che lo apre dopo il sipario e dopo la
+  scelta sui cookie — due finestre una sopra l'altra non le legge nessuno.
+
+  Due lingue insieme, non un selettore: chi prenota e' in buona parte
+  straniero, e un pop-up che chiede prima in che lingua parlare ha gia' perso.
+  L'inglese porta `lang="en"` perche' i lettori di schermo lo pronuncino bene.
+
+  E' un <dialog>: il browser si occupa del fuoco, del tasto Esc e dello
+  sfondo. Senza JavaScript resta chiuso, e il sito non perde nulla — il
+  pulsante «Prenota ora» c'e' gia' nell'hero.
+{% endcomment %}
+<dialog class="popup-prenota" id="popup-prenota" aria-labelledby="popup-prenota-titolo">
+  <form method="dialog" class="popup-chiudi-form">
+    <button type="submit" class="popup-chiudi" aria-label="Chiudi · Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </form>
+
+  <img class="popup-foto" src="{% static 'img/hero-video-1000.jpg' %}" alt=""
+       width="1000" height="562" loading="lazy" decoding="async">
+
+  <div class="popup-corpo">
+    <h2 id="popup-prenota-titolo" class="popup-titolo">
+      Prenota ora l'immobile per la tua vacanza!
+    </h2>
+    <p class="popup-titolo-en" lang="en">Book your holiday home now!</p>
+
+    <a class="btn btn-primary btn-external popup-cta" href="{{ BOOKING_URL }}"
+       target="_blank" rel="noopener noreferrer">
+      <span>Prenota ora <span class="popup-cta-en" lang="en">· Book now</span></span>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17L17 7M9 7h8v8"/>
+      </svg>
+      <span class="solo-lettori">(si apre in una nuova scheda)</span>
+    </a>
+  </div>
+</dialog>

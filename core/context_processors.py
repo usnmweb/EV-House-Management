@@ -45,5 +45,8 @@ def site_settings(request):
         "COMPANY_CAPITAL": settings.COMPANY_CAPITAL,
         "BOOKING_URL": settings.BOOKING_URL,
         "OWNER_PORTAL_URL": settings.OWNER_PORTAL_URL,
+        "SOCIAL_LINKS": [
+            {"chiave": c, "nome": n, "url": u} for c, n, u in settings.SOCIAL_LINKS
+        ],
         "LOCALITA_NAV": SimpleLazyObject(_localita_pubblicate),
     }

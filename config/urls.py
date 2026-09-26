@@ -2,7 +2,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.generic import RedirectView
 
 from blog.sitemaps import ArticleSitemap
 from core.views import robots_txt
@@ -17,7 +18,13 @@ sitemaps = {
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("properties/", include("properties.urls")),
-    path("giornale/", include("blog.urls")),
+    path("blog/", include("blog.urls")),
+    # Il blog si chiamava «Giornale»: i vecchi indirizzi, gia' condivisi o
+    # indicizzati, portano alla pagina nuova con un 301 invece di un 404.
+    re_path(
+        r"^giornale/(?P<resto>.*)$",
+        RedirectView.as_view(url="/blog/%(resto)s", permanent=True, query_string=True),
+    ),
     path(
         "sitemap.xml",
         sitemap,

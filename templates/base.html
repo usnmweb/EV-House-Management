@@ -112,6 +112,7 @@
       "addressCountry": "IT"
     },
     "areaServed": {"@type": "AdministrativeArea", "name": "Sardegna"},
+    "sameAs": [{% for s in SOCIAL_LINKS %}{% if s.chiave != "whatsapp" %}{% if not forloop.first %}, {% endif %}"{{ s.url }}"{% endif %}{% endfor %}],
     "description": "Gestione di immobili e affitti brevi in Sardegna: accoglienza ospiti, pulizie, manutenzione e adempimenti."
   }
   </script>
@@ -202,7 +203,7 @@
           </li>
           <li><a class="nav-voce" href="{% url 'core:services' %}">Servizi</a></li>
           <li><a class="nav-voce" href="{% url 'core:gallery' %}">Galleria</a></li>
-          <li><a class="nav-voce" href="{% url 'blog:list' %}">Giornale</a></li>
+          <li><a class="nav-voce" href="{% url 'blog:list' %}">Blog</a></li>
           {% comment %}
             Il portale proprietari porta fuori dal sito, sul gestionale: si
             apre in una scheda nuova — chi ci va sta facendo un'altra cosa e
@@ -255,6 +256,19 @@
         <p class="footer-tagline">
           Gestione immobiliare e affitti brevi. Cura del dettaglio, risultati misurabili.
         </p>
+        {% if SOCIAL_LINKS %}
+        {# Solo icone: il nome di ogni social resta per i lettori di schermo e nel tooltip. #}
+        <ul class="footer-social">
+          {% for s in SOCIAL_LINKS %}
+          <li>
+            <a href="{{ s.url }}" target="_blank" rel="noopener" title="{{ s.nome }}">
+              {% include "_icona_social.html" with chiave=s.chiave %}
+              <span class="solo-lettori">{{ s.nome }} (si apre in una nuova scheda)</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
       </div>
 
       <div class="footer-col">
@@ -264,7 +278,7 @@
           <li><a href="{% url 'properties:list' %}">Immobili</a></li>
           <li><a href="{% url 'core:services' %}">Servizi</a></li>
           <li><a href="{% url 'core:gallery' %}">Galleria</a></li>
-          <li><a href="{% url 'blog:list' %}">Giornale</a></li>
+          <li><a href="{% url 'blog:list' %}">Blog</a></li>
           <li><a href="{% url 'core:contact' %}">Contatti</a></li>
           <li>
             <a href="{{ OWNER_PORTAL_URL }}" target="_blank" rel="noopener">

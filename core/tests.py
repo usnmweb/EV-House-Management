@@ -195,7 +195,7 @@ class PannelloAmministrazioneTest(TestCase):
     def test_le_sezioni_hanno_nomi_italiani_e_un_ordine_di_lavoro(self):
         pagina = self.client.get(reverse("admin:index"))
         nomi = [s["name"] for s in pagina.context["app_list"]]
-        self.assertEqual(nomi, ["Immobili", "Il Giornale", "Recensioni", "Utenti e accessi"])
+        self.assertEqual(nomi, ["Immobili", "Blog", "Recensioni", "Utenti e accessi"])
 
     def test_il_filtro_copertina_separa_scelte_e_portale(self):
         elenco = reverse("admin:properties_property_changelist")
