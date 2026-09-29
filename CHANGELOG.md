@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   gunicorn (deploy/README.md).
 
 ### Changed
+- The site is live as a preview at https://evhouse.mont3.dev/ (first deploy on 2026-09-29);
+  `deployment.json` lists it under `deployments[]` with status `dev`.
 
 ### Deprecated
 
