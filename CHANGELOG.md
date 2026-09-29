@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial project scaffold from `Mont3-Suisse/template`.
+- Deploy target for a preview at https://evhouse.mont3.dev/ on server 2, ready for the first
+  deploy: one command, `sudo /usr/local/sbin/evhouse-deploy`, runs `build.sh` and restarts
+  gunicorn (deploy/README.md).
 
 ### Changed
 
