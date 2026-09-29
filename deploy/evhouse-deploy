@@ -1,0 +1,105 @@
+#!/bin/bash
+# Deploy the EV House website in one command: take main from GitHub, back up the database, build
+# with the repository's own build.sh (the steps Render runs) as evhouse under a memory cap,
+# restart, and check that the site answers. Installed at /usr/local/sbin/evhouse-deploy on
+# server 2 (24.199.86.139); the copy in the repository (deploy/evhouse-deploy) must match it.
+#
+# Run it as:   sudo /usr/local/sbin/evhouse-deploy
+#
+# It takes no arguments, so whoever runs it through sudo cannot change what it does. Everything
+# that touches the code or the data runs as evhouse, never as root. One app build at a time on
+# this box: it shares a lock with /usr/local/sbin/blue-venado-build.
+set -euo pipefail
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+APP=/srv/evhouse/app
+VENV=/srv/evhouse/venv
+DB=/srv/evhouse/data/db/db.sqlite3
+BACKUPS=/srv/evhouse/data/db/backups
+KEEP=15
+ENV_FILE=/srv/evhouse/evhouse.env
+as_app() { runuser -u evhouse -- env HOME=/srv/evhouse "$@"; }
+
+if [ "$#" -ne 0 ]; then
+  echo "evhouse-deploy takes no arguments." >&2
+  exit 2
+fi
+# Each build may take over a gigabyte and Francesca lives on this box too: never two at once.
+exec 9>/run/lock/app-build.lock
+if ! flock -n 9; then
+  echo "Another build is running on this box (Blue Venado or EV House): wait for it to finish." >&2
+  exit 1
+fi
+
+echo "== 1/5 Code: main from GitHub =="
+as_app git -C "$APP" fetch --quiet origin
+branch=$(as_app git -C "$APP" rev-parse --abbrev-ref HEAD)
+if [ "$branch" != main ]; then
+  echo "The checkout is on '$branch', not main. Put it back with:" >&2
+  echo "  sudo -u evhouse -H git -C $APP checkout main" >&2
+  exit 1
+fi
+if [ -n "$(as_app git -C "$APP" status --porcelain --untracked-files=no)" ]; then
+  echo "The checkout has local edits, and nothing is ever edited on the server. See them with:" >&2
+  echo "  sudo -u evhouse -H git -C $APP status" >&2
+  exit 1
+fi
+before=$(as_app git -C "$APP" rev-parse --short HEAD)
+as_app git -C "$APP" merge --ff-only --quiet origin/main
+now=$(as_app git -C "$APP" rev-parse --short HEAD)
+echo "  $before -> $now"
+if [ ! -f "$APP/manage.py" ] || [ ! -f "$APP/build.sh" ]; then
+  echo "Nothing to deploy yet: main has no manage.py and build.sh." >&2
+  echo "Push the code to Mont3-Suisse/evhouse-website, then run this again." >&2
+  exit 1
+fi
+
+echo "== 2/5 Database backup =="
+if [ -f "$DB" ]; then
+  copy="$BACKUPS/db-$(date -u +%Y%m%d-%H%M%S)-$before.sqlite3"
+  as_app python3 - "$DB" "$copy" <<'PY'
+import sqlite3, sys
+src, dst = sqlite3.connect(sys.argv[1]), sqlite3.connect(sys.argv[2])
+with dst:
+    src.backup(dst)
+dst.close()
+src.close()
+PY
+  echo "  $copy"
+  ls -1t "$BACKUPS"/db-*.sqlite3 | tail -n +$((KEEP + 1)) | while read -r old; do as_app rm -f "$old"; done
+else
+  echo "  no database yet: first deploy"
+fi
+
+echo "== 3/5 Build: build.sh as evhouse, under a memory cap =="
+if [ ! -x "$VENV/bin/python" ]; then
+  as_app python3 -m venv "$VENV"
+fi
+if ! systemd-run --unit=eh-build --wait --pipe --collect \
+  -p User=evhouse -p Group=evhouse -p WorkingDirectory="$APP" \
+  -p EnvironmentFile="$ENV_FILE" \
+  -p MemoryHigh=1300M -p MemoryMax=1600M -p OOMScoreAdjust=1000 -p Nice=10 \
+  -E HOME=/srv/evhouse -E VIRTUAL_ENV="$VENV" -E PATH="$VENV/bin:/usr/bin:/bin" \
+  /bin/bash ./build.sh; then
+  echo "BUILD FAILED. The site was not restarted: it still runs the previous version." >&2
+  exit 1
+fi
+
+echo "== 4/5 Restart =="
+systemctl restart evhouse-website
+
+echo "== 5/5 Check =="
+# Through the loopback, as nginx calls it: the app forces HTTPS unless X-Forwarded-Proto says so.
+code=000
+for i in $(seq 1 30); do
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 -H 'Host: evhouse.mont3.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:3300/ || true)
+  [ "$code" = 200 ] && break
+  sleep 1
+done
+if systemctl is-active --quiet evhouse-website && [ "$code" = 200 ]; then
+  echo "Deploy done: $now is live, the home page answers $code."
+else
+  echo "PROBLEM: service $(systemctl is-active evhouse-website || true), home page $code. Last log lines:" >&2
+  journalctl -u evhouse-website --no-pager -n 30 >&2 || true
+  echo "The database as it was before this deploy is in $BACKUPS (see deploy/README.md, Rollback)." >&2
+  exit 1
+fi

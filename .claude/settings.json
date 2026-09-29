@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "extraKnownMarketplaces": {
+    "mont3": {
+      "source": {
+        "source": "github",
+        "repo": "Mont3-Suisse/claude-plugins"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "mont3-toolkit@mont3": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git fetch:*)",
+      "Bash(ls:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh repo view:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Edit(./.env)",
+      "Read(./.env.local)",
+      "Edit(./.env.local)",
+      "Read(./.env.production)",
+      "Edit(./.env.production)",
+      "Read(./.env.bak*)",
+      "Edit(./.env.bak*)",
+      "Read(./secrets/**)",
+      "Edit(./secrets/**)",
+      "Read(./**/*.pem)",
+      "Edit(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Edit(./**/*.key)",
+      "Read(./**/id_rsa*)",
+      "Read(./**/id_ed25519*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v python3 >/dev/null 2>&1; then python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_secrets.py\"; else python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_secrets.py\"; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v python3 >/dev/null 2>&1; then python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/changelog_reminder.py\"; else python \"$CLAUDE_PROJECT_DIR/.claude/hooks/changelog_reminder.py\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if command -v python3 >/dev/null 2>&1; then python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/deployment_reminder.py\"; else python \"$CLAUDE_PROJECT_DIR/.claude/hooks/deployment_reminder.py\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if command -v python3 >/dev/null 2>&1; then python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/project_reminder.py\"; else python \"$CLAUDE_PROJECT_DIR/.claude/hooks/project_reminder.py\"; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

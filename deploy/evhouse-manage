@@ -1,0 +1,17 @@
+#!/bin/bash
+# Run a Django management command for the EV House website, as evhouse, with the site's settings:
+#   sudo -u evhouse evhouse-manage createsuperuser
+#   sudo -u evhouse evhouse-manage showmigrations
+# Installed at /usr/local/bin/evhouse-manage on server 2 (24.199.86.139); the copy in the
+# repository (deploy/evhouse-manage) must match it. It runs as evhouse, never as root, so it needs
+# no sudo rule of its own.
+set -euo pipefail
+if [ "$(id -un)" != evhouse ]; then
+  echo "Run it as evhouse:   sudo -u evhouse evhouse-manage $*" >&2
+  exit 1
+fi
+cd /srv/evhouse/app
+set -a
+. /srv/evhouse/evhouse.env
+set +a
+exec /srv/evhouse/venv/bin/python manage.py "$@"

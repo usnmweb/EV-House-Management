@@ -1,0 +1,36 @@
+# systemd unit for the EV House website (evhouse-website), a Django app served by gunicorn.
+#
+# Installed at /etc/systemd/system/evhouse-website.service on 24.199.86.139 (server 2) on
+# 2026-09-28. The copy in the repository (deploy/evhouse-website.service) must stay identical to
+# this file: it is what the runbook installs.
+#
+# Runs as the `evhouse` system user (no shell, no password) from a git checkout of `main`, with its
+# own virtualenv in /srv/evhouse/venv. Deploys go through /usr/local/sbin/evhouse-deploy. The start
+# command mirrors the one render.yaml gives Render: keep them in step.
+
+[Unit]
+Description=EV House website (Django, gunicorn)
+After=network.target
+# Nothing to serve before the first deploy: until the code and its virtualenv exist the unit is
+# skipped, at boot too, instead of failing and restarting every five seconds.
+ConditionPathExists=/srv/evhouse/app/manage.py
+ConditionPathExists=/srv/evhouse/venv/bin/gunicorn
+
+[Service]
+Type=simple
+User=evhouse
+Group=evhouse
+WorkingDirectory=/srv/evhouse/app
+Environment=HOME=/srv/evhouse
+# Settings and secrets (DJANGO_SECRET_KEY, hosts, database and media paths, optional SMTP):
+# owned by evhouse, mode 600, never in git. See deploy/README.md.
+EnvironmentFile=/srv/evhouse/evhouse.env
+# Loopback only: nginx is the only way in, so port 3300 stays closed to the outside.
+ExecStart=/srv/evhouse/venv/bin/gunicorn config.wsgi:application --workers 2 --timeout 120 --bind 127.0.0.1:3300
+Restart=on-failure
+RestartSec=5
+# The box has 4 GB shared with Francesca and other services: a leak here must not take them down.
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target
